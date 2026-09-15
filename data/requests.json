@@ -1,0 +1,33 @@
+{
+  "_comment": "Rome's hand-authored progression (DESIGN §6) plus random filler. Kinds: deliver (resources), build (building tier), recruits (militia), host (an official; costs denarii and resolves after N rounds). Rewards: denarii, scrolls, unlocks, gravitas.",
+  "progression": [
+    { "id": "r01", "title": "Survey the road", "text": "The legate at Mogontiacum asks for timber to mark the road east.", "kind": "deliver", "deliver": { "wood": 80 }, "reward": { "denarii": 60 } },
+    { "id": "r02", "title": "Raise a waystation", "text": "A waystation on the road will carry Rome's letters and Rome's gold.", "kind": "build", "build": { "building": "waystation", "tier": 1 }, "reward": { "denarii": 80, "scrolls": 1 } },
+    { "id": "r03", "title": "Grain for the Rhine forts", "text": "The garrisons on the river are short. Send grain.", "kind": "deliver", "deliver": { "grain": 150 }, "reward": { "denarii": 100 } },
+    { "id": "r04", "title": "Recruits for the auxilia", "text": "Rome asks for men. They will not come back.", "kind": "recruits", "recruits": 5, "reward": { "denarii": 90, "gravitas": 3 } },
+    { "id": "r05", "title": "Host the quaestor", "text": "A quaestor tours the frontier. House him well.", "kind": "host", "hostCost": 50, "reward": { "denarii": 40, "scrolls": 1, "unlock": "citizenship_grant" } },
+    { "id": "r06", "title": "Strengthen the castellum", "text": "The legate wants walls he can point to.", "kind": "build", "build": { "building": "castellum", "tier": 2 }, "reward": { "denarii": 150, "unlock": "catapult" } },
+    { "id": "r07", "title": "Iron for the smiths", "text": "The legion's smiths at Vetera need iron.", "kind": "deliver", "deliver": { "iron": 150 }, "reward": { "denarii": 140 } },
+    { "id": "r08", "title": "Quarter a cohort", "text": "A cohort winters with you. Your militia stands down while it does.", "kind": "host", "hostCost": 80, "reward": { "denarii": 120, "unlock": "veteran_cohort" } },
+    { "id": "r09", "title": "A temple for the colony", "text": "A colonia without an altar to Jupiter is a camp.", "kind": "build", "build": { "building": "temple", "tier": 1 }, "reward": { "denarii": 100, "scrolls": 2, "gravitas": 4 } },
+    { "id": "r10", "title": "Clay for the kilns", "text": "The forts want tiles. Send clay.", "kind": "deliver", "deliver": { "clay": 300 }, "reward": { "denarii": 160 } },
+    { "id": "r11", "title": "A proper forum", "text": "Rome expects a basilica worthy of the name.", "kind": "build", "build": { "building": "forum", "tier": 2 }, "reward": { "denarii": 250, "scrolls": 2, "unlock": "engineer" } },
+    { "id": "r12", "title": "More recruits", "text": "The auxilia grow. So must your contribution.", "kind": "recruits", "recruits": 10, "reward": { "denarii": 180, "gravitas": 5 } },
+    { "id": "r13", "title": "Host the legate", "text": "The legate himself comes east. Everything must be right.", "kind": "host", "hostCost": 150, "reward": { "denarii": 200, "scrolls": 2, "gravitas": 8 } },
+    { "id": "r14", "title": "Grain for the campaign", "text": "The legions march in spring. They eat.", "kind": "deliver", "deliver": { "grain": 500 }, "reward": { "denarii": 300 } },
+    { "id": "r15", "title": "The basilica", "text": "Raise the forum to its full height. Rome will remember it.", "kind": "build", "build": { "building": "forum", "tier": 3 }, "reward": { "denarii": 600, "scrolls": 4, "gravitas": 15 } }
+  ],
+  "filler": [
+    { "id": "f_wood", "title": "Timber for the fleet", "text": "The Rhine fleet needs planking.", "kind": "deliver", "deliverPerTier": { "wood": 120 }, "rewardPerTier": { "denarii": 70 } },
+    { "id": "f_grain", "title": "Grain for the forts", "text": "The river garrisons are short again.", "kind": "deliver", "deliverPerTier": { "grain": 120 }, "rewardPerTier": { "denarii": 70 } },
+    { "id": "f_iron", "title": "Iron for the armouries", "text": "Spearheads and nails.", "kind": "deliver", "deliverPerTier": { "iron": 60 }, "rewardPerTier": { "denarii": 80 } },
+    { "id": "f_clay", "title": "Clay for the tileries", "text": "Roof tiles for the new barracks.", "kind": "deliver", "deliverPerTier": { "clay": 120 }, "rewardPerTier": { "denarii": 70 } },
+    { "id": "f_recruits", "title": "Recruits", "text": "A few men for the auxilia.", "kind": "recruits", "recruitsPerTier": 3, "rewardPerTier": { "denarii": 60, "gravitas": 2 } }
+  ],
+  "unlocks": {
+    "catapult": { "name": "Catapult", "description": "A defence bonus now; an offensive engine later.", "defenceBonus": 15 },
+    "engineer": { "name": "Engineer", "description": "A military engineer on loan. Construction is faster.", "buildTimeMultiplier": 0.85 },
+    "veteran_cohort": { "name": "Veteran cohort", "description": "Discharged veterans settle here. The militia pool grows.", "militiaBonus": 10 },
+    "citizenship_grant": { "name": "Citizenship grant", "description": "Rome confirms your house's standing. Your leader gains gravitas.", "gravitas": 5 }
+  }
+}
