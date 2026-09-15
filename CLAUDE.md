@@ -68,6 +68,7 @@ assets/          generated SVGs, portraits
 - Flag uncertainty with ✅ / 🟡 / 🔴 rather than projecting confidence.
 - Mathias cross-checks proposals with Gemini. Gemini's art-direction instincts are sound; its codebase-specific claims need verification against this repo before acting on them.
 - End every substantial session with a `docs/CAPSULE-SESSION-<date>.md`: what changed, what's verified, what's next, what's open.
+- In an unattended session, a ❓ may be resolved only as a data-file default, listed in the session capsule for confirmation. Never in code.
 
 ## Do not
 

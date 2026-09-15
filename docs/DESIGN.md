@@ -42,7 +42,7 @@ Two clocks. The player sees only one.
 
 ### 3.1 The village clock — real time, invisible ✅
 
-Resource accrual, construction timers, site yields and research progress run on wall-clock time, including while the game is closed. Offline accrual is capped by storage capacity (§4.2), not by a time cap. The player never sees this clock: things are either done or still in progress.
+Resource accrual, construction timers, site yields and research progress run on wall-clock time, including while the game is closed. Offline accrual is capped by storage capacity (§4.2), not by a time cap. No countdowns. Construction shows progress and the rush price; the council tab shows hours until the idle round. No other time is displayed. ✅
 
 ### 3.2 The political clock — rounds ✅
 
@@ -58,12 +58,12 @@ Any number of rounds may run per day. Political actions can be **prepared** at a
 
 ### 3.3 Calendar floor ✅
 
-If no round has run in N real hours, an **idle round** runs automatically: opponents act, the player does not. This closes the exploit where a player never opens the council and therefore never ages, is never raided and never faces a challenge. ❓ N — proposed 24.
+If no round has run in N real hours, an **idle round** runs automatically: opponents act, the player does not. This closes the exploit where a player never opens the council and therefore never ages, is never raided and never faces a challenge. ✅ N = 24 hours (`data/config.json` `calendarFloorHours`). ✅ After a long absence at most 7 idle rounds run (`idleRoundsMaxCatchUp`), so a month away is not thirty raids.
 
-### 3.4 Tuning ❓
+### 3.4 Tuning
 
-- Age advances by one unit per round. Natural lifespan in rounds — proposed range 120–200, so a leader who politicks hard burns through his life faster than one who delegates.
-- Whether a flavour calendar (months, years) is displayed at all, and if so whether it counts rounds or real days.
+- ✅ Age is counted in rounds and advances by one per round. Starting ages are authored in rounds (`data/families.json`). Natural death has zero chance below 120 rounds and ramps linearly to certainty at 200 (`data/config.json` `lifespan`), so a leader who politicks hard burns through his life faster than one who delegates.
+- ❓ Whether a flavour calendar (months, years) is displayed at all, and if so whether it counts rounds or real days.
 
 ---
 
@@ -90,7 +90,7 @@ Storage capacity is what caps offline accrual (§3.1) and is what raids target (
 
 ### 4.3 Population ✅
 
-One number. Needs housing and grain upkeep. Grows with buildings. More population means more posts can be filled, more denarii income and a larger militia pool (§8.1). No citizen tiers in v0 (banked). No sickness, no overpopulation penalties.
+One number. Needs housing and grain upkeep. Grows with buildings. More population means more posts can be filled, more denarii income and a larger militia pool (§8.1). No citizen tiers in v0 (banked). No sickness, no overpopulation penalties. ✅ Hunger stalls, never kills: at zero grain, population growth stops; it does not decline.
 
 ### 4.4 Buildings ✅
 
@@ -164,7 +164,7 @@ An institution, not a person. Rome wants the colony to succeed and is not abusiv
 - **Rewards:** both unique items (catapult, engineer, veteran cohort) and unlocks (permission to build baths or an aqueduct, citizenship grants for characters, research scrolls).
 - **Ignoring Rome:** no punishment. You forgo aid you will sorely miss, and the loyalist family's standing falls.
 - **Gravitas as currency:** Rome's backing for a political action can be bought with gravitas (§9.2).
-- **Intervention:** on collapse, Rome administers the colony until the player recovers (§1).
+- **Intervention:** on collapse, Rome administers the colony until the player recovers (§1). ✅ Collapse is population ≤ 5 or corruption ≥ 95 (`data/config.json` `collapse`). Rome clears the council, zeroes corruption, grants supplies and administers for 4 rounds. Research and the family survive.
 
 Rome's role is deliberately narrow in v0 and expands later.
 
@@ -172,7 +172,7 @@ Rome's role is deliberately narrow in v0 and expands later.
 
 ## 7. Tribes ✅
 
-- Three, hand-authored, with distinct personalities. ✅ Archetypes: the trader, the raider, the wary. ❓ Names — real Germanic peoples of the period are available (the Cherusci, Chatti and Sugambri were all active around the Rhine at this time ✅).
+- Three, hand-authored, with distinct personalities. ✅ Archetypes: the trader, the raider, the wary. ✅ Names — real Germanic peoples of the period (the Cherusci, Chatti and Sugambri were all active around the Rhine at this time). ✅ v0: the Chatti are the raider. 🟡 v0.1: the Cherusci as the wary, the Sugambri as the trader, as listed inactive in `data/tribes.json`.
 - **Disposition on two axes:** fear and trust.
 - **Tribes have likes and hates toward each other** (Rome: Total War diplomacy model). Allying with one shifts the others.
 - **Envoy menu:** demand tribute, offer trade, propose alliance, ask for hostages, warn of a raid, invite to a festival.
@@ -220,15 +220,15 @@ Four: the player's and three rivals. **All four run on identical character rules
 
 ### 9.3 Posts and the council ✅
 
-- **Major posts** (the council — Game of Thrones small council): temple, market, garrison, works, lands/granary, treasury, tribal relations. ❓ Which five are in v0.
+- **Major posts** (the council — Game of Thrones small council): temple, market, garrison, works, lands/granary, treasury, tribal relations. ✅ v0 has five: treasury, garrison, works, granary, market (`data/posts.json`). Temple and tribal relations arrive with their versions.
 - **Lesser posts** outside the council: less gravitas, less threat.
-- **The top office** — the lord of the colony. ❓ Title: *praefectus* is the safest period term. Separate from the council posts.
+- **The top office** — the lord of the colony. ✅ Title: *praefectus*. Separate from the council posts.
 - **Appointment effect — both:** a bonus to the post's domain scaled by the holder's relevant stat; that family's standing rises and the others' fall; **and** the family gains leverage in that domain (§9.4).
 - Rival families without any posts grow angry. Rival families with too many grow dangerous. The player's job is the balance.
 
 ### 9.4 Leverage and corruption ✅
 
-An unhappy family holding a post can: **obstruct** (its domain underperforms), **skim** (corruption rises), **leak** (tribes learn the size of your stores), **back a coup**.
+An unhappy family holding a post can: **obstruct** (its domain underperforms), **skim** (corruption rises), **leak** (tribes learn the size of your stores), **back a coup**. ✅ v0 has obstruct, skim and leak; backing a coup arrives with the top-office challenge in v0.2 (§13).
 
 **Corruption** is one colony-wide meter. It raises construction costs and drains denarii. It rises with the number of rival-family post-holders weighted by how poorly they regard you. It falls when your own family holds the treasury, with good relations, and with the treasurer's discipline stat.
 
@@ -317,14 +317,14 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 ## 15. Open questions ❓
 
 1. Town name.
-2. Calendar floor interval N (§3.3) and the age-per-round lifespan (§3.4).
+2. ~~Calendar floor interval N (§3.3) and the age-per-round lifespan (§3.4).~~ ✅ Resolved 2026-09-15: N = 24 hours; lifespan 120 → 200 rounds.
 3. Whether a flavour calendar is displayed and what it counts.
 4. Final resource list beyond v0 and the two-step chains.
-5. Which five council posts are in v0.
-6. Title of the top office.
+5. ~~Which five council posts are in v0.~~ ✅ Resolved 2026-09-15: treasury, garrison, works, granary, market.
+6. ~~Title of the top office.~~ ✅ Resolved 2026-09-15: *praefectus*.
 7. Rounds from birth to adulthood.
 8. One temple or a temple per god.
-9. Tribe names and personalities.
+9. ~~Tribe names and personalities.~~ ✅ Resolved 2026-09-15 for v0: the Chatti, raider. The other two are 🟡 pending v0.1 (§7).
 10. Map size.
 11. Research tree contents.
 12. Whether Rome's request to attack a tribe can exist before offence does (recommend no).
@@ -332,3 +332,4 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 ---
 
 *Change log:* v0.1 — 2026-09-16 — first codification from two design interviews. Same day: all 🟡 proposals confirmed by the Owner and marked ✅.
+v0.1.1 — 2026-09-15 — first implementation session. Open questions 2, 5, 6 and 9 resolved; seven implementation defaults from `docs/CAPSULE-SESSION-2026-09-15.md` confirmed by the Owner and recorded as ✅ in §3.1, §3.3, §3.4, §4.3, §6, §9.4. Inactive family Iulii renamed Valerii (the Iulii are the imperial gens in year 0).

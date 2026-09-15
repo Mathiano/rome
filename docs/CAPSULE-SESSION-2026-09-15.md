@@ -23,6 +23,8 @@ First implementation session. The repo held only a README; this session built th
 
 ## Proposals made without confirmation 🟡
 
+> **Confirmed by Mathias later the same day** except the town name, which stays open. All of it now lives in `docs/DESIGN.md` as ✅; this section is kept as the log of what was proposed. `Iulii` was renamed `Valerii` on his instruction.
+
 CLAUDE.md says not to implement ❓ items without Mathias confirming. This session ran unattended and v0 cannot exist without answers to five of them, so each is a data-file value flagged here, changeable without touching code:
 
 | Open question | Placeholder | Where |

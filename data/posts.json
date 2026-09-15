@@ -1,5 +1,5 @@
 {
-  "_comment": "🟡 DESIGN §9.3 lists seven major posts and asks which five are in v0. Proposed: treasury, garrison, works, granary, market. Temple and tribal relations wait for v0.2/v0.3. Change this file, not code.",
+  "_comment": "✅ DESIGN §9.3: v0 has five of the seven major posts — treasury, garrison, works, granary, market. Temple and tribal relations wait for their versions. Change this file, not code.",
   "posts": [
     { "id": "treasury", "name": "Treasurer", "domain": "treasury", "stat": "discipline", "description": "Guards the denarii. Lowers corruption when held by a disciplined man of your own house." },
     { "id": "garrison", "name": "Prefect of the garrison", "domain": "defence", "stat": "discipline", "description": "Commands the militia. His discipline adds to the walls." },

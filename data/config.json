@@ -1,13 +1,13 @@
 {
-  "_comment": "Global tuning. Marks: values under _proposed are placeholders for DESIGN.md open questions and await Owner confirmation.",
+  "_comment": "Global tuning. _proposed records where each value was confirmed in DESIGN.md; only townName is still open.",
   "saveVersion": 1,
   "townName": "[TOWN NAME]",
   "_proposed": {
     "townName": "DESIGN §15.1 — placeholder kept verbatim",
-    "calendarFloorHours": "DESIGN §3.3 — proposed 24",
-    "lifespan": "DESIGN §3.4 — proposed 120–200 rounds",
-    "topOffice": "DESIGN §9.3 — praefectus is the safest period term",
-    "idleRoundsMaxCatchUp": "not in DESIGN — caps how many idle rounds run after a long absence"
+    "calendarFloorHours": "DESIGN §3.3 — confirmed 24",
+    "lifespan": "DESIGN §3.4 — confirmed 120–200 rounds",
+    "topOffice": "DESIGN §9.3 — confirmed praefectus",
+    "idleRoundsMaxCatchUp": "DESIGN §3.3 — confirmed 7"
   },
   "tickMs": 1000,
   "calendarFloorHours": 24,

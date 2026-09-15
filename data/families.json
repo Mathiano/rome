@@ -30,7 +30,7 @@
           "stats": { "authority": 4, "discipline": 3, "craft": 3, "connections": 6, "piety": 6 } }
       ]
     },
-    { "id": "iulii", "name": "Iulii", "gensName": "gens Iulia", "isPlayer": false, "active": false, "colour": "#5a7a2d", "attitude": 0, "members": [] },
+    { "id": "valerii", "name": "Valerii", "gensName": "gens Valeria", "isPlayer": false, "active": false, "colour": "#5a7a2d", "attitude": 0, "members": [] },
     { "id": "claudii", "name": "Claudii", "gensName": "gens Claudia", "isPlayer": false, "active": false, "colour": "#6a4a8a", "attitude": 0, "members": [] }
   ],
   "newMen": {

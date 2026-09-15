@@ -1,5 +1,5 @@
 {
-  "_comment": "🟡 DESIGN §7 names are ❓. v0 uses one tribe (DESIGN §13): the raider archetype, given a real Rhine-region name. All three are listed; only the first is active. Disposition axes: fear and trust, 0–100.",
+  "_comment": "✅ DESIGN §7: v0 uses one tribe, the Chatti as the raider. The other two are listed inactive for v0.1 (🟡 names). Disposition axes: fear and trust, 0–100.",
   "tribes": [
     {
       "id": "chatti", "name": "The Chatti", "archetype": "raider", "active": true,
