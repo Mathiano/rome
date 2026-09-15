@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" data-building="iron_mine" data-tier="1" data-ax="32" data-ay="48">
+<polygon points="4.0,48.0 32.0,62.0 60.0,48.0 32.0,34.0" fill="#9c8a62" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-opacity="0.6"/>
+<polygon points="8.0,50.0 28.0,60.0 52.0,46.0 36.0,34.0 18.0,38.0" fill="#a9a08a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="26.0,56.0 34.0,52.0 34.0,44.0 30.0,42.0 26.0,48.0" fill="#2a2118" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="25.5" y="47.0" width="1.5" height="9.0" fill="#a67c4e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="33.5" y="43.0" width="1.5" height="9.0" fill="#a67c4e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="42.0" cy="54.0" r="2.0" fill="#6e6f72" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.6"/>
+</svg>

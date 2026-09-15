@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" data-building="insulae" data-tier="1" data-ax="32" data-ay="48">
+<polygon points="4.0,48.0 32.0,62.0 60.0,48.0 32.0,34.0" fill="#9c8a62" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-opacity="0.6"/>
+<polygon points="8.2,48.0 32.0,59.9 32.0,49.9 8.2,38.0" fill="#c4b58e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="32.0,59.9 55.8,48.0 55.8,38.0 32.0,49.9" fill="#e3d6b4" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="8.2,38.0 32.0,49.9 55.8,38.0 32.0,26.1" fill="#a34d33" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="34.8" y="51.4" width="2.4" height="3.2" fill="#2a2118" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.6"/>
+<rect x="42.7" y="47.5" width="2.4" height="3.2" fill="#2a2118" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.6"/>
+<rect x="50.6" y="43.5" width="2.4" height="3.2" fill="#2a2118" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.6"/>
+<line x1="32.0" y1="54.5" x2="56.0" y2="42.5" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke="#7d5a36"/>
+</svg>
