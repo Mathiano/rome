@@ -1,0 +1,334 @@
+# [TOWN NAME] — Design Document v0.1
+
+Working title: Rome III (repo `Mathiano/rome`). The shipped name will be different — "Rome II" is a Total War title. The town name is the Owner's to choose; `[TOWN NAME]` is a placeholder throughout.
+
+**Marks:** ✅ decided · 🟡 proposed by Claude, awaiting Owner confirmation · ❓ open question
+
+**How to use this document:** it is the single source of truth for design. Code follows the doc; if the code needs to diverge, the doc changes first. Claude Code reads it via `CLAUDE.md`. Numbers in tuning sections are starting points, not commitments.
+
+---
+
+## 1. Premise ✅
+
+- **When and where.** Year 0, Augustan era. A Roman colonia founded from nothing in Germania between the Rhine and the Elbe, far to the north and beyond reliable reach of the legions. Real region, fictional town. The historical model is Waldgirmes, a civilian Roman town east of the Rhine (✅ it existed, with a forum; 🟡 founded c. 4 BC, abandoned after Teutoburg in AD 9).
+- **Who you are.** A Roman family (gens): a party leader and heirs. Rome's appointee in charge of the colony. Three other noble families sit on the council; they are companions and rivals at once (Rome II model). You can keep one family friendly throughout while the others plot, obstruct or revolt.
+- **The two outside actors.** Rome, an institution rather than a face — benevolent, sets goals, rewards success, can order actions, steps in if the colony collapses. Three tribes, hand-authored, with their own likes and hates toward each other and toward you.
+- **What you are trying to do.** Build the colonia through tiers; keep the other families satisfied while placing your own people in the key posts; keep your family alive across generations. There is no fixed end. The game is "completed" when all content is achieved; the post-game runs indefinitely and content is added over time.
+- **Losing.** You can lose badly — a coup, citizens leaving, raids getting through, the top office taken from you — but never completely. Research persists through any collapse. If everything falls apart, Rome steps in and administers the colony until you are back on your feet. If every member of your family dies, you choose a new character and continue.
+- **Scale.** Significantly bigger than Dream Acres, reached through versioned content drops rather than a large v0 (see §13).
+
+---
+
+## 2. Pillars — design rules ✅
+
+These are not up for negotiation inside a session. Changing one is an Owner decision recorded here.
+
+1. **No real money, no energy bars, no pay-to-win.** Hired help costs denarii only.
+2. **Real-time for anything only you do. Turn-based for anything involving another actor.**
+3. **Every timer can be finished early for denarii, and the price never exceeds what the colony earns in that time.**
+4. **Buildings upgrade in place.** No builders walking around. Each tier makes the structure visibly more sophisticated; the top tier animates.
+5. **Politics carry the tension.** Single-player. Rivals, tribes and Rome are simulated, never human.
+6. **Population is opportunity, not a chore.** More people means more posts, income and militia. No sickness, overpopulation or Farthest Frontier-style micromanagement.
+7. **Never unrecoverable.** Setbacks are hard. Total loss is impossible. Research survives everything.
+8. **Defer, don't drop.** Features that don't fit the current version are banked in §14, not deleted.
+9. **Keep it real.** Roman names, Roman gods, Roman practices (adoption, patrilineal families, the castellum). Anachronisms are flagged, not silently adopted.
+10. **PC first, landscape.** Mobile is a later decision.
+
+---
+
+## 3. Time model
+
+Two clocks. The player sees only one.
+
+### 3.1 The village clock — real time, invisible ✅
+
+Resource accrual, construction timers, site yields and research progress run on wall-clock time, including while the game is closed. Offline accrual is capped by storage capacity (§4.2), not by a time cap. The player never sees this clock: things are either done or still in progress.
+
+### 3.2 The political clock — rounds ✅
+
+A **round** is triggered when the player makes a political move. Sequence within a round:
+
+1. Player acts.
+2. Each rival family acts or passes.
+3. Each tribe acts or passes.
+4. Rome acts or passes.
+5. Ages advance (§9.2); round-based events resolve.
+
+Any number of rounds may run per day. Political actions can be **prepared** at any time (queue an intrigue, dispatch an envoy, send scouts) and **resolve** at the next round. Preparation fills a session; resolution stays turn-based.
+
+### 3.3 Calendar floor ✅
+
+If no round has run in N real hours, an **idle round** runs automatically: opponents act, the player does not. This closes the exploit where a player never opens the council and therefore never ages, is never raided and never faces a challenge. ❓ N — proposed 24.
+
+### 3.4 Tuning ❓
+
+- Age advances by one unit per round. Natural lifespan in rounds — proposed range 120–200, so a leader who politicks hard burns through his life faster than one who delegates.
+- Whether a flavour calendar (months, years) is displayed at all, and if so whether it counts rounds or real days.
+
+---
+
+## 4. Economy
+
+### 4.1 Resources ✅
+
+Anno-lite: some processing chains, none longer than two steps, and many raw resources usable as-is (Travian).
+
+**v0 — five:** wood, clay, iron, grain, denarii.
+
+**Planned content drops** (each brings its buildings): stone, marble, salt; processed — bricks, tools, pottery, ❓ wine, ❓ bread/food as a grain refinement. Final list is open; the mechanism (a resource arrives with its producer building and its consumers) is decided.
+
+### 4.2 Storage — Travian model ✅
+
+| Store | Holds | Notes |
+|---|---|---|
+| Warehouse | all non-food resources | capacity per tier; overflow is lost |
+| Granary | grain and food | capacity per tier; overflow is lost |
+| Treasury | denarii | uncapped |
+| Cellars | a fixed amount of each resource | hidden from raids (Travian's cranny) |
+
+Storage capacity is what caps offline accrual (§3.1) and is what raids target (§8), so the warehouse tier is a genuine strategic choice: bigger stores, bigger target.
+
+### 4.3 Population ✅
+
+One number. Needs housing and grain upkeep. Grows with buildings. More population means more posts can be filled, more denarii income and a larger militia pool (§8.1). No citizen tiers in v0 (banked). No sickness, no overpopulation penalties.
+
+### 4.4 Buildings ✅
+
+- ~12 buildings in v0, three visible tiers each (36 sprites). Tier 3 animates (§10).
+- Construction is timed. Finishing early costs denarii per Pillar 3.
+- **Concurrency:** one building and one resource field may be under construction at the same time — Travian's actual Roman-faction rule ✅. No build queue beyond that.
+- Resource buildings sit on their site: the clay works on the clay bank, the mine on the iron seam.
+
+**v0 building list ✅** — confirmed 2026-09-16; edit freely as the doc evolves:
+
+| Building | Ring | Role |
+|---|---|---|
+| Forum (with basilica) | centre | seat of the council; its tier is the colony's tier |
+| Castellum | centre | garrison, bodyguard pool, walls anchor, defence strength |
+| Warehouse | inner | storage |
+| Granary | inner | storage |
+| Cellars | inner | hidden storage |
+| Insulae (housing) | inner | population cap |
+| Market | inner | trade with tribes and Rome |
+| Temple | inner | gods (§9.8), piety, gravitas |
+| Waystation | inner | Rome requests; road link |
+| Lumber camp | outer | wood site |
+| Clay works | outer | clay site |
+| Iron mine | outer | iron site |
+| Farm | outer | grain site |
+
+Library (research, §4.6) is v0.2.
+
+### 4.5 Layout ✅
+
+Three fixed rings, expanding outward as the colony grows:
+
+1. **Centre:** Forum and Castellum, side by side.
+2. **Inner ring:** buildings. Fixed slots; the player chooses which building fills which slot.
+3. **Outer ring:** fields, mines, lumber. Fixed slots tied to resource sites.
+
+This is Travian's fixed-slot model with player-chosen placement, and it preserves the concentric-rings idea from the earlier castle-builder design.
+
+### 4.6 Research ✅ (system) / ❓ (contents)
+
+A research system driven by three inputs: denarii (pay for experiments), research scrolls (earned from Rome rewards, ruins on the map, and trade), and the Library building. The tree is data-driven (`data/research.json`). Research is never lost, even through collapse and Rome's intervention. ❓ Tree contents — first pass in v0.2.
+
+---
+
+## 5. World map
+
+### 5.1 Structure
+
+- Hex grid. ❓ Size — proposed ~25 across.
+- The player's town map is fully visible. World-map terrain is visible from the start; **sites are hidden as "?"** until scouted. A scouted "?" resolves to treasure, a bonus site, or a barbarian camp that punishes the scout.
+- Tribal villages are never shown on the map. Tribes are present through envoys, raids and contested sites.
+
+### 5.2 Sites ✅
+
+All of these are in, arriving over versions: forest, quarry, clay bank, iron seam, salt spring, river ford (trade route — non-resource effect), shrine (gravitas — non-resource effect), ruins (research scrolls).
+
+### 5.3 Claiming and holding ✅
+
+- **Claim:** a council action plus denarii.
+- **Hold:** a small denarii upkeep. Defending a site is the expensive part: garrisoning it draws from the militia pool (§8.1). The player is meant to be forced to prioritise which sites get real protection.
+- **Distance matters:** exposure to raids rises with distance from the colonia.
+- **Lose:** a tribal raid on the site, or a contest at council.
+
+---
+
+## 6. Rome ✅
+
+An institution, not a person. Rome wants the colony to succeed and is not abusive or demanding.
+
+- **Requests:** deliver resources, host a garrison, build a road or waystation, send recruits, host a visiting official. ❓ Ordering an attack on a tribe — banked until offence exists (§8.3). A hand-authored progression of ~15 requests plus random filler.
+- **Rewards:** both unique items (catapult, engineer, veteran cohort) and unlocks (permission to build baths or an aqueduct, citizenship grants for characters, research scrolls).
+- **Ignoring Rome:** no punishment. You forgo aid you will sorely miss, and the loyalist family's standing falls.
+- **Gravitas as currency:** Rome's backing for a political action can be bought with gravitas (§9.2).
+- **Intervention:** on collapse, Rome administers the colony until the player recovers (§1).
+
+Rome's role is deliberately narrow in v0 and expands later.
+
+---
+
+## 7. Tribes ✅
+
+- Three, hand-authored, with distinct personalities. ✅ Archetypes: the trader, the raider, the wary. ❓ Names — real Germanic peoples of the period are available (the Cherusci, Chatti and Sugambri were all active around the Rhine at this time ✅).
+- **Disposition on two axes:** fear and trust.
+- **Tribes have likes and hates toward each other** (Rome: Total War diplomacy model). Allying with one shifts the others.
+- **Envoy menu:** demand tribute, offer trade, propose alliance, ask for hostages, warn of a raid, invite to a festival.
+- Tribes can be weakened or won over — bribes, marriage, Roman action — and a tribe can become a **client** as a late-game state.
+
+---
+
+## 8. Combat — abstract in v0 ✅
+
+No units on the map. Strength against strength, resolved at council.
+
+### 8.1 The militia pool ✅
+
+One pool of men-at-arms, sized by population and the Castellum tier, with three sinks: **home defence**, **site garrisons** (§5.3), **bodyguards** (§9.6). Every allocation is a trade-off.
+
+### 8.2 Raids ✅
+
+Defence strength (walls + home militia + the garrison post-holder's discipline) versus raid strength → a percentage of stored goods lost. Cellars are exempt. Raids on a distant site follow the same formula against that site's garrison.
+
+### 8.3 Offence — banked ✅
+
+Defence only in v0. Offensive actions (punitive raids for loot, retaking a site, Rome-ordered attacks) come with a later version. The catapult is a defence bonus now and an offensive unlock later.
+
+---
+
+## 9. Politics
+
+### 9.1 Families ✅
+
+Four: the player's and three rivals. **All four run on identical character rules** — same ageing, mortality, stats and heirs. Each family has: standing (the sum of its members' gravitas), attitude toward the player, and size (number of living members — which is also its voting weight, §9.5).
+
+### 9.2 Characters ✅
+
+- **Stats (five):** authority (drives gravitas gain), discipline (order, defence, corruption resistance), craft (works and economy), connections (intrigue and trade), piety (temples and gods).
+- **Levelling:** by holding posts and by events. Both.
+- **Gravitas:** per character, cumulative to family standing. Both a **rank** (thresholds unlock intrigue options and posts) and a **spendable stock** (paid to Rome for backing, spent on favours). Rank and stock are tracked as separate numbers.
+- **Ageing:** advances per political round (§3.2).
+- **Death:** age, assassination, illness and raid events.
+- **Heirs — three routes:**
+  - *Birth.* Requires a marriage; the child becomes an adult after ❓ N rounds. Starting families is critical to the family's survival.
+  - *Adoption.* Of an adult, from another family or from the new men. ✅ Standard Roman practice (Caesar adopted Octavian; Augustus adopted Tiberius).
+  - *New men.* A pool of veterans, freedmen and tribal nobles who can be raised into the family. No fifth family emerges in v0.
+- **Children belong to the father's family** ✅ (patrilineal, historically correct). A daughter married out gives her children to the other family; a son married in keeps them.
+- **Bodyguards:** allocated per character from the militia pool. Guarding one leaves another exposed; you can guard everyone until the family outgrows the pool.
+
+### 9.3 Posts and the council ✅
+
+- **Major posts** (the council — Game of Thrones small council): temple, market, garrison, works, lands/granary, treasury, tribal relations. ❓ Which five are in v0.
+- **Lesser posts** outside the council: less gravitas, less threat.
+- **The top office** — the lord of the colony. ❓ Title: *praefectus* is the safest period term. Separate from the council posts.
+- **Appointment effect — both:** a bonus to the post's domain scaled by the holder's relevant stat; that family's standing rises and the others' fall; **and** the family gains leverage in that domain (§9.4).
+- Rival families without any posts grow angry. Rival families with too many grow dangerous. The player's job is the balance.
+
+### 9.4 Leverage and corruption ✅
+
+An unhappy family holding a post can: **obstruct** (its domain underperforms), **skim** (corruption rises), **leak** (tribes learn the size of your stores), **back a coup**.
+
+**Corruption** is one colony-wide meter. It raises construction costs and drains denarii. It rises with the number of rival-family post-holders weighted by how poorly they regard you. It falls when your own family holds the treasury, with good relations, and with the treasurer's discipline stat.
+
+### 9.5 The top office ✅
+
+- No calendar election. A rival family that judges itself strong enough can **call a challenge** and force a vote.
+- **Electorate:** every living member of all four families, one vote each. Members vote for their own family's candidate; when their family has no candidate, they vote for whichever candidate they like more. Rival families usually prefer the player in office over another rival, unless strong enough to take it themselves.
+- **So:** a bigger family and members who like you more than their peers is the defence.
+- **Losing** the office is not game over. The player continues as the family out of power and must win the office back. Losing it is very much not ideal.
+
+### 9.6 Intrigue ✅
+
+Menu: bribe, expose, marry, exile, promote, demote, denounce to Rome, assassinate.
+
+- **Assassination** is in, and the player can order one. It is rare, blocked by bodyguards, and generates large grievances from **all** families — nobody takes it lightly.
+- **Marriage** between families strengthens relations and produces heirs under the patrilineal rule (§9.2). Marriage with tribal nobles is also in, and shifts that tribe's disposition.
+
+### 9.7 Failure states ✅
+
+Coup (the office taken by force), secession (a family or a share of citizens leaves), denunciation to Rome (Rome intervenes — a soft reset, not a loss), assassination of the leader (an heir takes over). Each is a hard setback; none is terminal (Pillar 7).
+
+### 9.8 Gods ✅
+
+Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
+
+| God | Domain in play |
+|---|---|
+| Jupiter | authority and gravitas |
+| Mars | defence |
+| Venus | family, marriage, heirs |
+| Mercury | trade |
+| Ceres | grain |
+| The cult of Augustus | Roman favour |
+
+❓ One temple with a chosen dedication, or a temple per god (more buildings, more art). Piety stat governs the effect.
+
+---
+
+## 10. Art direction ✅
+
+- **Buildings:** painterly, ink-outlined isometric, from the existing parametric SVG pipeline (isobuild, ported into `tools/`). Tier is a generator parameter, which is exactly why the pipeline fits Pillar 4. A Roman building grammar has to be written: rectangular footprints, columns and porticos (polyline approximations of arches — the no-bezier rule stands), terracotta roofs. The palette is re-derived from a Roman reference image the way the current one was derived from Stonehaven.
+- **Animation:** tier 3 only. A small reusable set (smoke, a moving crane, a water wheel, a swinging sign) shared across buildings via CSS keyframes and the Web Animations API, following the conventions already defined (viewBox 64×64; base-diamond-centre anchors for buildings; ground anchor for characters).
+- **Portraits:** monochrome ink-and-wash busts, one accent colour per family. Generated as a batch from one fixed style prompt and committed to the repo.
+- **World map:** SVG hex grid in the same palette.
+- **Nothing lifted** from Rome II, Travian, Anno or any other game. Reference, never copy.
+
+---
+
+## 11. Tech ✅
+
+- **Stack:** Vite + TypeScript, modular. SVG rendering throughout (village and map). React only if the panel UI grows heavy enough to want it — decided when the first complex panel exists.
+- **State:** one store, serialised to JSON. That JSON is the save file.
+- **Persistence:** v0 — localStorage plus JSON export/import (the Owner plays across three devices). v0.x — Supabase sync behind magic-link auth. Vercel hosts the app; it does not hold player state.
+- **Data-driven balance:** `data/resources.json`, `data/buildings.json`, `data/research.json`, `data/requests.json`, `data/tribes.json`, `data/families.json`, `data/events.json`. Game logic reads data; it never hard-codes a cost or a name.
+- **Asset pipeline:** `tools/isobuild/` (Python) generates building SVGs from the building table.
+- **Deploy:** GitHub → Vercel auto-deploy, stable URL for playtesting.
+
+---
+
+## 12. Session design ✅
+
+- Target: a 15-minute daily session, extendable to an hour by choice.
+- A 15-minute session: collect, set one construction, prepare a political action, resolve one round, leave.
+- An hour: multiple rounds, scouting, intrigue, marriage negotiations, site claims.
+
+---
+
+## 13. Versions
+
+| Version | Scope |
+|---|---|
+| **v0 — vertical slice** | Village, five resources, ~12 buildings, storage, timed construction with hired help, Rome requests, one tribe with envoys and raids, two families (yours + one rival), five council posts, gravitas, basic intrigue (bribe, promote, demote), abstract raids, localStorage save with export/import. No world map. |
+| **v0.1** | World map with scouting and "?" sites, site claiming and garrisons, all three tribes with the like/hate web. |
+| **v0.2** | Research system and Library. Families three and four. Marriage, heirs by birth and adoption, bodyguards, assassination. Top-office challenge. |
+| **v0.3** | First content drop: stone, marble, salt and their buildings; first processed goods. Temples per god. Supabase sync. |
+| **later** | Offence and Rome-ordered attacks. Citizen tiers. Mobile. Latin UI names. Traits. The Teutoburg event. |
+
+---
+
+## 14. Banked ✅ (defer, don't drop)
+
+Processed goods beyond the first drop · citizen tiers · mobile layout · Latin building names with English tooltips (the forum is always the forum) · offensive combat · Rome ordering attacks on tribes · character traits (Rome II style) · a fifth family emerging · a Teutoburg-scale late-game event · weather · named events for real Germanic leaders.
+
+---
+
+## 15. Open questions ❓
+
+1. Town name.
+2. Calendar floor interval N (§3.3) and the age-per-round lifespan (§3.4).
+3. Whether a flavour calendar is displayed and what it counts.
+4. Final resource list beyond v0 and the two-step chains.
+5. Which five council posts are in v0.
+6. Title of the top office.
+7. Rounds from birth to adulthood.
+8. One temple or a temple per god.
+9. Tribe names and personalities.
+10. Map size.
+11. Research tree contents.
+12. Whether Rome's request to attack a tribe can exist before offence does (recommend no).
+
+---
+
+*Change log:* v0.1 — 2026-09-16 — first codification from two design interviews. Same day: all 🟡 proposals confirmed by the Owner and marked ✅.
