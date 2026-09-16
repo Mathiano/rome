@@ -1,6 +1,6 @@
-# [TOWN NAME] — Design Document v0.1
+# Arctown — Design Document v0.1
 
-Working title: Rome III (repo `Mathiano/rome`). The shipped name will be different — "Rome II" is a Total War title. The town name is the Owner's to choose; `[TOWN NAME]` is a placeholder throughout.
+Working title: Rome III (repo `Mathiano/rome`). The shipped name will be different — "Rome II" is a Total War title. ✅ The town is Arctown (`data/config.json` `townName`).
 
 **Marks:** ✅ decided · 🟡 proposed by Claude, awaiting Owner confirmation · ❓ open question
 
@@ -316,7 +316,7 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 
 ## 15. Open questions ❓
 
-1. Town name.
+1. ~~Town name.~~ ✅ Resolved 2026-09-16: Arctown.
 2. ~~Calendar floor interval N (§3.3) and the age-per-round lifespan (§3.4).~~ ✅ Resolved 2026-09-15: N = 24 hours; lifespan 120 → 200 rounds.
 3. Whether a flavour calendar is displayed and what it counts.
 4. Final resource list beyond v0 and the two-step chains.
@@ -333,3 +333,4 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 
 *Change log:* v0.1 — 2026-09-16 — first codification from two design interviews. Same day: all 🟡 proposals confirmed by the Owner and marked ✅.
 v0.1.1 — 2026-09-15 — first implementation session. Open questions 2, 5, 6 and 9 resolved; seven implementation defaults from `docs/CAPSULE-SESSION-2026-09-15.md` confirmed by the Owner and recorded as ✅ in §3.1, §3.3, §3.4, §4.3, §6, §9.4. Inactive family Iulii renamed Valerii (the Iulii are the imperial gens in year 0).
+v0.1.2 — 2026-09-16 — town named Arctown (§15.1). CI on every pull request. Dev-only time control documented in the session capsule, not here: it is tooling, not design.

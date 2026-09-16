@@ -128,27 +128,27 @@ export function migrate(state: GameState): GameState {
   return state;
 }
 
-export function saveToLocalStorage(state: GameState): boolean {
+export function saveToLocalStorage(state: GameState, key: string = SAVE_KEY): boolean {
   try {
-    globalThis.localStorage?.setItem(SAVE_KEY, serialise(state));
+    globalThis.localStorage?.setItem(key, serialise(state));
     return true;
   } catch {
     return false;
   }
 }
 
-export function loadFromLocalStorage(): GameState | null {
+export function loadFromLocalStorage(key: string = SAVE_KEY): GameState | null {
   try {
-    const json = globalThis.localStorage?.getItem(SAVE_KEY);
+    const json = globalThis.localStorage?.getItem(key);
     return json ? deserialise(json) : null;
   } catch {
     return null;
   }
 }
 
-export function clearLocalStorage(): void {
+export function clearLocalStorage(key: string = SAVE_KEY): void {
   try {
-    globalThis.localStorage?.removeItem(SAVE_KEY);
+    globalThis.localStorage?.removeItem(key);
   } catch {
     /* ignore */
   }

@@ -60,7 +60,7 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
   let body = '';
   switch (tab) {
     case 'village': body = renderVillage(s, selected, now); break;
-    case 'council': body = renderCouncil(s); break;
+    case 'council': body = renderCouncil(s, now); break;
     case 'family': body = renderFamilies(s); break;
     case 'tribe': body = renderTribe(s); break;
     case 'rome': body = renderRome(s); break;
@@ -114,7 +114,7 @@ function charOption(s: GameState, id: string, stat: keyof typeof s.characters[st
   return `<option value="${c.id}">${esc(c.name)} (${fam.name}, ${stat} ${c.stats[stat]})</option>`;
 }
 
-function renderCouncil(s: GameState): string {
+function renderCouncil(s: GameState, now: number): string {
   const office = s.office ? s.characters[s.office] : null;
   let out = `<h2>The council</h2>`;
   out += `<p><b>${config.topOffice.title}:</b> ${office ? esc(office.name) : 'vacant'}</p>`;
@@ -137,7 +137,7 @@ function renderCouncil(s: GameState): string {
   out += `<p>Your leader holds <b>${n(leader?.gravitasStock ?? 0)}</b> spendable gravitas (rank ${leader ? gravitasRank(leader) : 0}).</p>`;
   out += `<button class="act" data-political="rome_backing" ${(leader?.gravitasStock ?? 0) < g.romeBackingCost ? 'disabled' : ''}>Seek Rome's backing (${g.romeBackingCost} gravitas)</button> `;
   out += `<button class="act secondary" data-political="convene">Convene the council (pass)</button>`;
-  out += `<p class="muted">Every action here runs a political round: the rival house, the tribe and Rome all act, and everyone ages. If you stay away ${config.calendarFloorHours} hours the council meets without you (${Math.ceil(roundsUntilIdle(s, Date.now()) / 3_600_000)}h left).</p>`;
+  out += `<p class="muted">Every action here runs a political round: the rival house, the tribe and Rome all act, and everyone ages. If you stay away ${config.calendarFloorHours} hours the council meets without you (${Math.ceil(roundsUntilIdle(s, now) / 3_600_000)}h left).</p>`;
   return out;
 }
 

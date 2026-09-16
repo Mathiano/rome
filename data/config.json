@@ -1,9 +1,9 @@
 {
-  "_comment": "Global tuning. _proposed records where each value was confirmed in DESIGN.md; only townName is still open.",
+  "_comment": "Global tuning. _proposed records where each value was confirmed in DESIGN.md.",
   "saveVersion": 1,
-  "townName": "[TOWN NAME]",
+  "townName": "Arctown",
   "_proposed": {
-    "townName": "DESIGN §15.1 — placeholder kept verbatim",
+    "townName": "DESIGN §15.1 — confirmed Arctown",
     "calendarFloorHours": "DESIGN §3.3 — confirmed 24",
     "lifespan": "DESIGN §3.4 — confirmed 120–200 rounds",
     "topOffice": "DESIGN §9.3 — confirmed praefectus",

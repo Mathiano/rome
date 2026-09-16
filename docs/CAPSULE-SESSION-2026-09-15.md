@@ -59,3 +59,16 @@ Also not in the doc and decided here (all 🟡):
 3. Portrait batch and a real palette reference for `tools/isobuild/`.
 4. v0.1: world map, scouting, site claims, the other two tribes with the like/hate web (`data/tribes.json` already lists them).
 5. v0.2: research tree in `data/research.json`, families three and four (already named), marriage, heirs, bodyguards, the top-office challenge.
+
+---
+
+## Addendum — 2026-09-16
+
+- **Town named Arctown.** `data/config.json` `townName`; DESIGN §15.1 closed. Nothing else in the doc used the placeholder except the title.
+- **CI.** `.github/workflows/ci.yml` runs `npm ci`, `npm test`, `npm run build` on every pull request and on push to `main`. Node 22.
+- **Dev-only time control** (`src/dev.ts`, wired in `src/main.ts`). Active only with `?dev=1` in the URL.
+  - The game clock becomes a virtual clock: real time × a multiplier (1, 10, 60, 600) plus skips of 1 h, 6 h, 24 h and 7 days. At 600× the 24 h calendar floor passes in 2.4 minutes, so multi-day politics fit in one sitting.
+  - Dev mode plays in its own save slot (`rome.save.dev.v1`). The real colony (`rome.save.v1`) is never read or written with the flag on. This is why the multiplier can be honest about "never persisted into the save": a warped clock leaves future-dated timestamps behind, so the only clean guarantee is a separate slot.
+  - Multiplier and virtual offset persist under `rome.dev.clock` so a reload in dev mode continues where it was. That key is not part of any save.
+  - Without the flag there is no dev bar, no dev code path runs, and the save format has no dev fields (tested).
+- **Verified** ✅ 90 tests. Headless Chromium: no dev bar on the normal URL; with `?dev=1` a 24 h skip runs the idle round and fills the stores; the 600× multiplier is covered by the unit test, not the browser run; the real save slot is byte-identical before and after; returning to the normal URL shows the unwarped colony.
