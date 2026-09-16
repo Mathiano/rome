@@ -54,8 +54,8 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
         if (slot.building && slot.tier > 0) {
           const s = sprite(slot.building, slot.tier);
           if (s) {
-            gr.spriteG.setAttribute('transform', `translate(${-s.ax},${-s.ay})`);
-            gr.spriteG.innerHTML = s.inner;
+            const img = el('image', { href: s.url, x: s.x, y: s.y, width: s.width, height: s.height, 'data-ax': s.ax, 'data-ay': s.ay });
+            gr.spriteG.appendChild(img);
           }
         }
       }

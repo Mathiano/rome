@@ -269,8 +269,8 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 
 ## 10. Art direction ✅
 
-- **Buildings:** painterly, ink-outlined isometric, from the existing parametric SVG pipeline (isobuild, ported into `tools/`). Tier is a generator parameter, which is exactly why the pipeline fits Pillar 4. A Roman building grammar has to be written: rectangular footprints, columns and porticos (polyline approximations of arches — the no-bezier rule stands), terracotta roofs. The palette is re-derived from a Roman reference image the way the current one was derived from Stonehaven.
-- **Animation:** tier 3 only. A small reusable set (smoke, a moving crane, a water wheel, a swinging sign) shared across buildings via CSS keyframes and the Web Animations API, following the conventions already defined (viewBox 64×64; base-diamond-centre anchors for buildings; ground anchor for characters).
+- **Buildings:** ✅ 2026-09-16 — raster PNG sprites with alpha, generated from a style anchor (`assets/style/anchor-v1.jpg`; prompts in `assets/style/PROMPTS.md`) and processed by `tools/artgen/` (key the white background, trim, find the ground plate, anchor, scale, manifest). Each sprite is one structure standing on its ground plate, the base diamond; the anchor is the plate centre, the midpoint of the plate's left and right corners; the plate's width equals the tile width. Roman grammar as before: rectangular footprints, columns and porticos, terracotta roofs. isobuild is retired for buildings. SVG remains for the world map, the UI and animated overlays.
+- **Animation:** tier 3 only. A small reusable set (smoke, a moving crane, a water wheel, a swinging sign) drawn as SVG overlays on top of the PNG sprite, via CSS keyframes and the Web Animations API, positioned from the same anchor. ✅ 2026-09-16.
 - **Portraits:** monochrome ink-and-wash busts, one accent colour per family. Generated as a batch from one fixed style prompt and committed to the repo.
 - **World map:** SVG hex grid in the same palette.
 - **Nothing lifted** from Rome II, Travian, Anno or any other game. Reference, never copy.
@@ -334,3 +334,4 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 *Change log:* v0.1 — 2026-09-16 — first codification from two design interviews. Same day: all 🟡 proposals confirmed by the Owner and marked ✅.
 v0.1.1 — 2026-09-15 — first implementation session. Open questions 2, 5, 6 and 9 resolved; seven implementation defaults from `docs/CAPSULE-SESSION-2026-09-15.md` confirmed by the Owner and recorded as ✅ in §3.1, §3.3, §3.4, §4.3, §6, §9.4. Inactive family Iulii renamed Valerii (the Iulii are the imperial gens in year 0).
 v0.1.2 — 2026-09-16 — town named Arctown (§15.1). CI on every pull request. Dev-only time control documented in the session capsule, not here: it is tooling, not design.
+v0.1.3 — 2026-09-16 — §10 art pipeline pivot: buildings are raster PNG sprites from a style anchor via `tools/artgen/`; SVG kept for map, UI and animated overlays; isobuild retired.
