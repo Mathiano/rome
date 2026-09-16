@@ -1,0 +1,114 @@
+{
+  "_comment": "Global tuning. _proposed records where each value was confirmed in DESIGN.md.",
+  "saveVersion": 1,
+  "townName": "Arctown",
+  "_proposed": {
+    "townName": "DESIGN §15.1 — confirmed Arctown",
+    "calendarFloorHours": "DESIGN §3.3 — confirmed 24",
+    "lifespan": "DESIGN §3.4 — confirmed 120–200 rounds",
+    "topOffice": "DESIGN §9.3 — confirmed praefectus",
+    "idleRoundsMaxCatchUp": "DESIGN §3.3 — confirmed 7"
+  },
+  "tickMs": 1000,
+  "calendarFloorHours": 24,
+  "idleRoundsMaxCatchUp": 7,
+  "topOffice": { "id": "praefectus", "title": "Praefectus" },
+  "lifespan": { "roundsMin": 120, "roundsMax": 200 },
+  "population": {
+    "start": 20,
+    "baseCap": 30,
+    "growthPerHour": 3,
+    "grainUpkeepPerHeadPerHour": 0.05,
+    "taxPerHeadPerHour": 0.4,
+    "militiaRatio": 0.25
+  },
+  "rush": { "minPrice": 1 },
+  "concurrency": { "building": 1, "field": 1 },
+  "corruption": {
+    "min": 0,
+    "max": 100,
+    "risePerRivalPost": 1.5,
+    "attitudeWeight": 0.02,
+    "fallWhenPlayerTreasury": 2,
+    "fallPerTreasurerDiscipline": 0.3,
+    "fallWhenRivalContent": 0.5,
+    "costMultiplierPerPoint": 0.005,
+    "denariiDrainPerPointPerHour": 0.05
+  },
+  "gravitas": {
+    "rankThresholds": [0, 10, 25, 50, 100, 200],
+    "gainPerRoundInPost": 1,
+    "authorityWeight": 0.2,
+    "gainForOffice": 2,
+    "romeBackingCost": 10,
+    "romeBackingAttitude": 15,
+    "romeBackingFavour": 5
+  },
+  "posts": {
+    "bonusPerStatPoint": 0.03,
+    "standingShiftOnAppoint": 8,
+    "attitudeShiftOnAppoint": 12,
+    "attitudeShiftOnDismiss": -15,
+    "attitudeDriftNoPosts": -3,
+    "attitudeDriftWithPosts": 1,
+    "dangerousPostCount": 3,
+    "unhappyThreshold": -20
+  },
+  "intrigue": {
+    "bribe": { "cost": 60, "attitude": 10, "gravitasLoss": 1 }
+  },
+  "leverage": {
+    "obstructPenalty": 0.25,
+    "skimCorruption": 6,
+    "leakRounds": 3,
+    "actChance": 0.6
+  },
+  "raid": {
+    "baseChance": 0.12,
+    "fearFactor": 0.0025,
+    "trustFactor": 0.0015,
+    "leakedStrengthMultiplier": 1.5,
+    "leakedChanceBonus": 0.15,
+    "maxLossFraction": 0.5,
+    "wallStrengthPerCastellumTier": 12,
+    "garrisonDisciplineWeight": 1.5,
+    "militiaWeight": 1,
+    "minRoundsBetweenRaids": 2,
+    "fearGainOnRepulse": 10,
+    "fearLossOnSuccess": 5
+  },
+  "tribe": {
+    "tributeFearThreshold": 60,
+    "tributeAmount": 80,
+    "tributeRefusalTrust": -10,
+    "tradeTrust": 8,
+    "allianceTrustThreshold": 70,
+    "allianceFearThreshold": 30,
+    "allianceRefusalTrust": -5,
+    "hostageFearThreshold": 70,
+    "hostageRefusalTrust": -12,
+    "hostageRaidSuppressionRounds": 6,
+    "warnFear": 8,
+    "warnTrust": -3,
+    "festivalCost": { "grain": 60, "denarii": 30 },
+    "festivalTrust": 12,
+    "festivalFear": -3,
+    "trustDecayPerRound": 0.5,
+    "fearDecayPerRound": 0.5
+  },
+  "rome": {
+    "startFavour": 20,
+    "declineFavour": -5,
+    "declineLoyalistAttitude": -8,
+    "fillerEveryRounds": 2,
+    "hostOfficialRounds": 2
+  },
+  "collapse": {
+    "populationFloor": 5,
+    "corruptionCeiling": 95,
+    "administrationRounds": 4,
+    "grant": { "denarii": 200, "grain": 100, "wood": 50 }
+  },
+  "events": { "chancePerRound": 0.25 },
+  "log": { "max": 200 }
+}

@@ -1,0 +1,14 @@
+{
+  "_comment": "Round-based events (DESIGN §3.2 step 5). Weighted; one may fire per round. Effects are applied by src/politics/events.ts.",
+  "events": [
+    { "id": "fever", "weight": 3, "title": "Marsh fever", "text": "{name} takes a fever from the marshes.", "effect": { "type": "illness", "deathChance": 0.25 } },
+    { "id": "good_harvest", "weight": 3, "title": "Good harvest", "text": "The fields yield beyond expectation.", "effect": { "type": "resources", "grain": 80 } },
+    { "id": "storm", "weight": 2, "title": "Storm", "text": "A storm takes the roof off a store.", "effect": { "type": "resources", "wood": -40, "clay": -30 } },
+    { "id": "merchant", "weight": 2, "title": "Merchant from the Rhine", "text": "A merchant pays well for the colony's goods.", "effect": { "type": "resources", "denarii": 50 } },
+    { "id": "omen", "weight": 2, "title": "Favourable omen", "text": "The augurs read the birds well. {name} gains standing.", "effect": { "type": "gravitas", "amount": 3 } },
+    { "id": "brawl", "weight": 2, "title": "Brawl in the forum", "text": "Men of the two houses come to blows.", "effect": { "type": "attitude", "amount": -6 } },
+    { "id": "feast", "weight": 2, "title": "Shared feast", "text": "The houses dine together and old quarrels cool.", "effect": { "type": "attitude", "amount": 5 } },
+    { "id": "deserters", "weight": 1, "title": "Deserters", "text": "Men slip away into the forest.", "effect": { "type": "population", "amount": -3 } },
+    { "id": "settlers", "weight": 2, "title": "Settlers", "text": "A party of veterans and their families arrive from the Rhine.", "effect": { "type": "population", "amount": 6 } }
+  ]
+}

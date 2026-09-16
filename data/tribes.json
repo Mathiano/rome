@@ -1,0 +1,30 @@
+{
+  "_comment": "✅ DESIGN §7: v0 uses one tribe, the Chatti as the raider. The other two are listed inactive for v0.1 (🟡 names). Disposition axes: fear and trust, 0–100.",
+  "tribes": [
+    {
+      "id": "chatti", "name": "The Chatti", "archetype": "raider", "active": true,
+      "description": "Hill people of the upper Lahn. They respect strength and remember slights.",
+      "start": { "fear": 25, "trust": 15 },
+      "strength": 40, "strengthGrowthPerRound": 0.4,
+      "raidAppetite": 1.0,
+      "trade": { "gives": "iron", "wants": "grain", "ratio": 1.5 },
+      "likes": [], "hates": ["cherusci"]
+    },
+    { "id": "cherusci", "name": "The Cherusci", "archetype": "wary", "active": false,
+      "description": "Forest people of the Weser. Slow to trust, slow to forgive.",
+      "start": { "fear": 30, "trust": 20 }, "strength": 55, "strengthGrowthPerRound": 0.3, "raidAppetite": 0.5,
+      "trade": { "gives": "wood", "wants": "iron", "ratio": 1.2 }, "likes": [], "hates": ["chatti"] },
+    { "id": "sugambri", "name": "The Sugambri", "archetype": "trader", "active": false,
+      "description": "River people of the lower Rhine. They will sell anything to anyone.",
+      "start": { "fear": 20, "trust": 35 }, "strength": 35, "strengthGrowthPerRound": 0.2, "raidAppetite": 0.3,
+      "trade": { "gives": "clay", "wants": "denarii", "ratio": 1.0 }, "likes": ["chatti"], "hates": [] }
+  ],
+  "envoys": [
+    { "id": "demand_tribute", "name": "Demand tribute", "description": "If they fear you enough they pay. If not, they resent the asking." },
+    { "id": "offer_trade", "name": "Offer trade", "description": "Opens exchange at the market. Builds trust." },
+    { "id": "propose_alliance", "name": "Propose alliance", "description": "Needs high trust and low fear. An allied tribe does not raid." },
+    { "id": "ask_hostages", "name": "Ask for hostages", "description": "A fearful tribe sends sons of its chiefs; raids stop for a time." },
+    { "id": "warn_of_raid", "name": "Warn them off", "description": "Show your strength. Fear rises, trust dips." },
+    { "id": "invite_festival", "name": "Invite to a festival", "description": "Costs grain and denarii. Trust rises." }
+  ]
+}

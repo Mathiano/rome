@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" data-building="lumber_camp" data-tier="3" data-ax="32" data-ay="48">
+<style>@keyframes anim-smoke { 0% { transform: translate(0,0); opacity: .9 } 100% { transform: translate(2px,-14px); opacity: 0 } }
+@keyframes anim-flag { 0%,100% { transform: skewY(0deg) } 50% { transform: skewY(-6deg) } }
+@keyframes anim-sway { 0%,100% { transform: rotate(-2deg) } 50% { transform: rotate(2deg) } }
+@keyframes anim-glow { 0%,100% { opacity: .35 } 50% { opacity: .9 } }
+@keyframes anim-hammer { 0%,100% { transform: rotate(0deg) } 40% { transform: rotate(-35deg) } }
+@keyframes anim-bob { 0%,100% { transform: translateY(0) } 50% { transform: translateY(-1.5px) } }
+.anim-smoke { animation: anim-smoke 2.6s linear infinite; transform-box: fill-box; }
+.anim-smoke.d1 { animation-delay: -0.9s } .anim-smoke.d2 { animation-delay: -1.8s }
+.anim-flag { animation: anim-flag 1.8s ease-in-out infinite; transform-box: fill-box; transform-origin: 0% 50%; }
+.anim-sway { animation: anim-sway 3s ease-in-out infinite; transform-box: fill-box; transform-origin: 50% 100%; }
+.anim-glow { animation: anim-glow 1.6s ease-in-out infinite; }
+.anim-hammer { animation: anim-hammer 1.2s ease-in-out infinite; transform-box: fill-box; transform-origin: 100% 100%; }
+.anim-bob { animation: anim-bob 2s ease-in-out infinite; transform-box: fill-box; }</style>
+<polygon points="4.0,48.0 32.0,62.0 60.0,48.0 32.0,34.0" fill="#9c8a62" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-opacity="0.6"/>
+<rect x="13.3" y="36.6" width="1.4" height="5.4" fill="#7d5a36" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="14.0" cy="34.8" r="3.8" fill="#5f7a3a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="12.0" cy="36.1" r="2.5" fill="#44582a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="15.8" cy="36.4" r="2.3" fill="#5f7a3a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="19.2" y="41.7" width="1.7" height="6.3" fill="#7d5a36" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="20.0" cy="39.6" r="4.4" fill="#5f7a3a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="17.7" cy="41.2" r="2.9" fill="#44582a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="22.1" cy="41.5" r="2.7" fill="#5f7a3a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="25.0" y="34.8" width="1.9" height="7.2" fill="#7d5a36" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="26.0" cy="32.4" r="5.0" fill="#5f7a3a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="23.4" cy="34.2" r="3.4" fill="#44582a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="28.4" cy="34.6" r="3.1" fill="#5f7a3a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="30.9" y="39.9" width="2.2" height="8.1" fill="#7d5a36" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="32.0" cy="37.2" r="5.7" fill="#5f7a3a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="29.0" cy="39.2" r="3.8" fill="#44582a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<circle cx="34.7" cy="39.6" r="3.5" fill="#5f7a3a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<ellipse cx="42.0" cy="56.0" rx="2.6" ry="1.8" fill="#a67c4e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.7"/>
+<ellipse cx="47.0" cy="56.0" rx="2.6" ry="1.8" fill="#a67c4e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.7"/>
+<ellipse cx="52.0" cy="56.0" rx="2.6" ry="1.8" fill="#a67c4e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.7"/>
+<ellipse cx="42.0" cy="52.5" rx="2.6" ry="1.8" fill="#a67c4e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.7"/>
+<ellipse cx="47.0" cy="52.5" rx="2.6" ry="1.8" fill="#a67c4e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-width="0.7"/>
+<polygon points="35.0,44.0 44.0,48.5 44.0,42.5 35.0,38.0" fill="#7d5a36" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="44.0,48.5 53.0,44.0 53.0,38.0 44.0,42.5" fill="#a67c4e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="35.0,38.0 44.0,42.5 53.0,38.0 44.0,33.5" fill="#5b3f25" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<line x1="46.0" y1="50.0" x2="50.0" y2="43.0" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" class="anim-hammer"/>
+</svg>

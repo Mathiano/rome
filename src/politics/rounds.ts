@@ -1,0 +1,47 @@
+import { config } from '../data';
+import type { GameState } from '../state/types';
+import { log } from '../state/store';
+import { rivalFamilies } from './characters';
+import { rivalTurn } from './families';
+import { tribeTurn } from '../tribes/turn';
+import { romeTurn, checkCollapse } from '../rome/requests';
+import { ageAll } from './characters';
+import { rollEvent } from './events';
+import { accrueGravitas, driftAttitudes, updateCorruption } from './posts';
+import { sumEffect } from '../village/storage';
+
+/**
+ * One political round (DESIGN §3.2). The player's own action has already been
+ * applied by the caller; this runs steps 2–5. `idle` means the player did not
+ * act (calendar floor, §3.3).
+ */
+export function runRound(state: GameState, now: number, idle = false): void {
+  state.round += 1;
+  state.lastRoundAt = now;
+  if (idle) log(state, 'system', `Round ${state.round}: the council meets without you.`);
+  else log(state, 'system', `Round ${state.round}.`);
+  for (const f of rivalFamilies(state)) rivalTurn(state, f);
+  tribeTurn(state);
+  romeTurn(state);
+  ageAll(state);
+  rollEvent(state);
+  accrueGravitas(state, sumEffect(state, 'gravitasPerRound'));
+  driftAttitudes(state);
+  updateCorruption(state);
+  checkCollapse(state);
+}
+
+/** Calendar floor: if no round has run in `floorMs`, opponents act without the player. */
+export function runIdleRounds(state: GameState, now: number, floorMs: number, maxCatchUp: number): number {
+  let n = 0;
+  while (now - state.lastRoundAt >= floorMs && n < maxCatchUp) {
+    runRound(state, state.lastRoundAt + floorMs, true);
+    n += 1;
+  }
+  if (n >= maxCatchUp && now - state.lastRoundAt >= floorMs) state.lastRoundAt = now;
+  return n;
+}
+
+export function roundsUntilIdle(state: GameState, now: number): number {
+  return Math.max(0, config.calendarFloorHours * 3_600_000 - (now - state.lastRoundAt));
+}

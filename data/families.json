@@ -1,0 +1,42 @@
+{
+  "_comment": "v0: the player's gens and one rival (DESIGN §13). Families three and four arrive in v0.2 and are listed inactive so names are settled. Ages are in rounds. Stats 1–10.",
+  "families": [
+    {
+      "id": "player", "name": "Aurelii", "gensName": "gens Aurelia", "isPlayer": true, "active": true, "colour": "#8a2d2d",
+      "attitude": 100,
+      "members": [
+        { "id": "p_leader", "name": "Lucius Aurelius Varro", "sex": "m", "age": 40, "isLeader": true,
+          "stats": { "authority": 6, "discipline": 5, "craft": 4, "connections": 5, "piety": 4 } },
+        { "id": "p_son", "name": "Gaius Aurelius Varro", "sex": "m", "age": 18,
+          "stats": { "authority": 3, "discipline": 4, "craft": 5, "connections": 3, "piety": 3 } },
+        { "id": "p_brother", "name": "Marcus Aurelius Cotta", "sex": "m", "age": 36,
+          "stats": { "authority": 4, "discipline": 6, "craft": 3, "connections": 4, "piety": 6 } },
+        { "id": "p_daughter", "name": "Aurelia Prima", "sex": "f", "age": 16,
+          "stats": { "authority": 3, "discipline": 3, "craft": 4, "connections": 6, "piety": 5 } }
+      ]
+    },
+    {
+      "id": "cornelii", "name": "Cornelii", "gensName": "gens Cornelia", "isPlayer": false, "active": true, "colour": "#2d4f8a",
+      "loyalist": true,
+      "attitude": 20,
+      "members": [
+        { "id": "c_leader", "name": "Publius Cornelius Rufus", "sex": "m", "age": 48, "isLeader": true,
+          "stats": { "authority": 7, "discipline": 4, "craft": 3, "connections": 7, "piety": 3 } },
+        { "id": "c_son", "name": "Publius Cornelius Rufus the Younger", "sex": "m", "age": 22,
+          "stats": { "authority": 4, "discipline": 5, "craft": 6, "connections": 4, "piety": 2 } },
+        { "id": "c_nephew", "name": "Sextus Cornelius Balbus", "sex": "m", "age": 30,
+          "stats": { "authority": 3, "discipline": 7, "craft": 4, "connections": 3, "piety": 5 } },
+        { "id": "c_daughter", "name": "Cornelia", "sex": "f", "age": 19,
+          "stats": { "authority": 4, "discipline": 3, "craft": 3, "connections": 6, "piety": 6 } }
+      ]
+    },
+    { "id": "valerii", "name": "Valerii", "gensName": "gens Valeria", "isPlayer": false, "active": false, "colour": "#5a7a2d", "attitude": 0, "members": [] },
+    { "id": "claudii", "name": "Claudii", "gensName": "gens Claudia", "isPlayer": false, "active": false, "colour": "#6a4a8a", "attitude": 0, "members": [] }
+  ],
+  "newMen": {
+    "_comment": "Pool used when a family has no living member (DESIGN §1, §9.2). Pillar 7.",
+    "praenomina": ["Titus", "Quintus", "Decimus", "Spurius", "Aulus", "Manius"],
+    "cognomina": ["Silo", "Niger", "Longus", "Paullus", "Crispus", "Vetus"],
+    "origins": ["veteran of the Rhine legions", "freedman of the family", "a noble of the tribes given citizenship"]
+  }
+}

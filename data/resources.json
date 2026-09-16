@@ -1,0 +1,10 @@
+{
+  "resources": [
+    { "id": "wood", "name": "Wood", "store": "warehouse", "site": "forest" },
+    { "id": "clay", "name": "Clay", "store": "warehouse", "site": "clay_bank" },
+    { "id": "iron", "name": "Iron", "store": "warehouse", "site": "iron_seam" },
+    { "id": "grain", "name": "Grain", "store": "granary", "site": "farmland" },
+    { "id": "denarii", "name": "Denarii", "store": "treasury" }
+  ],
+  "start": { "wood": 120, "clay": 120, "iron": 60, "grain": 150, "denarii": 80 }
+}

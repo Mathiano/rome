@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" data-building="temple" data-tier="2" data-ax="32" data-ay="48">
+<polygon points="4.0,48.0 32.0,62.0 60.0,48.0 32.0,34.0" fill="#9c8a62" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke-opacity="0.6"/>
+<polygon points="6.8,48.0 32.0,60.6 32.0,57.6 6.8,45.0" fill="#a9a08a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="32.0,60.6 57.2,48.0 57.2,45.0 32.0,57.6" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="6.8,45.0 32.0,57.6 57.2,45.0 32.0,32.4" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="12.4,45.0 32.0,54.8 32.0,40.8 12.4,31.0" fill="#c4b58e" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="32.0,54.8 51.6,45.0 51.6,31.0 32.0,40.8" fill="#e3d6b4" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="32.0,21.2 51.6,31.0 47.6,25.0 16.4,25.0" fill="#a34d33" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polygon points="12.4,31.0 32.0,40.8 51.6,31.0 47.6,25.0 16.4,25.0" fill="#c96a47" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<polyline points="13.4,29.5 32.0,36.8 50.6,29.5" fill="none" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke="#7e3a26" stroke-width="0.7"/>
+<polyline points="14.4,28.0 32.0,32.9 49.6,28.0" fill="none" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke="#7e3a26" stroke-width="0.7"/>
+<polyline points="15.4,26.5 32.0,28.9 48.6,26.5" fill="none" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" stroke="#7e3a26" stroke-width="0.7"/>
+<rect x="32.2" y="41.0" width="2.8" height="13.0" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" rx="0.6"/>
+<rect x="31.6" y="40.2" width="4.0" height="1.6" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="35.5" y="39.3" width="2.8" height="13.0" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" rx="0.6"/>
+<rect x="34.9" y="38.5" width="4.0" height="1.6" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="38.8" y="37.7" width="2.8" height="13.0" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" rx="0.6"/>
+<rect x="38.2" y="36.9" width="4.0" height="1.6" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="42.0" y="36.1" width="2.8" height="13.0" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" rx="0.6"/>
+<rect x="41.4" y="35.3" width="4.0" height="1.6" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="45.3" y="34.5" width="2.8" height="13.0" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" rx="0.6"/>
+<rect x="44.7" y="33.7" width="4.0" height="1.6" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="48.6" y="32.8" width="2.8" height="13.0" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" rx="0.6"/>
+<rect x="48.0" y="32.0" width="4.0" height="1.6" fill="#cfc7b2" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+<rect x="48.0" y="50.0" width="4.0" height="3.0" fill="#a9a08a" stroke="#2a2118" stroke-width="1.1" stroke-linejoin="round" stroke-linecap="round" />
+</svg>
