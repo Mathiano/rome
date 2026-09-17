@@ -1,0 +1,25 @@
+{
+  "tileWidth": 64,
+  "ppu": 4,
+  "sprites": {
+    "anchor-v1": {
+      "file": "anchor-v1.png",
+      "width": 258,
+      "height": 176,
+      "ax": 128.94,
+      "ay": 107.81,
+      "ppu": 4,
+      "plateWidth": 64,
+      "source": "assets/style/anchor-v1.jpg",
+      "trimOffset": [
+        316,
+        23
+      ],
+      "sourceScale": 0.118081,
+      "slopes": {
+        "left": 0.5278,
+        "right": -0.5275
+      }
+    }
+  }
+}

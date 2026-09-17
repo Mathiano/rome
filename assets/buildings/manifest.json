@@ -1,5 +1,25 @@
 {
   "tileWidth": 64,
   "ppu": 4,
-  "sprites": {}
+  "sprites": {
+    "lumber-camp-t1": {
+      "file": "lumber-camp-t1.png",
+      "width": 262,
+      "height": 177,
+      "ax": 130.6,
+      "ay": 107.21,
+      "ppu": 4,
+      "plateWidth": 64,
+      "source": "assets/src/lumber-camp-t1.jpg",
+      "trimOffset": [
+        110,
+        14
+      ],
+      "sourceScale": 0.324873,
+      "slopes": {
+        "left": 0.5129,
+        "right": -0.5275
+      }
+    }
+  }
 }

@@ -45,9 +45,41 @@ class PlateError(Exception):
 
 
 # ------------------------------------------------------------------ keying
+def background_candidates(rgb: np.ndarray, white: int, tol: int = 18) -> np.ndarray:
+    """Pixels that could be background: near-white, or, when the border is a painted
+    checkerboard, any neutral grey between its two dominant greys (± tol)."""
+    near = rgb.min(axis=2) >= white
+    border = np.concatenate([rgb[0], rgb[-1], rgb[:, 0], rgb[:, -1]]).astype(np.int32)
+    neutral_border = border[(border.max(axis=1) - border.min(axis=1)) <= 24]
+    if len(neutral_border) < 0.5 * len(border):
+        return near
+    lum = neutral_border.mean(axis=1)
+    q = (lum // 16).astype(np.int32)
+    keys, counts = np.unique(q, return_counts=True)
+    dominant = [k * 16 + 8 for k, c in zip(keys, counts) if c >= 0.10 * len(border)]
+    if not dominant:
+        return near
+    lo, hi = min(dominant) - tol, max(dominant) + tol
+    if lo >= white:
+        return near
+    mx, mn = rgb.max(axis=2).astype(np.int32), rgb.min(axis=2).astype(np.int32)
+    band = ((mx - mn) <= 24) & (mn >= lo) & (mx <= hi)
+    return near | band
+
+
+def despeckle(opaque: np.ndarray, r: int = 2, keep: int = 8) -> np.ndarray:
+    """Drop opaque pixels with fewer than `keep` opaque neighbours in a (2r+1)² window."""
+    h, w = opaque.shape
+    p = np.pad(opaque.astype(np.int32), r + 1)
+    c = p.cumsum(0).cumsum(1)
+    k = 2 * r + 1
+    count = c[k : k + h, k : k + w] - c[:h, k : k + w] - c[k : k + h, :w] + c[:h, :w]
+    return opaque & (count >= keep)
+
+
 def key_background(rgb: np.ndarray, white: int = 232) -> np.ndarray:
-    """Return alpha (uint8). Background = near-white pixels connected to the border."""
-    near = (rgb.min(axis=2) >= white)
+    """Return alpha (uint8). Background = background-coloured pixels connected to the border."""
+    near = background_candidates(rgb, white)
     h, w = near.shape
     bg = np.zeros_like(near)
     bg[0, :] = near[0, :]
@@ -65,6 +97,7 @@ def key_background(rgb: np.ndarray, white: int = 232) -> np.ndarray:
         if np.array_equal(grown, bg):
             break
         bg = grown
+    bg |= ~despeckle(~bg)
     alpha = np.full((h, w), 255, dtype=np.uint8)
     alpha[bg] = 0
     # Soften the 1-px rim so anti-aliased outlines do not get a white halo.
@@ -153,6 +186,8 @@ def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white:
         "ppu": ppu,
         "plateWidth": tile_width,
         "source": os.path.relpath(path, ROOT),
+        "trimOffset": [int(x0), int(y0)],
+        "sourceScale": round(scale, 6),
         "slopes": {"left": round(s_left, 4), "right": round(s_right, 4)},
     }
     return name, entry

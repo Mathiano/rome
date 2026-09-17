@@ -9,7 +9,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "assets": "python3 tools/artgen/build.py",
-    "assets:selftest": "python3 tools/artgen/build.py --selftest"
+    "assets:selftest": "python3 tools/artgen/build.py --selftest && python3 tools/artgen/loop.py --selftest",
+    "assets:loop": "python3 tools/artgen/loop.py"
   },
   "devDependencies": {
     "@types/node": "^22.20.3",

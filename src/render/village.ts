@@ -1,7 +1,7 @@
 import { layout, building } from '../data';
 import type { GameState, Slot } from '../state/types';
 import { progress } from '../village/construction';
-import { sprite } from './sprites';
+import { sprite, type OverlayPlacement } from './sprites';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -56,6 +56,7 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
           if (s) {
             const img = el('image', { href: s.url, x: s.x, y: s.y, width: s.width, height: s.height, 'data-ax': s.ax, 'data-ay': s.ay });
             gr.spriteG.appendChild(img);
+            for (const o of s.overlays) gr.spriteG.appendChild(loopOverlay(o));
           }
         }
       }
@@ -71,6 +72,17 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
 }
 
 const ROMAN = ['', 'I', 'II', 'III'];
+
+/** A sprite-sheet loop: a nested <svg> clips one frame; the sheet steps left one frame per tick. */
+export function loopOverlay(o: OverlayPlacement): SVGSVGElement {
+  const clip = el('svg', { class: 'overlay', x: o.x, y: o.y, width: o.width, height: o.height, viewBox: `0 0 ${o.frameWidth} ${o.frameHeight}`, preserveAspectRatio: 'none' });
+  const sheet = el('image', { href: o.url, x: 0, y: 0, width: o.frameWidth * o.frames, height: o.frameHeight, preserveAspectRatio: 'none' });
+  const seconds = o.frames / o.fps;
+  sheet.style.animation = `sheet-loop ${seconds}s steps(${o.frames}) infinite`;
+  sheet.style.setProperty('--sheet-width', `${o.frameWidth * o.frames}px`);
+  clip.appendChild(sheet);
+  return clip;
+}
 
 function labelFor(slot: Slot): string {
   if (slot.building && slot.tier > 0) return `${building(slot.building).name} ${ROMAN[slot.tier] ?? slot.tier}`;

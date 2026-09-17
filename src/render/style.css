@@ -69,3 +69,6 @@ header .res .neg b { color: #e0885a; }
 .devbar { position: absolute; top: 8px; left: 8px; background: rgba(42,33,24,0.9); color: var(--gold); padding: 4px 8px; border-radius: 3px; font-size: 12px; z-index: 5; }
 .devbar button { font: inherit; background: transparent; color: var(--parchment); border: 1px solid var(--gold); padding: 0 5px; margin: 0 1px; cursor: pointer; border-radius: 2px; }
 .devbar button.on { background: var(--gold); color: var(--ink); }
+
+@keyframes sheet-loop { to { transform: translateX(calc(-1 * var(--sheet-width))); } }
+#village .overlay image { transform-box: view-box; }

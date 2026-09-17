@@ -72,3 +72,39 @@ Also not in the doc and decided here (all 🟡):
   - Multiplier and virtual offset persist under `rome.dev.clock` so a reload in dev mode continues where it was. That key is not part of any save.
   - Without the flag there is no dev bar, no dev code path runs, and the save format has no dev fields (tested).
 - **Verified** ✅ 90 tests. Headless Chromium: no dev bar on the normal URL; with `?dev=1` a 24 h skip runs the idle round and fills the stores; the 600× multiplier is covered by the unit test, not the browser run; the real save slot is byte-identical before and after; returning to the normal URL shows the unwarped colony.
+
+---
+
+## Addendum — 2026-09-17, real art through the pipeline and the loop tool
+
+Inputs landed on the branch by upload: `assets/style/PROMPTS.md`, `assets/style/anchor-v1.jpg`, `assets/src/lumber-camp-t1.jpg`, `assets/src/lumber-camp-t3-trees.mp4`.
+
+### artgen on real art ✅
+
+| Input | Result |
+|---|---|
+| `lumber-camp-t1.jpg` | passes: slopes +0.513 / −0.528, sprite 262×177 px, anchor (130.6, 107.2). In the village. |
+| `anchor-v1.jpg` | failed first: it sits on a painted grey checkerboard (140 / 195), not white. The keyer now also keys the neutral-grey band between the two dominant border greys and despeckles, so it passes: slopes +0.528 / −0.528. Output in `assets/style/`, not in the buildings manifest. |
+
+`build.py` entries now record `trimOffset` and `sourceScale` so overlays can be mapped from source pixels into sprite space. Older entries without them are rejected by `loop.py` with a message to regenerate.
+
+### `tools/artgen/loop.py` ✅ (spec from Mathias, 2026-09-17)
+
+Frames via ffmpeg at 12 fps (system ffmpeg, else `imageio-ffmpeg`'s static build; the Playwright ffmpeg in this sandbox has no H.264 decoder). Best loop window over N = 12..18 by mean absolute grey difference, top three printed. Envelope of the window frames against the still registered into frame space (plate corners; correlation-search fallback; `--identity` when the still is a frame). Moving pixel = envelope > 40 (max channel) **and** at least 40% of its 9×9 neighbourhood also moves, so codec flicker on every outline does not count; without that filter the real clip measured 73% of the frame and would fail. Bounding box printed as % of frame area; `LoopError` above 40%. Crop + pad, border-connected keying, horizontal sheet ≤ 16 frames ≤ 256 px tall, manifest entry `{type:"loop", x, y, width, height, frames, fps, frameWidth, frameHeight, file, licence, source, window, movingArea}` positioned relative to the plate anchor in sprite pixels. `--selftest` covers the exact-period case, the position maths, the whole-frame re-render rejection and the identity path; CI runs it.
+
+### The real clip 🟡
+
+- **Loop:** best window start 49, N 12, score 1.88 (top three: 49/12, 49/13, 48/15).
+- **Moving region:** trees and crane, x 734–1151, y 1–428 = **19.3%** of the frame. Passes.
+- **Sheet:** `assets/overlays/lumber-camp-t3-trees.png`, 12 frames of 254×256 at 12 fps, 1.4 MB. Licence field as instructed.
+- 🔴 **The clip is not an animation of a still we have.** It shows a tier-3 lumber camp (chimney, crane, three pines) and the only still in the repo is tier 1, a different building. There is no `lumber-camp-t3.jpg`. I ran the tool with the clip's own first frame as the still (`--identity`) and a manual anchor (`--anchor 634,445`, the plate's left-corner height and bottom-corner x). The overlay is therefore in a **standalone** `assets/overlays/manifest.json`, not attached to a sprite, and it does not render in the village. That is the honest state, not a bug.
+- 🔴 **The t3 render will fail artgen as drawn.** The pines overhang the plate on the right, so the rightmost opaque pixel is a tree and the plate test fails (measured right slope −0.92 on the frame). Per PROMPTS.md, one structure on one plate: the trees need to stand inside the plate. Re-prompt before generating `lumber-camp-t3.jpg`.
+- 🟡 The clip also has a low-amplitude wobble on every edge. The density filter hides it for detection, but the cropped sheet still carries static shed and log-pile pixels that will shimmer over the sprite. Acceptable for a PoC; a cleaner clip fixes it.
+
+### Renderer ✅
+
+`place()` resolves `overlays` on a sprite entry into scene units; `loopOverlay()` draws a nested `<svg>` clipped to one frame with the sheet stepping left via `steps(frames)`. Unit-tested with a synthetic entry; not yet seen with real art because no sprite carries an overlay.
+
+### Verified ✅
+
+56 tests; `npm run build`; both self-tests; headless render of the village with the real lumber camp sprite on its tile (screenshot sent).
