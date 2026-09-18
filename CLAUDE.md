@@ -29,7 +29,7 @@ From `docs/DESIGN.md` §2. Short form:
 
 - Vite + TypeScript. SVG rendering for village and map. No React unless a panel needs it — ask first.
 - One state store, serialised to JSON. That JSON is the save file. localStorage + export/import in v0.
-- Data in `data/`, game logic in `src/`, asset pipeline in `tools/isobuild/` (Python).
+- Data in `data/`, game logic in `src/`, asset pipeline in `tools/artgen/` (Python).
 - GitHub → Vercel auto-deploy. No secrets in the repo.
 
 ## Repo layout
@@ -47,15 +47,15 @@ src/
   rome/          requests, rewards
   tribes/        disposition, envoys
   render/        SVG village view, map view, panels
-tools/isobuild/  building SVG generator + palette pipeline
-assets/          generated SVGs, portraits
+tools/artgen/    source render → keyed, trimmed, anchored PNG sprite + manifest (Python)
+assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites + manifest), portraits
 ```
 
 ## Conventions
 
-- **Anchors:** buildings anchor at base-diamond centre (`data-ax` / `data-ay`). Never the south vertex — it floats half a tile.
-- **SVG primitives only** in generated buildings. No bezier paths. Arches are polyline approximations.
-- **Animation:** tier 3 only. CSS keyframes and the Web Animations API. viewBox 64×64.
+- **Anchors:** buildings anchor at the ground-plate centre, the midpoint of the plate's left and right corners (`data-ax` / `data-ay`, and `ax` / `ay` in `assets/buildings/manifest.json`). Never the south vertex — it floats half a tile.
+- **Sprites:** PNG with alpha. The ground plate is the base diamond. One structure per sprite. The plate width equals the tile width; `tools/artgen/` enforces the plate's 2:1 edges and writes the manifest.
+- **Animation:** tier 3 only. SVG overlays on the PNG sprite, CSS keyframes and the Web Animations API, positioned from the same anchor.
 - **Naming in code:** English. Latin only where the doc says so (`forum`, `castellum`).
 - **Gods:** Roman names. Jupiter, not Zeus.
 - **Assets:** generated or original only. Nothing copied from Rome II, Travian, Anno or any other game.

@@ -1,0 +1,3 @@
+pillow>=10
+numpy>=1.26
+imageio-ffmpeg>=0.5  # static ffmpeg with H.264 for loop.py; a system ffmpeg on PATH is used first

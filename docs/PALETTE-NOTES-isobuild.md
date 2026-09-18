@@ -1,3 +1,5 @@
+> Retired 2026-09-16 with isobuild (DESIGN §10). Kept for the UI colour tokens in `src/render/style.css`, which still use these values.
+
 # Palette notes
 
 First-pass Roman palette for the isobuild pipeline. Lives in `tools/isobuild/palette.json`; this file explains the choices.
