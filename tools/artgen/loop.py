@@ -42,6 +42,7 @@ import build as artgen  # noqa: E402
 ROOT = artgen.ROOT
 DEFAULT_OUT = os.path.join(ROOT, "assets", "overlays")
 DEFAULT_MANIFEST = os.path.join(ROOT, "assets", "buildings", "manifest.json")
+LOW_MOTION = 1.0
 DEFAULT_LICENCE = "Google Veo via Gemini — verify commercial terms and SynthID before ship; PoC only"
 
 
@@ -74,18 +75,36 @@ def extract_frames(mp4: str, fps: int, workdir: str) -> list:
 
 
 # ------------------------------------------------------------------ loop window
-def best_windows(frames: list, n_min: int, n_max: int, top: int = 3) -> list:
-    """Return [(score, start, N)] sorted by score; score = mean abs grey difference."""
+def best_windows(frames: list, n_min: int, n_max: int, top: int = 3, min_motion: float = 0.0) -> list:
+    """Return [(seam, motion, start, N)] sorted by seam score.
+
+    `seam` is the mean absolute grey difference between the first frame and the
+    frame N ahead — how invisible the loop's cut will be. `motion` is the mean
+    frame-to-frame change inside the window — how much actually happens in it.
+    Seam alone has a degenerate optimum: the most frozen stretch of a clip loops
+    perfectly and shows nothing, so motion is reported alongside it, and
+    `min_motion` can exclude the frozen windows outright.
+    """
     grey = [f.mean(axis=2) if f.ndim == 3 else f.astype(float) for f in frames]
     T = len(grey)
     if T <= n_min:
         raise LoopError(f"clip has {T} frames, need more than {n_min}")
+    # Motion per window = mean frame-to-frame change inside it, taken from the
+    # T-1 consecutive differences through a prefix sum, so reporting it costs one
+    # pass over the clip rather than one pass per candidate window.
+    step = np.array([float(np.abs(grey[i + 1] - grey[i]).mean()) for i in range(T - 1)])
+    cum = np.concatenate([[0.0], np.cumsum(step)])
     out = []
     for s in range(0, T - n_min):
         for n in range(n_min, n_max + 1):
             if s + n >= T:
                 break
-            out.append((float(np.abs(grey[s] - grey[s + n]).mean()), s, n))
+            seam = float(np.abs(grey[s] - grey[s + n]).mean())
+            motion = float((cum[s + n] - cum[s]) / n)
+            if motion >= min_motion:
+                out.append((seam, motion, s, n))
+    if not out:
+        raise LoopError(f"no window has motion >= {min_motion}: nothing in this clip is animating")
     out.sort()
     return out[:top]
 
@@ -165,19 +184,57 @@ def box_count(mask: np.ndarray, r: int) -> np.ndarray:
     return c[k : k + h, k : k + w] - c[:h, k : k + w] - c[k : k + h, :w] + c[:h, :w]
 
 
-def moving_region(window: list, still_fs: np.ndarray, threshold: int, density: float, radius: int = 4):
+def moving_region(window: list, still_fs: np.ndarray, threshold: int, density: float, radius: int = 4,
+                  mass: float = 0.99):
+    """Envelope of the window against the still, the moving mask, and its bounding box.
+
+    The box follows the moving *mass*, not its extreme specks: a handful of stray
+    pixels on the far side of the frame would otherwise stretch the box across it.
+    Columns and rows are trimmed to the central `mass` of moving pixels. A clip
+    that really was re-rendered whole has its mass spread everywhere, so the
+    trimmed box stays large and the caller's area gate still catches it.
+    """
     env = np.zeros(still_fs.shape[:2], np.int16)
     ref = still_fs.astype(np.int16)
     for f in window:
         env = np.maximum(env, np.abs(f.astype(np.int16) - ref).max(axis=2))
     raw = env > threshold
     dense = raw & (box_count(raw, radius) >= density * (2 * radius + 1) ** 2)
-    ys, xs = np.nonzero(dense)
-    if len(xs) == 0:
+    if not dense.any():
         raise LoopError("nothing moves above the threshold; is this the right clip for this still?")
-    bbox = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
-    area = (bbox[2] - bbox[0]) * (bbox[3] - bbox[1]) / (env.shape[0] * env.shape[1])
-    return env, dense, bbox, area
+    ys, xs = np.nonzero(dense)
+    full = (int(xs.min()), int(ys.min()), int(xs.max()) + 1, int(ys.max()) + 1)
+
+    def trim(counts):
+        total = counts.sum()
+        c = np.cumsum(counts)
+        lo = int(np.searchsorted(c, total * (1 - mass) / 2))
+        hi = int(np.searchsorted(c, total * (1 + mass) / 2))
+        return lo, min(len(counts) - 1, hi) + 1
+
+    x0, x1 = trim(dense.sum(axis=0))
+    y0, y1 = trim(dense.sum(axis=1))
+    bbox = (x0, y0, x1, y1)
+    area = (x1 - x0) * (y1 - y0) / (env.shape[0] * env.shape[1])
+    return env, dense, bbox, area, full
+
+
+def shimmer(window: list, dense: np.ndarray, crop, white: int, threshold: int = 6):
+    """How much the *static* part of the crop wobbles between frames.
+
+    Returns (fraction of static opaque pixels whose temporal mean-absolute
+    deviation exceeds `threshold`, their mean deviation). This is the pixel
+    noise that will be visible as the overlay plays over a still sprite.
+    """
+    x0, y0, x1, y1 = crop
+    stack = np.stack([f[y0:y1, x0:x1].astype(np.float32) for f in window])
+    mad = np.abs(stack - stack.mean(axis=0)).mean(axis=0).max(axis=2)
+    opaque = artgen.key_background(window[0][y0:y1, x0:x1], white) > 128
+    static = opaque & ~dense[y0:y1, x0:x1]
+    if not static.any():
+        return 0.0, 0.0
+    vals = mad[static]
+    return float((vals > threshold).mean()), float(vals.mean())
 
 
 # ------------------------------------------------------------------ sheet
@@ -221,27 +278,34 @@ def sprite_space(entry: dict):
 
 
 def run(still_path, mp4_path, name, sprite_key, out_dir, manifest_path, fps, n_min, n_max, threshold, density,
-        max_area, pad, max_frames, max_height, white, licence, identity, frames=None, still_rgb=None, anchor=None):
+        max_area, pad, max_frames, max_height, white, licence, identity, frames=None, still_rgb=None, anchor=None,
+        mass=0.99, min_motion=0.0):
     still = still_rgb if still_rgb is not None else np.asarray(Image.open(still_path).convert("RGB"))
     with tempfile.TemporaryDirectory() as td:
         if frames is None:
             frames = extract_frames(mp4_path, fps, td)
     print(f"{len(frames)} frames at {fps} fps, {frames[0].shape[1]}×{frames[0].shape[0]}")
 
-    top = best_windows(frames, n_min, n_max)
-    print("loop candidates (score, start, N):")
-    for sc, s, n in top:
-        print(f"  {sc:7.3f}  start {s:4d}  N {n:2d}  ({n / fps:.2f} s)")
-    score, start, n = top[0]
+    top = best_windows(frames, n_min, n_max, min_motion=min_motion)
+    print("loop candidates (seam score, motion, start, N):")
+    for sc, mo, s, n in top:
+        print(f"  seam {sc:7.3f}  motion {mo:6.3f}  start {s:4d}  N {n:2d}  ({n / fps:.2f} s)")
+    score, motion, start, n = top[0]
+    if motion < LOW_MOTION:
+        print(f"WARNING: the chosen window's motion is {motion:.3f}, below {LOW_MOTION}. The lowest-seam window is "
+              f"often the most frozen stretch of a clip: this loop may show almost nothing. Re-run with "
+              f"--min-motion to exclude frozen windows.", file=sys.stderr)
     window = frames[start : start + n]
 
     k, ox, oy, how = register(still, frames[start], identity)
     print(f"registration: {how}; still px per frame px {k:.4f}, still origin at frame ({ox:.1f}, {oy:.1f})")
     still_fs = still_in_frame_space(still, k, ox, oy, (frames[0].shape[1], frames[0].shape[0]))
 
-    env, dense, bbox, area = moving_region(window, still_fs, threshold, density)
+    env, dense, bbox, area, full = moving_region(window, still_fs, threshold, density, mass=mass)
+    full_area = (full[2] - full[0]) * (full[3] - full[1]) / (dense.shape[0] * dense.shape[1])
     print(f"moving region (frame px): x {bbox[0]}..{bbox[2]}, y {bbox[1]}..{bbox[3]} = {area * 100:.1f}% of frame area "
-          f"(threshold {threshold}, density {density}); dense moving pixels {dense.mean() * 100:.1f}%")
+          f"(threshold {threshold}, density {density}, mass {mass}); dense moving pixels {dense.mean() * 100:.1f}%; "
+          f"untrimmed extent {full_area * 100:.1f}%")
     if area > max_area:
         raise LoopError(
             f"moving region covers {area * 100:.1f}% of the frame, above the {max_area * 100:.0f}% limit: "
@@ -249,6 +313,9 @@ def run(still_path, mp4_path, name, sprite_key, out_dir, manifest_path, fps, n_m
         )
 
     sheet, crop, nframes, fw, fh = make_sheet(window, bbox, pad, max_frames, max_height, white)
+    shim_frac, shim_mean = shimmer(window, dense, crop, white)
+    print(f"static shimmer inside the crop: {shim_frac * 100:.1f}% of static opaque pixels wobble above 6/255 "
+          f"(mean deviation {shim_mean:.2f}/255)")
     os.makedirs(out_dir, exist_ok=True)
     file = f"{name}.png"
     sheet.save(os.path.join(out_dir, file), optimize=True)
@@ -290,8 +357,10 @@ def run(still_path, mp4_path, name, sprite_key, out_dir, manifest_path, fps, n_m
         "frameHeight": fh,
         "licence": licence,
         "source": os.path.relpath(mp4_path, ROOT) if mp4_path else None,
-        "window": {"start": start, "n": n, "score": round(score, 3)},
+        "window": {"start": start, "n": n, "seam": round(score, 3), "motion": round(motion, 3)},
         "movingArea": round(area, 4),
+        "movingAreaUntrimmed": round(full_area, 4),
+        "staticShimmer": {"fraction": round(shim_frac, 4), "mean": round(shim_mean, 2)},
         "anchor": anchor_how,
     }
     if sprite_key:
@@ -347,7 +416,8 @@ def selftest() -> int:
                       licence="test", identity=False)
         ov = run(still_path, None, sprite_key=name, frames=frames, **common)
         assert ov["frames"] == 12 and ov["fps"] == 12, ov
-        assert ov["window"]["n"] == 12 and ov["window"]["score"] < 0.05, ov["window"]
+        assert ov["window"]["n"] == 12 and ov["window"]["seam"] < 0.05, ov["window"]
+        assert ov["window"]["motion"] > 0, ov["window"]
         assert ov["movingArea"] < 0.1, ov["movingArea"]
         # the overlay must sit where the puff is: region x 560..660 maps to sprite space
         to_sprite, s = sprite_space(entry)
@@ -391,6 +461,8 @@ def main(argv=None) -> int:
     p.add_argument("--threshold", type=int, default=40, help="max-channel difference counted as motion")
     p.add_argument("--density", type=float, default=0.4, help="fraction of a 9×9 neighbourhood that must also move")
     p.add_argument("--max-area", type=float, default=0.40)
+    p.add_argument("--min-motion", type=float, default=0.0, help="reject loop windows quieter than this")
+    p.add_argument("--mass", type=float, default=0.99, help="fraction of moving pixels the bounding box must cover")
     p.add_argument("--pad", type=int, default=8)
     p.add_argument("--max-frames", type=int, default=16)
     p.add_argument("--max-height", type=int, default=256)
@@ -407,7 +479,7 @@ def main(argv=None) -> int:
     try:
         run(a.still, a.mp4, a.name or os.path.splitext(os.path.basename(a.mp4))[0], a.sprite, a.out, a.manifest, a.fps,
             a.n_min, a.n_max, a.threshold, a.density, a.max_area, a.pad, a.max_frames, a.max_height, a.white, a.licence,
-            a.identity, anchor=anchor)
+            a.identity, anchor=anchor, mass=a.mass, min_motion=a.min_motion)
     except LoopError as e:
         print(f"FAIL: {e}", file=sys.stderr)
         return 1

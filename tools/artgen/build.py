@@ -29,7 +29,7 @@ import sys
 import tempfile
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw
 
 ROOT = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 DEFAULT_SRC = os.path.join(ROOT, "assets", "src")
@@ -114,21 +114,68 @@ def key_background(rgb: np.ndarray, white: int = 232) -> np.ndarray:
 
 
 # ------------------------------------------------------------------ geometry
-def plate_corners(alpha: np.ndarray):
-    """Left, right and bottom corners as the extreme opaque pixels. Returns ((xl,yl),(xr,yr),(xb,yb))."""
-    ys, xs = np.nonzero(alpha > 128)
+def _column_extremes(alpha: np.ndarray):
+    """For every column holding opaque pixels, the y of its lowest opaque pixel."""
+    opaque = alpha > 128
+    h = opaque.shape[0]
+    xs = np.nonzero(opaque.any(axis=0))[0]
     if len(xs) == 0:
         raise PlateError("no opaque pixels after keying")
-    # Walls rise from the side corners, so the corner is the LOWEST opaque pixel
-    # in the extreme column, not the median. The bottom corner is the median x of
-    # the lowest row (the plate's front edge may be a few pixels thick).
-    xl = xs.min()
-    yl = float(ys[xs == xl].max())
-    xr = xs.max()
-    yr = float(ys[xs == xr].max())
-    yb = ys.max()
-    xb = float(np.median(xs[ys == yb]))
-    return (float(xl), yl), (float(xr), yr), (xb, float(yb))
+    ybottom = h - 1 - np.argmax(opaque[::-1, :], axis=0)
+    return xs.astype(float), ybottom[xs].astype(float)
+
+
+def _theil_sen(x: np.ndarray, y: np.ndarray, max_pairs: int = 40000, seed: int = 0):
+    """Median-of-pairwise-slopes line fit. Robust to the ~30% of points that are not the edge."""
+    n = len(x)
+    if n < 8:
+        raise PlateError("too few silhouette points to fit a plate edge")
+    if n * (n - 1) // 2 > max_pairs:
+        rng = np.random.default_rng(seed)
+        i, j = rng.integers(0, n, max_pairs), rng.integers(0, n, max_pairs)
+        keep = x[i] != x[j]
+        i, j = i[keep], j[keep]
+    else:
+        i, j = np.triu_indices(n, 1)
+        keep = x[i] != x[j]
+        i, j = i[keep], j[keep]
+    slope = float(np.median((y[j] - y[i]) / (x[j] - x[i])))
+    return slope, float(np.median(y - slope * x))
+
+
+def plate_corners(alpha: np.ndarray, tol_frac: float = 0.006):
+    """Left, right and bottom corners of the ground plate.
+
+    The bottom corner is the lowest opaque pixel. The side corners are the
+    extreme opaque pixels *that lie on the plate's own bottom edge*: each edge
+    is fitted robustly to the bottom silhouette, then the corner is the furthest
+    point still on that line. Taking the plain extreme pixel instead puts the
+    corner on anything that overhangs the plate — a tree, an eave, a crane arm.
+    """
+    xs, yb = _column_extremes(alpha)
+    ymax = yb.max()
+    xbottom = float(np.median(xs[yb == ymax]))
+    width = float(alpha.shape[1])
+    tol = max(3.0, tol_frac * width)
+    margin = max(3.0, 0.01 * width)
+
+    def side(is_left: bool):
+        mask = (xs < xbottom - margin) if is_left else (xs > xbottom + margin)
+        sx, sy = xs[mask], yb[mask]
+        if len(sx) < 8:
+            # Too little edge to fit: fall back to the plain extreme pixel.
+            ex = xs.min() if is_left else xs.max()
+            return float(ex), float(yb[xs == ex].max())
+        m, b = _theil_sen(sx, sy)
+        on = np.abs(sy - (m * sx + b)) <= tol
+        if not on.any():
+            ex = sx.min() if is_left else sx.max()
+            return float(ex), float(sy[sx == ex][0])
+        cand = sx[on]
+        cx = cand.min() if is_left else cand.max()
+        return float(cx), float(sy[sx == cx][0])
+
+    return side(True), side(False), (xbottom, float(ymax))
 
 
 def check_slopes(left, right, bottom):
@@ -163,6 +210,8 @@ def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white:
 
     left, right, bottom = plate_corners(alpha)
     s_left, s_right = check_slopes(left, right, bottom)
+    ys_all, xs_all = np.nonzero(alpha > 128)
+    overhang = [round(float(left[0] - xs_all.min()), 1), round(float(xs_all.max() - right[0]), 1)]
     ax = (left[0] + right[0]) / 2
     ay = (left[1] + right[1]) / 2
     plate_px = right[0] - left[0]
@@ -189,6 +238,7 @@ def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white:
         "trimOffset": [int(x0), int(y0)],
         "sourceScale": round(scale, 6),
         "slopes": {"left": round(s_left, 4), "right": round(s_right, 4)},
+        "overhangPx": overhang,
     }
     return name, entry
 
@@ -217,7 +267,6 @@ def tile_width_from_layout() -> int:
 # ------------------------------------------------------------------ self-test
 def synth_plate(path: str, skew: float = 0.0, size=(900, 700), plate_w=600, box_h=200):
     """White image with a 2:1 diamond plate (optionally skewed) and a box on it."""
-    from PIL import ImageDraw
     img = Image.new("RGB", size, (255, 255, 255))
     d = ImageDraw.Draw(img)
     cx, cy = size[0] // 2, size[1] - 260
@@ -264,6 +313,18 @@ def selftest() -> int:
         m = write_manifest(os.path.join(td, "out"), {name: e}, 64, 4)
         with open(m) as f:
             assert json.load(f)["sprites"]["test-t1"]["ax"] == e["ax"]
+        # A silhouette overhanging its plate (foliage, an eave) must not drag the corner out.
+        over = os.path.join(td, "over-t1.jpg")
+        Lo, Eo, So = synth_plate(over)
+        img = Image.open(over)
+        dd = ImageDraw.Draw(img)
+        dd.ellipse([Eo[0] + 40, Eo[1] - 220, Eo[0] + 150, Eo[1] - 110], fill=(70, 100, 60), outline=(40, 30, 20))
+        img.save(over, quality=95)
+        a_over = key_background(np.asarray(Image.open(over).convert("RGB")), 232)
+        L2, R2, B2 = plate_corners(a_over)
+        assert abs(R2[0] - Eo[0]) <= 6, f"overhang pulled the right corner to {R2} (plate corner {Eo})"
+        assert abs(L2[0] - Lo[0]) <= 6, (L2, Lo)
+        check_slopes(L2, R2, B2)
     print("artgen selftest OK")
     return 0
 

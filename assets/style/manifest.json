@@ -5,9 +5,9 @@
     "anchor-v1": {
       "file": "anchor-v1.png",
       "width": 258,
-      "height": 176,
-      "ax": 128.94,
-      "ay": 107.81,
+      "height": 177,
+      "ax": 129.3,
+      "ay": 109.14,
       "ppu": 4,
       "plateWidth": 64,
       "source": "assets/style/anchor-v1.jpg",
@@ -15,11 +15,15 @@
         316,
         23
       ],
-      "sourceScale": 0.118081,
+      "sourceScale": 0.118245,
       "slopes": {
-        "left": 0.5278,
+        "left": 0.5106,
         "right": -0.5275
-      }
+      },
+      "overhangPx": [
+        3.0,
+        0.0
+      ]
     }
   }
 }

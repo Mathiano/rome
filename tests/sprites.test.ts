@@ -27,8 +27,20 @@ describe('sprite manifest (CLAUDE.md conventions)', () => {
       expect(h.colourType, 'colour type 6 = RGBA').toBe(6);
       expect(e.plateWidth).toBe(spriteManifest.tileWidth);
       expect(e.ppu).toBe(spriteManifest.ppu);
-      // Left and right plate corners are the trimmed extremes, so the anchor sits at the horizontal centre.
-      expect(Math.abs(e.ax - e.width / 2)).toBeLessThanOrEqual(1.5);
+      // The anchor is the plate centre, so the plate must fit either side of it.
+      const half = (e.plateWidth * e.ppu) / 2;
+      const leftGap = e.ax - half;
+      const rightGap = e.width - e.ax - half;
+      expect(leftGap, 'plate overruns the sprite on the left').toBeGreaterThanOrEqual(-0.5);
+      expect(rightGap, 'plate overruns the sprite on the right').toBeGreaterThanOrEqual(-0.5);
+      // The anchor is off-centre only by whatever overhangs the plate (a tree, an eave).
+      const overhang = (e as unknown as { overhangPx?: [number, number]; sourceScale?: number });
+      if (overhang.overhangPx && overhang.sourceScale) {
+        const [l, r] = overhang.overhangPx;
+        expect(l).toBeGreaterThanOrEqual(0);
+        expect(r).toBeGreaterThanOrEqual(0);
+        expect(Math.abs(rightGap - leftGap - (r - l) * overhang.sourceScale)).toBeLessThanOrEqual(1.5);
+      }
       expect(e.ay).toBeGreaterThan(0);
       expect(e.ay).toBeLessThanOrEqual(e.height);
       const p = place(e, 'x');
