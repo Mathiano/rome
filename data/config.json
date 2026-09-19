@@ -3,17 +3,23 @@
   "saveVersion": 1,
   "townName": "Arctown",
   "_proposed": {
-    "townName": "DESIGN §15.1 — confirmed Arctown",
-    "calendarFloorHours": "DESIGN §3.3 — confirmed 24",
-    "lifespan": "DESIGN §3.4 — confirmed 120–200 rounds",
-    "topOffice": "DESIGN §9.3 — confirmed praefectus",
-    "idleRoundsMaxCatchUp": "DESIGN §3.3 — confirmed 7"
+    "townName": "DESIGN \u00a715.1 \u2014 confirmed Arctown",
+    "calendarFloorHours": "DESIGN \u00a73.3 \u2014 confirmed 24",
+    "lifespan": "DESIGN \u00a73.4 \u2014 confirmed 120\u2013200 rounds",
+    "topOffice": "DESIGN \u00a79.3 \u2014 confirmed praefectus",
+    "idleRoundsMaxCatchUp": "DESIGN \u00a73.3 \u2014 confirmed 7"
   },
   "tickMs": 1000,
   "calendarFloorHours": 24,
   "idleRoundsMaxCatchUp": 7,
-  "topOffice": { "id": "praefectus", "title": "Praefectus" },
-  "lifespan": { "roundsMin": 120, "roundsMax": 200 },
+  "topOffice": {
+    "id": "praefectus",
+    "title": "Praefectus"
+  },
+  "lifespan": {
+    "roundsMin": 120,
+    "roundsMax": 200
+  },
   "population": {
     "start": 20,
     "baseCap": 30,
@@ -22,8 +28,13 @@
     "taxPerHeadPerHour": 0.4,
     "militiaRatio": 0.25
   },
-  "rush": { "minPrice": 1 },
-  "concurrency": { "building": 1, "field": 1 },
+  "rush": {
+    "minPrice": 1
+  },
+  "concurrency": {
+    "building": 1,
+    "field": 1
+  },
   "corruption": {
     "min": 0,
     "max": 100,
@@ -36,13 +47,21 @@
     "denariiDrainPerPointPerHour": 0.05
   },
   "gravitas": {
-    "rankThresholds": [0, 10, 25, 50, 100, 200],
+    "rankThresholds": [
+      0,
+      10,
+      25,
+      50,
+      100,
+      200
+    ],
     "gainPerRoundInPost": 1,
     "authorityWeight": 0.2,
     "gainForOffice": 2,
     "romeBackingCost": 10,
     "romeBackingAttitude": 15,
-    "romeBackingFavour": 5
+    "romeBackingFavour": 5,
+    "romeBackingMinRank": 2
   },
   "posts": {
     "bonusPerStatPoint": 0.03,
@@ -52,10 +71,16 @@
     "attitudeDriftNoPosts": -3,
     "attitudeDriftWithPosts": 1,
     "dangerousPostCount": 3,
-    "unhappyThreshold": -20
+    "unhappyThreshold": -20,
+    "vacantAllowedBelowRank": true
   },
   "intrigue": {
-    "bribe": { "cost": 60, "attitude": 10, "gravitasLoss": 1 }
+    "bribe": {
+      "cost": 60,
+      "attitude": 10,
+      "gravitasLoss": 1,
+      "minRank": 1
+    }
   },
   "leverage": {
     "obstructPenalty": 0.25,
@@ -90,7 +115,10 @@
     "hostageRaidSuppressionRounds": 6,
     "warnFear": 8,
     "warnTrust": -3,
-    "festivalCost": { "grain": 60, "denarii": 30 },
+    "festivalCost": {
+      "grain": 60,
+      "denarii": 30
+    },
     "festivalTrust": 12,
     "festivalFear": -3,
     "trustDecayPerRound": 0.5,
@@ -107,8 +135,22 @@
     "populationFloor": 5,
     "corruptionCeiling": 95,
     "administrationRounds": 4,
-    "grant": { "denarii": 200, "grain": 100, "wood": 50 }
+    "grant": {
+      "denarii": 200,
+      "grain": 100,
+      "wood": 50
+    }
   },
-  "events": { "chancePerRound": 0.25 },
-  "log": { "max": 200 }
+  "events": {
+    "chancePerRound": 0.25
+  },
+  "log": {
+    "max": 200
+  },
+  "levelling": {
+    "_comment": "DESIGN \u00a79.2: characters level by holding posts and by events.",
+    "chancePerRoundInPost": 0.14,
+    "statMax": 10,
+    "officeAuthorityChance": 0.1
+  }
 }

@@ -1,11 +1,11 @@
 import { activeTribe, building, config, envoys, posts as postDefs, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
-import type { GameState } from '../state/types';
+import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, eligibleBuildings, rushPrice, slotById } from '../village/construction';
 import { netPerHour } from '../village/economy';
 import { capacity, hiddenPerResource, populationCap, forumTier } from '../village/storage';
 import { gravitasRank, leaderOf, livingMembers, playerFamily, rivalFamilies, standing } from '../politics/characters';
-import { holderOf, postsHeldBy } from '../politics/posts';
+import { holderOf, meetsRank, postsHeldBy } from '../politics/posts';
 import { militiaPool, homeMilitia } from '../combat/militia';
 import { defenceStrength, raidChance, raidStrength } from '../combat/raids';
 import { tradeRate } from '../tribes/envoys';
@@ -37,6 +37,40 @@ export interface PanelHandlers {
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const n = (v: number) => (Math.abs(v) >= 100 ? Math.round(v).toString() : (Math.round(v * 10) / 10).toString());
 const ROMAN = ['', 'I', 'II', 'III'];
+
+export interface News { title: string; subtitle: string; lines: LogEntry[] }
+
+/**
+ * Everything that has happened since the player last acknowledged the news:
+ * the opening beat on a new colony, the report after a round, or the digest of
+ * rounds that ran while the game was closed.
+ */
+export function pendingNews(state: GameState): News | null {
+  const lines = state.log.filter((e) => e.id > state.seenLogId && !/^Round \d+\.$/.test(e.text));
+  if (!lines.length) return null;
+  if (state.awayRounds > 0) {
+    return {
+      title: 'While you were away',
+      subtitle: `${state.awayRounds} round${state.awayRounds === 1 ? '' : 's'} ran without you. The council does not wait.`,
+      lines,
+    };
+  }
+  if (state.round === 0) {
+    return { title: esc(config.townName), subtitle: 'A colonia in Germania, beyond the Rhine. Rome expects it to stand.', lines };
+  }
+  const r = state.lastReport;
+  return {
+    title: `Round ${state.round}`,
+    subtitle: r ? `Population ${Math.floor(state.population)} · corruption ${n(state.corruption)}` : '',
+    lines,
+  };
+}
+
+export function renderNews(news: News): string {
+  const items = news.lines.map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('');
+  return `<div class="news-card"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
+    <ul>${items}</ul><button class="act" data-news-ok>Continue</button></div>`;
+}
 
 export function renderHeader(state: GameState): string {
   const net = netPerHour(state);
@@ -108,10 +142,11 @@ function renderVillage(s: GameState, selected: string | null, now: number): stri
   return out;
 }
 
-function charOption(s: GameState, id: string, stat: keyof typeof s.characters[string]['stats']): string {
+function charOption(s: GameState, id: string, stat: keyof typeof s.characters[string]['stats'], postId: string): string {
   const c = s.characters[id];
   const fam = s.families[c.familyId];
-  return `<option value="${c.id}">${esc(c.name)} (${fam.name}, ${stat} ${c.stats[stat]})</option>`;
+  const ok = meetsRank(s, postId, c.id);
+  return `<option value="${c.id}">${ok ? '' : '✗ '}${esc(c.name)} — ${fam.name}, ${stat} ${c.stats[stat]}, rank ${gravitasRank(c)}</option>`;
 }
 
 function renderCouncil(s: GameState, now: number): string {
@@ -124,9 +159,11 @@ function renderCouncil(s: GameState, now: number): string {
   for (const p of postDefs) {
     const h = holderOf(s, p.id);
     const obstructed = (s.obstructed[p.domain] ?? 0) > s.round;
-    out += `<div class="card ${h ? (s.families[h.familyId].isPlayer ? 'player' : 'rival') : ''}"><b>${esc(p.name)}</b> <span class="muted">(${p.stat})</span><p class="muted">${esc(p.description)}</p>`;
+    out += `<div class="card ${h ? (s.families[h.familyId].isPlayer ? 'player' : 'rival') : ''}"><b>${esc(p.name)}</b> <span class="muted">(${p.stat}${p.minRank ? `, needs rank ${p.minRank}` : ''})</span><p class="muted">${esc(p.description)}</p>`;
     out += `<p>${h ? `${esc(h.name)} of the ${s.families[h.familyId].name}, ${p.stat} ${h.stats[p.stat]}` : '<em>vacant</em>'}${obstructed ? ' · <span style="color:var(--terracotta)">obstructing</span>' : ''}</p>`;
-    out += `<select data-select-post="${p.id}">${living.map((c) => charOption(s, c.id, p.stat)).join('')}</select> `;
+    const eligible = living.filter((c) => meetsRank(s, p.id, c.id));
+    const options = (eligible.length ? eligible : living).map((c) => charOption(s, c.id, p.stat, p.id)).join('');
+    out += `<select data-select-post="${p.id}">${options}</select> `;
     out += `<button class="act" data-appoint="${p.id}">Appoint</button>`;
     if (h) out += `<button class="act secondary" data-dismiss="${p.id}">Dismiss</button>`;
     out += `</div>`;
@@ -135,7 +172,8 @@ function renderCouncil(s: GameState, now: number): string {
   const leader = leaderOf(s, playerFamily(s).id);
   const g = config.gravitas;
   out += `<p>Your leader holds <b>${n(leader?.gravitasStock ?? 0)}</b> spendable gravitas (rank ${leader ? gravitasRank(leader) : 0}).</p>`;
-  out += `<button class="act" data-political="rome_backing" ${(leader?.gravitasStock ?? 0) < g.romeBackingCost ? 'disabled' : ''}>Seek Rome's backing (${g.romeBackingCost} gravitas)</button> `;
+  const backingOk = leader && gravitasRank(leader) >= g.romeBackingMinRank && leader.gravitasStock >= g.romeBackingCost;
+  out += `<button class="act" data-political="rome_backing" ${backingOk ? '' : 'disabled'}>Seek Rome's backing (${g.romeBackingCost} gravitas, rank ${g.romeBackingMinRank})</button> `;
   out += `<button class="act secondary" data-political="convene">Convene the council (pass)</button>`;
   out += `<p class="muted">Every action here runs a political round: the rival house, the tribe and Rome all act, and everyone ages. If you stay away ${config.calendarFloorHours} hours the council meets without you (${Math.ceil(roundsUntilIdle(s, now) / 3_600_000)}h left).</p>`;
   return out;
@@ -154,7 +192,9 @@ function renderFamilies(s: GameState): string {
       if (held.length === 0) out += `<p class="muted">Without a post their regard for you falls each round.</p>`;
       if (held.length >= config.posts.dangerousPostCount) out += `<p style="color:var(--terracotta)">They hold too many posts. Dangerous.</p>`;
       const b = config.intrigue.bribe;
-      out += `<button class="act" data-political="bribe" data-family="${f.id}" ${s.resources.denarii < b.cost ? 'disabled' : ''}>Bribe (${b.cost} denarii, +${b.attitude})</button>`;
+      const pl = leaderOf(s, playerFamily(s).id);
+      const canBribe = s.resources.denarii >= b.cost && !!pl && gravitasRank(pl) >= b.minRank;
+      out += `<button class="act" data-political="bribe" data-family="${f.id}" ${canBribe ? '' : 'disabled'}>Bribe (${b.cost} denarii, +${b.attitude}${b.minRank ? `, rank ${b.minRank}` : ''})</button>`;
     }
     out += `<table><tr><th>Name</th><th>Age</th><th>Post</th><th>Gravitas</th></tr>`;
     for (const c of members) {
@@ -163,7 +203,7 @@ function renderFamilies(s: GameState): string {
     }
     out += `</table></div>`;
   }
-  out += `<p class="muted">Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Marriage, heirs and adoption arrive in v0.2.</p>`;
+  out += `<p class="muted">A post teaches its trade: its holder's stat grows while he serves. Gravitas rank gates the greater posts. Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Marriage, heirs and adoption arrive in v0.2.</p>`;
   return out;
 }
 

@@ -65,6 +65,7 @@ export interface PostDef {
   domain: string;
   stat: StatId;
   description: string;
+  minRank: number;
 }
 export interface TribeDef {
   id: string;

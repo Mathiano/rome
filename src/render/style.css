@@ -92,3 +92,16 @@ header .res .neg b { color: #e0885a; }
 
 #village .labels { pointer-events: none; }
 #village .slot { pointer-events: all; }
+
+.news { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(42,33,24,0.45); z-index: 20; }
+.news-card { background: var(--parchment); border: 2px solid var(--ink); border-radius: 3px;
+  padding: 16px 20px; max-width: 520px; max-height: 76%; overflow-y: auto; box-shadow: 0 8px 24px var(--shadow); }
+.news-card h2 { margin: 0 0 2px; font-size: 20px; letter-spacing: 0.04em; }
+.news-card ul { list-style: none; padding: 0; margin: 10px 0 14px; }
+.news-card li { padding: 5px 0 5px 10px; border-left: 3px solid var(--parchment-dark); margin-bottom: 3px; }
+.news-card li.k-raid { border-left-color: var(--terracotta); }
+.news-card li.k-rome { border-left-color: var(--river); }
+.news-card li.k-event { border-left-color: var(--moss); }
+.news-card li.k-family { border-left-color: var(--gold); }
+.news-card li.k-council { border-left-color: var(--ink); }

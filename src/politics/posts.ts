@@ -1,7 +1,8 @@
 import { config, post as postDef, posts as postDefs } from '../data';
+import { chance } from '../state/rng';
 import type { GameState } from '../state/types';
 import { log } from '../state/store';
-import { livingMembers, playerFamily, rivalFamilies } from './characters';
+import { gravitasRank, livingMembers, playerFamily, rivalFamilies } from './characters';
 
 export function holderOf(state: GameState, postId: string) {
   const id = state.posts[postId];
@@ -12,10 +13,20 @@ export function postsHeldBy(state: GameState, familyId: string): string[] {
   return postDefs.filter((p) => holderOf(state, p.id)?.familyId === familyId).map((p) => p.id);
 }
 
+/** Gravitas rank a character must hold to take a post (DESIGN §9.2). */
+export function meetsRank(state: GameState, postId: string, characterId: string): boolean {
+  const c = state.characters[characterId];
+  const p = postDef(postId);
+  return !!c && c.alive && gravitasRank(c) >= p.minRank;
+}
+
 export function appoint(state: GameState, postId: string, characterId: string): void {
   const c = state.characters[characterId];
   if (!c || !c.alive) throw new Error('No such living character');
-  postDef(postId);
+  const def = postDef(postId);
+  if (gravitasRank(c) < def.minRank) {
+    throw new Error(`${def.name} needs gravitas rank ${def.minRank}; ${c.name} is rank ${gravitasRank(c)}`);
+  }
   if (c.post) state.posts[c.post] = null;
   const prev = holderOf(state, postId);
   if (prev) {
@@ -85,6 +96,11 @@ export function accrueGravitas(state: GameState, forumGravitas: number): void {
     const gain = config.gravitas.gainPerRoundInPost * (1 + h.stats.authority * config.gravitas.authorityWeight);
     h.gravitas += gain;
     h.gravitasStock += gain;
+    // Holding a post teaches its trade (DESIGN §9.2).
+    if (h.stats[p.stat] < config.levelling.statMax && chance(state, config.levelling.chancePerRoundInPost)) {
+      h.stats[p.stat] += 1;
+      log(state, 'family', `${h.name} grows abler as ${p.name}: ${p.stat} ${h.stats[p.stat]}.`);
+    }
   }
   if (state.office) {
     const o = state.characters[state.office];
@@ -92,6 +108,10 @@ export function accrueGravitas(state: GameState, forumGravitas: number): void {
       const gain = (config.gravitas.gainForOffice + forumGravitas) * (1 + o.stats.authority * config.gravitas.authorityWeight);
       o.gravitas += gain;
       o.gravitasStock += gain;
+      if (o.stats.authority < config.levelling.statMax && chance(state, config.levelling.officeAuthorityChance)) {
+        o.stats.authority += 1;
+        log(state, 'family', `${o.name} grows in authority: ${o.stats.authority}.`);
+      }
     }
   }
 }

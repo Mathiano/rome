@@ -65,6 +65,7 @@ describe('posts and corruption', () => {
     updateCorruption(s);
     expect(s.corruption).toBeGreaterThan(0);
     const high = s.corruption;
+    s.characters.p_brother.gravitas = config.gravitas.rankThresholds[1];
     appoint(s, 'treasury', 'p_brother');
     s.families.cornelii.attitude = 40;
     updateCorruption(s);
@@ -83,6 +84,7 @@ describe('intrigue', () => {
   it('bribe costs denarii and raises attitude', () => {
     const s = createInitialState(0, 1);
     s.resources.denarii = 1000;
+    s.characters.p_leader.gravitas = config.gravitas.rankThresholds[config.intrigue.bribe.minRank];
     const before = s.families.cornelii.attitude;
     bribe(s, 'cornelii');
     expect(s.resources.denarii).toBe(1000 - config.intrigue.bribe.cost);

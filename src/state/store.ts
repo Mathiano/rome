@@ -93,13 +93,18 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       hostingUntilRound: 0,
     },
     log: [],
+    logSeq: 0,
+    seenLogId: 0,
+    lastReport: null,
+    awayRounds: 0,
   };
   log(state, 'system', `${config.townName} is founded. ${playerLeader.name} holds the office of ${config.topOffice.title}.`);
   return state;
 }
 
 export function log(state: GameState, kind: LogEntry['kind'], text: string): void {
-  state.log.push({ round: state.round, at: state.lastTick, kind, text });
+  state.logSeq = (state.logSeq ?? 0) + 1;
+  state.log.push({ id: state.logSeq, round: state.round, at: state.lastTick, kind, text });
   if (state.log.length > config.log.max) state.log.splice(0, state.log.length - config.log.max);
 }
 
@@ -124,6 +129,14 @@ export function migrate(state: GameState): GameState {
   }
   // New posts added in data after a save was made appear as vacant.
   for (const p of posts) if (!(p.id in state.posts)) state.posts[p.id] = null;
+  // v1 saves predate the report and digest; give their log entries ids.
+  if (typeof state.logSeq !== 'number') {
+    state.logSeq = 0;
+    for (const e of state.log) e.id = ++state.logSeq;
+    state.seenLogId = state.logSeq;
+    state.lastReport = null;
+    state.awayRounds = 0;
+  }
   state.version = config.saveVersion;
   return state;
 }

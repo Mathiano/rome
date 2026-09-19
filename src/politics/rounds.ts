@@ -16,6 +16,7 @@ import { sumEffect } from '../village/storage';
  * act (calendar floor, §3.3).
  */
 export function runRound(state: GameState, now: number, idle = false): void {
+  const fromLogId = state.logSeq;
   state.round += 1;
   state.lastRoundAt = now;
   if (idle) log(state, 'system', `Round ${state.round}: the council meets without you.`);
@@ -29,6 +30,16 @@ export function runRound(state: GameState, now: number, idle = false): void {
   driftAttitudes(state);
   updateCorruption(state);
   checkCollapse(state);
+  state.lastReport = {
+    round: state.round,
+    at: now,
+    idle,
+    fromLogId,
+    population: Math.floor(state.population),
+    corruption: state.corruption,
+    resources: { ...state.resources },
+  };
+  if (idle) state.awayRounds += 1;
 }
 
 /** Calendar floor: if no round has run in `floorMs`, opponents act without the player. */
