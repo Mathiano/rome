@@ -9,6 +9,7 @@ import { holderOf, meetsRank, postsHeldBy } from '../politics/posts';
 import { militiaPool, homeMilitia } from '../combat/militia';
 import { defenceStrength, raidChance, raidStrength } from '../combat/raids';
 import { tradeRate } from '../tribes/envoys';
+import { portraitSvg } from './portrait';
 import { appeasePrice } from '../tribes/turn';
 import { pendingChoices } from '../politics/events';
 import { roundsUntilIdle } from '../politics/rounds';
@@ -218,12 +219,17 @@ function renderFamilies(s: GameState): string {
       const canBribe = s.resources.denarii >= b.cost && !!pl && gravitasRank(pl) >= b.minRank;
       out += `<button class="act" data-political="bribe" data-family="${f.id}" ${canBribe ? '' : 'disabled'}>Bribe (${b.cost} denarii, +${b.attitude}${b.minRank ? `, rank ${b.minRank}` : ''})</button>`;
     }
-    out += `<table><tr><th>Name</th><th>Age</th><th>Post</th><th>Gravitas</th></tr>`;
+    out += `<div class="roster">`;
     for (const c of members) {
       const st = c.stats;
-      out += `<tr class="${c.alive ? '' : 'dead'}"><td>${esc(c.name)}${c.isLeader ? ' ★' : ''}<div class="stats"><span>auth ${st.authority}</span><span>disc ${st.discipline}</span><span>craft ${st.craft}</span><span>conn ${st.connections}</span><span>piety ${st.piety}</span></div></td><td>${c.alive ? c.age : `† ${esc(c.causeOfDeath ?? '')}`}</td><td>${c.post ? esc(postDefs.find((p) => p.id === c.post)?.name ?? c.post) : ''}</td><td>${n(c.gravitas)} (r${gravitasRank(c)})</td></tr>`;
+      const postName = c.post ? esc(postDefs.find((p) => p.id === c.post)?.name ?? c.post) : '';
+      out += `<div class="member${c.alive ? '' : ' dead'}">${portraitSvg(c, f, { dead: !c.alive })}
+        <div class="who"><b>${esc(c.name)}</b>${c.isLeader ? ' <span title="head of the house">★</span>' : ''}
+          <div class="muted">${c.alive ? `age ${c.age}` : `† ${esc(c.causeOfDeath ?? '')}`} · gravitas ${n(c.gravitas)}, rank ${gravitasRank(c)}${postName ? ` · ${postName}` : ''}</div>
+          <div class="stats"><span>auth ${st.authority}</span><span>disc ${st.discipline}</span><span>craft ${st.craft}</span><span>conn ${st.connections}</span><span>piety ${st.piety}</span></div>
+        </div></div>`;
     }
-    out += `</table></div>`;
+    out += `</div></div>`;
   }
   out += `<p class="muted">A post teaches its trade: its holder's stat grows while he serves. Gravitas rank gates the greater posts. Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Marriage, heirs and adoption arrive in v0.2.</p>`;
   return out;

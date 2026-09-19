@@ -136,3 +136,10 @@ header .res .neg b { color: #e0885a; }
   #village .anim * { animation: none !important; }
   #village .anim-smoke .puff { opacity: 0.35; }
 }
+
+#panel .roster { margin-top: 8px; }
+#panel .member { display: flex; gap: 9px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--shadow); }
+#panel .member:first-child { border-top: none; }
+#panel .member.dead { opacity: 0.55; }
+#panel .member .who { flex: 1; min-width: 0; }
+#panel .portrait { flex: none; border: 1px solid var(--ink); border-radius: 2px; background: var(--parchment-dark); }
