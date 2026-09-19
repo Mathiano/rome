@@ -12,6 +12,8 @@ import { dispatchEnvoy, trade } from './tribes/envoys';
 import { appease } from './tribes/turn';
 import { acceptDemand, refuseDemand } from './politics/families';
 import { resolveChoice } from './politics/events';
+import { claimSite, dispatchScout, releaseSite, setGarrison } from './map/sites';
+import { spareMilitia } from './combat/militia';
 import { deliver, sendRecruits, hostOfficial, decline } from './rome/requests';
 
 export type Political =
@@ -28,6 +30,9 @@ export type Political =
   | { type: 'accept_demand'; familyId: string }
   | { type: 'refuse_demand'; familyId: string }
   | { type: 'appease' }
+  | { type: 'claim'; hex: string }
+  | { type: 'release'; hex: string }
+  | { type: 'garrison'; hex: string; men: number }
   | { type: 'convene' };
 
 export class Game {
@@ -61,6 +66,11 @@ export class Game {
     this.tick(now);
     dispatchEnvoy(this.state, envoyId);
   }
+  /** Scouts are prepared like an envoy and report at the next round. */
+  scout(hex: string, now = Date.now()): void {
+    this.tick(now);
+    dispatchScout(this.state, hex);
+  }
   // --- politics (each runs a round) ---
   act(a: Political, now = Date.now()): void {
     this.tick(now);
@@ -79,6 +89,9 @@ export class Game {
       case 'accept_demand': acceptDemand(s, a.familyId); break;
       case 'refuse_demand': refuseDemand(s, a.familyId); break;
       case 'appease': appease(s); break;
+      case 'claim': claimSite(s, a.hex); break;
+      case 'release': releaseSite(s, a.hex); break;
+      case 'garrison': setGarrison(s, a.hex, a.men, spareMilitia(s)); break;
       case 'convene': break;
     }
     runRound(s, now);

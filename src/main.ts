@@ -1,23 +1,28 @@
 import { Game } from './game';
-import { config } from './data';
+import { config, RESOURCE_IDS } from './data';
 import { createInitialState, deserialise, loadFromLocalStorage, saveToLocalStorage, serialise, clearLocalStorage, SAVE_KEY } from './state/store';
 import { createDevClock, isDevRequested, DEV_SAVE_KEY, DEV_MULTIPLIERS } from './dev';
 import { createVillageView } from './render/village';
+import { progress as progressOf } from './village/construction';
+import { createMapView } from './render/mapview';
 import { bindPanel, pendingNews, renderHeader, renderNews, renderPanel, type Tab } from './render/panel';
 
 const dev = createDevClock(isDevRequested(location.search), () => Date.now(), (() => { try { return globalThis.localStorage ?? null; } catch { return null; } })());
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
 
 const app = document.getElementById('app')!;
-app.innerHTML = `<header></header><div id="village"></div><div id="panel"></div>`;
+app.innerHTML = `<header></header><div id="stage"><div id="village"></div><div id="map"></div></div><div id="panel"></div>`;
 const header = app.querySelector('header')!;
 const villageEl = document.getElementById('village')!;
+const mapEl = document.getElementById('map')!;
 const panelEl = document.getElementById('panel')!;
 
 let game = new Game(loadFromLocalStorage(saveKey) ?? createInitialState(dev.now()));
 let tab: Tab = 'village';
 let selected: string | null = null;
+let selectedHex: string | null = null;
 let lastPanelHtml = '';
+let lastPanelKey = '';
 
 const view = createVillageView((id) => {
   selected = id;
@@ -25,6 +30,13 @@ const view = createVillageView((id) => {
   render(true);
 });
 villageEl.appendChild(view.root);
+
+const mapView = createMapView((hex) => {
+  selectedHex = hex;
+  tab = 'map';
+  render(true);
+});
+mapEl.appendChild(mapView.root);
 
 function toast(msg: string): void {
   const t = document.createElement('div');
@@ -74,15 +86,39 @@ function renderNewsOverlay(): void {
   newsEl.innerHTML = renderNews(news, game.state);
 }
 
+/**
+ * A fingerprint of everything the panel actually shows. The panel used to be
+ * rebuilt as a string every tick and usually thrown away unchanged; now the
+ * string is only built when one of these has moved.
+ */
+function panelKey(now: number): string {
+  const st = game.state;
+  const res = RESOURCE_IDS.map((id) => Math.round(st.resources[id])).join(',');
+  const work = st.constructions.map((c) => `${c.slotId}:${Math.round(progressOf(c, now) * 40)}`).join(',');
+  return [tab, selected, selectedHex, st.round, st.logSeq, res, work, Math.floor(st.population),
+    Math.round(st.corruption), st.map.claimed.length, st.map.scouted.length, st.map.pendingScout,
+    st.tribe.pendingEnvoy, st.tribe.massingForRound, st.rome.activeRequestId].join('|');
+}
+
 function render(force = false): void {
   const now = dev.now();
   header.innerHTML = renderHeader(game.state);
   renderNewsOverlay();
   if (dev.enabled) renderDevBar(now);
-  view.update(game.state, now, selected);
-  const html = renderPanel(game, tab, selected, now);
-  // Avoid clobbering the select/textarea the player is using unless something changed.
+
+  const onMap = tab === 'map';
+  villageEl.style.display = onMap ? 'none' : '';
+  mapEl.style.display = onMap ? '' : 'none';
+  if (onMap) mapView.update(game.state, selectedHex);
+  else view.update(game.state, now, selected);
+
+  const pk = panelKey(now);
+  if (!force && pk === lastPanelKey) return;
+  lastPanelKey = pk;
+
+  const html = renderPanel(game, tab, selected, now, selectedHex);
   if (force || html !== lastPanelHtml) {
+    // Never clobber a select or textarea the player is using mid-interaction.
     const active = document.activeElement;
     if (!force && active && panelEl.contains(active) && (active.tagName === 'SELECT' || active.tagName === 'TEXTAREA')) return;
     panelEl.innerHTML = html;
@@ -93,6 +129,7 @@ function render(force = false): void {
 bindPanel(panelEl, {
   onTab: (t) => { tab = t; render(true); },
   onChoice: (id) => guard(() => game.choose(id, dev.now())),
+  onScout: (hex) => guard(() => game.scout(hex, dev.now())),
   onBuild: (slot, b) => guard(() => game.build(slot, b, dev.now())),
   onRush: (slot) => guard(() => game.rush(slot, dev.now())),
   onPolitical: (a) => guard(() => game.act(a, dev.now())),

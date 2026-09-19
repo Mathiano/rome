@@ -1,6 +1,7 @@
 import { config, unlocks } from '../data';
 import type { GameState } from '../state/types';
 import { sumEffect } from '../village/storage';
+import { totalGarrisoned } from '../map/sites';
 
 /** One pool of men-at-arms (DESIGN §8.1). */
 export function militiaPool(state: GameState): number {
@@ -11,6 +12,12 @@ export function militiaPool(state: GameState): number {
   return Math.max(0, pool);
 }
 
+/** What is left at home once the far holdings and bodyguards have taken theirs. */
 export function homeMilitia(state: GameState): number {
-  return Math.max(0, militiaPool(state) - state.militia.garrisons - state.militia.bodyguards);
+  return Math.max(0, militiaPool(state) - totalGarrisoned(state) - state.militia.bodyguards);
+}
+
+/** Men not yet committed anywhere. */
+export function spareMilitia(state: GameState): number {
+  return homeMilitia(state);
 }

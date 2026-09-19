@@ -1,5 +1,6 @@
 import { building, config, post as postDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
 import { lesserEffect } from '../politics/posts';
+import { claimedProduction } from '../map/sites';
 import type { GameState, Resources } from '../state/types';
 import { capacity, populationCap, sumEffect } from './storage';
 
@@ -26,6 +27,10 @@ export function productionPerHour(state: GameState): Resources {
     const def = building(s.building);
     if (!def.produces) continue;
     out[def.produces] += def.tiers[s.tier - 1].effects.productionPerHour ?? 0;
+  }
+  // Held sites add their yield before the post bonuses lift it.
+  for (const [res, v] of Object.entries(claimedProduction(state))) {
+    out[res as ResourceId] += v ?? 0;
   }
   out.grain *= 1 + postBonus(state, 'granary');
   const works = postBonus(state, 'works');

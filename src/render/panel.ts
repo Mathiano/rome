@@ -10,15 +10,19 @@ import { militiaPool, homeMilitia } from '../combat/militia';
 import { defenceStrength, raidChance, raidStrength } from '../combat/raids';
 import { tradeRate } from '../tribes/envoys';
 import { portraitSvg } from './portrait';
+import { claimCost, claimOf, isScouted, ringOf, scoutCost, siteAt, siteDefence, siteRaidChance, upkeepPerRound } from '../map/sites';
+import { site as siteDef } from '../map/world';
+import { spareMilitia } from '../combat/militia';
 import { backingCost } from '../politics/intrigue';
 import { favourRewardMultiplier } from '../rome/requests';
 import { appeasePrice } from '../tribes/turn';
 import { pendingChoices } from '../politics/events';
 import { roundsUntilIdle } from '../politics/rounds';
 
-export type Tab = 'village' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save';
+export type Tab = 'village' | 'map' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save';
 const TABS: { id: Tab; name: string }[] = [
   { id: 'village', name: 'Village' },
+  { id: 'map', name: 'Map' },
   { id: 'council', name: 'Council' },
   { id: 'family', name: 'Houses' },
   { id: 'tribe', name: 'Tribe' },
@@ -30,6 +34,7 @@ const TABS: { id: Tab; name: string }[] = [
 export interface PanelHandlers {
   onTab(t: Tab): void;
   onChoice(id: string): void;
+  onScout(hex: string): void;
   onBuild(slotId: string, buildingId: string): void;
   onRush(slotId: string): void;
   onPolitical(a: Political): void;
@@ -100,7 +105,7 @@ export function renderHeader(state: GameState): string {
   return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${admin}</span><div class="res">${res}</div>`;
 }
 
-export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number): string {
+export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number, selectedHex: string | null = null): string {
   const s = game.state;
   const badge = (t: Tab) => {
     if (t === 'rome' && s.rome.activeRequest && !s.rome.activeRequest.fulfilled) return '<span class="badge">!</span>';
@@ -110,6 +115,7 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
   let body = '';
   switch (tab) {
     case 'village': body = renderVillage(s, selected, now); break;
+    case 'map': body = renderMap(s, selectedHex); break;
     case 'council': body = renderCouncil(s, now); break;
     case 'family': body = renderFamilies(s); break;
     case 'tribe': body = renderTribe(s); break;
@@ -163,6 +169,56 @@ function charOption(s: GameState, id: string, stat: keyof typeof s.characters[st
   const fam = s.families[c.familyId];
   const ok = meetsRank(s, postId, c.id);
   return `<option value="${c.id}">${ok ? '' : '✗ '}${esc(c.name)} — ${fam.name}, ${stat} ${c.stats[stat]}, rank ${gravitasRank(c)}</option>`;
+}
+
+function renderMap(s: GameState, hex: string | null): string {
+  const claimed = s.map.claimed;
+  const spare = spareMilitia(s);
+  let out = `<h2>The country</h2>`;
+  out += `<p class="muted">Terrain is known; what stands on it is not. A <b>?</b> is something worth a look. Scouts are dispatched now and report at the next round.</p>`;
+  out += `<p>Scouted <b>${s.map.scouted.length}</b> · held <b>${claimed.length}</b> · upkeep <b>${upkeepPerRound(s)}</b> denarii a round · <b>${spare}</b> men uncommitted</p>`;
+  if (s.map.pendingScout) out += `<p class="muted">Scouts are out toward ${esc(s.map.pendingScout)}.</p>`;
+
+  if (claimed.length) {
+    out += `<h3>Held</h3>`;
+    for (const c of claimed) {
+      const def = siteDef(c.siteId);
+      const r = ringOf(c.key);
+      out += `<div class="card"><b>${esc(def.name)}</b> <span class="muted">${c.key}, ${r} rings out</span>
+        <p class="muted">Raid chance ${Math.round(siteRaidChance(s, c) * 100)}% a round · garrison ${c.garrison} (${Math.round(siteDefence(c))} strength)</p>
+        <button class="act" data-garrison="${c.key}" data-men="${c.garrison + 1}" ${spare < 1 ? 'disabled' : ''}>Send a man</button>
+        <button class="act secondary" data-garrison="${c.key}" data-men="${Math.max(0, c.garrison - 1)}" ${c.garrison < 1 ? 'disabled' : ''}>Recall one</button>
+        <button class="act secondary" data-release="${c.key}">Give it up</button></div>`;
+    }
+  }
+
+  if (!hex) return out + `<p>Select a hex.</p>`;
+  const id = siteAt(s, hex);
+  const scouted = isScouted(s, hex);
+  const held = claimOf(s, hex);
+  out += `<h3>${esc(hex)} <span class="muted">— ${ringOf(hex)} rings out</span></h3>`;
+  if (hex === '0,0') return out + `<p>${esc(config.townName)} stands here.</p>`;
+  if (!scouted) {
+    const cost = scoutCost();
+    const can = !s.map.pendingScout && (s.resources.denarii >= (cost.denarii ?? 0));
+    out += id ? `<p>Something stands here. Nobody has been close enough to say what.</p>` : `<p class="muted">Nothing has been reported here.</p>`;
+    out += `<button class="act" data-scout="${hex}" ${can ? '' : 'disabled'}>Send scouts (${cost.denarii} denarii)</button>`;
+    return out;
+  }
+  if (!id) return out + `<p class="muted">Scouted. Empty country.</p>`;
+  const def = siteDef(id);
+  out += `<div class="card"><b>${esc(def.name)}</b><p class="muted">${esc(def.description)}</p>`;
+  if (def.produces) out += `<p>Yields ${Object.entries(def.produces).map(([k, v]) => `${v} ${k}/h`).join(', ')}</p>`;
+  if (def.effect) out += `<p>${Object.entries(def.effect).map(([k, v]) => `${k} ${v > 0 ? '+' : ''}${v}`).join(', ')}</p>`;
+  if (def.hostile) out += `<p style="color:var(--terracotta)">A war band. There is nothing here to hold.</p>`;
+  else if (held) out += `<p>Held since round ${held.claimedRound}.</p>`;
+  else {
+    const cost = claimCost(hex);
+    const can = (s.resources.denarii ?? 0) >= (cost.denarii ?? 0);
+    out += `<p>Claim for ${costTxt(cost, s)} · upkeep grows with distance</p>
+      <button class="act" data-claim="${hex}" ${can ? '' : 'disabled'}>Claim it</button>`;
+  }
+  return out + `</div>`;
 }
 
 function renderCouncil(s: GameState, now: number): string {
@@ -348,6 +404,7 @@ function renderSave(s: GameState): string {
     <tr><td>Rome</td><td>${st.romeRequestsCompleted} completed, ${st.romeRequestsDeclined} declined</td></tr>
     <tr><td>Deaths</td><td>${st.deaths}</td></tr>
     <tr><td>Peak population</td><td>${st.peakPopulation}</td></tr>
+    <tr><td>Country</td><td>${st.sitesClaimed} claimed, ${st.sitesLost} overrun, ${st.siteRaidsRepelled} held, ${st.scoutsLost} scouting parties lost</td></tr>
     <tr><td>Denarii spent on haste</td><td>${Math.round(st.denariiSpentOnHaste)}</td></tr>
     <tr><td>Lesser offices</td><td>corruption ${n(lesserEffect(s, 'corruptionFall'))}/round, build ${Math.round(lesserEffect(s, 'buildSpeed') * 100)}% faster, defence +${n(lesserEffect(s, 'defence'))}</td></tr>
   </table>
@@ -376,6 +433,10 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.dismissLesser) return h.onPolitical({ type: 'dismiss_lesser', postId: d.dismissLesser });
     if (d.dismiss) return h.onPolitical({ type: 'dismiss', postId: d.dismiss });
     if (d.choice) return h.onChoice(d.choice);
+    if (d.scout) return h.onScout(d.scout);
+    if (d.claim) return h.onPolitical({ type: 'claim', hex: d.claim });
+    if (d.release) return h.onPolitical({ type: 'release', hex: d.release });
+    if (d.garrison) return h.onPolitical({ type: 'garrison', hex: d.garrison, men: Number(d.men) });
     if (d.accept) return h.onPolitical({ type: 'accept_demand', familyId: d.accept });
     if (d.refuse) return h.onPolitical({ type: 'refuse_demand', familyId: d.refuse });
     if (d.political === 'bribe' && d.family) return h.onPolitical({ type: 'bribe', familyId: d.family });

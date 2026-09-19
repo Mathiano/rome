@@ -85,6 +85,12 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       massingForRound: -999,
       pendingEnvoy: null,
     },
+    map: {
+      seed: (seed ^ 0x5bf03635) | 0,
+      scouted: [],
+      claimed: [],
+      pendingScout: null,
+    },
     rome: {
       favour: config.rome.startFavour,
       activeRequestId: null,
@@ -116,6 +122,7 @@ export function emptyStats() {
     rounds: 0, idleRounds: 0, raidsSuffered: 0, raidsRepelled: 0, goodsLostToRaids: 0, deaths: 0,
     demandsGranted: 0, demandsRefused: 0, choicesAnswered: 0, romeRequestsCompleted: 0,
     romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
+    sitesClaimed: 0, sitesLost: 0, siteRaidsRepelled: 0, scoutsLost: 0,
   };
 }
 
@@ -159,7 +166,11 @@ export function migrate(state: GameState): GameState {
   for (const p of lesserPosts) if (!(p.id in state.lesserPosts)) state.lesserPosts[p.id] = null;
   for (const c of Object.values(state.characters)) if (c.lesserPost === undefined) c.lesserPost = null;
   if (!state.stats) state.stats = emptyStats();
+  else state.stats = { ...emptyStats(), ...state.stats };
   if (!state.rome.withheldUnlocks) state.rome.withheldUnlocks = [];
+  if (!state.map) {
+    state.map = { seed: (state.seed ^ 0x5bf03635) | 0, scouted: [], claimed: [], pendingScout: null };
+  }
   if (state.tribe.massingForRound === undefined) state.tribe.massingForRound = -999;
   for (const f of Object.values(state.families)) {
     if (f.grievances === undefined) f.grievances = 0;

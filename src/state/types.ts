@@ -109,7 +109,7 @@ export interface LogEntry {
   id: number;
   round: number;
   at: number;
-  kind: 'village' | 'council' | 'tribe' | 'rome' | 'raid' | 'event' | 'family' | 'system';
+  kind: 'village' | 'council' | 'tribe' | 'rome' | 'raid' | 'event' | 'family' | 'map' | 'system';
   text: string;
 }
 
@@ -139,6 +139,27 @@ export interface PlaytestStats {
   romeRequestsDeclined: number;
   peakPopulation: number;
   denariiSpentOnHaste: number;
+  sitesClaimed: number;
+  sitesLost: number;
+  siteRaidsRepelled: number;
+  scoutsLost: number;
+}
+
+/** A site the colony holds (DESIGN §5.3). */
+export interface ClaimedSite {
+  key: string;
+  siteId: string;
+  garrison: number;
+  claimedRound: number;
+}
+
+export interface MapState {
+  /** Fixed at founding. Terrain and sites are derived from it, never stored. */
+  seed: number;
+  scouted: string[];
+  claimed: ClaimedSite[];
+  /** Dispatched now, resolves at the next round (DESIGN §3.2). */
+  pendingScout: string | null;
 }
 
 export interface GameState {
@@ -163,6 +184,7 @@ export interface GameState {
   corruption: number;
   obstructed: Record<string, number>; // domain -> until round
   tribe: TribeState;
+  map: MapState;
   rome: RomeState;
   log: LogEntry[];
   logSeq: number;
