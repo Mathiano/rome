@@ -1,4 +1,4 @@
-import { config, events as eventDefs, activeTribe, type EventEffect, type EventChoice, type ResourceId } from '../data';
+import { config, events as eventDefs, type EventEffect, type EventChoice, type ResourceId } from '../data';
 import type { GameState } from '../state/types';
 import { chance, pick, weighted } from '../state/rng';
 import { log } from '../state/store';
@@ -33,8 +33,11 @@ export function applyEffect(state: GameState, e: EventEffect, targetId?: string)
   if (typeof e.corruption === 'number') {
     state.corruption = Math.max(config.corruption.min, Math.min(config.corruption.max, state.corruption + e.corruption));
   }
-  if (typeof e.fear === 'number') state.tribe.fear = Math.max(0, Math.min(100, state.tribe.fear + e.fear));
-  if (typeof e.trust === 'number') state.tribe.trust = Math.max(0, Math.min(100, state.tribe.trust + e.trust));
+  // What the colony does is heard by every tribe, not just the nearest.
+  for (const t of Object.values(state.tribes)) {
+    if (typeof e.fear === 'number') t.fear = Math.max(0, Math.min(100, t.fear + e.fear));
+    if (typeof e.trust === 'number') t.trust = Math.max(0, Math.min(100, t.trust + e.trust));
+  }
   if (typeof e.romeFavour === 'number') state.rome.favour += e.romeFavour;
   clampToCapacity(state);
 }
@@ -66,7 +69,6 @@ export function rollEvent(state: GameState): void {
   }
   applyEffect(state, e, target?.id);
   log(state, 'event', `${ev.title}: ${text}`);
-  void activeTribe;
 }
 
 export function pendingChoices(state: GameState): EventChoice[] {

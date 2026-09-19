@@ -1,4 +1,4 @@
-import { activeTribe, building, config, envoys, lesserPosts as lesserDefs, posts as postDefs, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
+import { activeTribes, building, config, envoys, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, eligibleBuildings, rushPrice, slotById } from '../village/construction';
@@ -38,8 +38,8 @@ export interface PanelHandlers {
   onBuild(slotId: string, buildingId: string): void;
   onRush(slotId: string): void;
   onPolitical(a: Political): void;
-  onEnvoy(id: string): void;
-  onTrade(amount: number): void;
+  onEnvoy(tribeId: string, envoyId: string): void;
+  onTrade(tribeId: string, amount: number): void;
   onExport(): void;
   onImport(json: string): void;
   onReset(): void;
@@ -305,36 +305,43 @@ function renderFamilies(s: GameState): string {
 }
 
 function renderTribe(s: GameState): string {
-  const t = s.tribe;
-  const def = activeTribe();
-  let out = `<h2>${esc(def.name)}</h2><p class="muted">${esc(def.description)}</p>`;
-  out += `<p>Fear <b>${n(t.fear)}</b></p><div class="meter fear"><i style="width:${t.fear}%"></i></div>`;
-  out += `<p>Trust <b>${n(t.trust)}</b></p><div class="meter trust"><i style="width:${t.trust}%"></i></div>`;
-  out += `<p>Their strength ${n(raidStrength(s))} against your defence <b>${n(defenceStrength(s))}</b> (walls, ${homeMilitia(s)} of ${militiaPool(s)} militia at home, the garrison prefect). Raid chance this round: <b>${Math.round(raidChance(s) * 100)}%</b>.</p>`;
-  if (t.allied) out += `<p style="color:var(--moss)">Allied. They do not raid.</p>`;
-  if (t.hostagesUntilRound > s.round) out += `<p>Hostages held: no raids until round ${t.hostagesUntilRound}.</p>`;
-  if (t.leakedUntilRound > s.round) out += `<p style="color:var(--terracotta)">They know the size of your stores (until round ${t.leakedUntilRound}).</p>`;
-  if (t.massingForRound >= s.round) {
-    const price = appeasePrice(s);
-    const odds = raidStrength(s) > defenceStrength(s) ? 'Your walls will not hold them.' : 'Your walls should hold.';
-    out += `<div class="card demand"><b>They are massing. The raid lands on round ${t.massingForRound}.</b>
-      <p>${odds}</p><p class="muted">Buying them off raises trust and lowers their fear of you: they learn that you pay.</p>
-      <button class="act" data-political="appease" ${s.resources.denarii < price ? 'disabled' : ''}>Pay ${price} denarii to turn them back</button></div>`;
-  }
-  out += `<h3>Envoys</h3>`;
-  if (t.pendingEnvoy) out += `<p>An envoy is on the road: <b>${esc(envoys.find((e) => e.id === t.pendingEnvoy)?.name ?? t.pendingEnvoy)}</b>. It resolves at the next round.</p>`;
-  for (const e of envoys) {
-    out += `<div class="card"><b>${esc(e.name)}</b><p class="muted">${esc(e.description)}</p><button class="act" data-envoy="${e.id}" ${t.pendingEnvoy ? 'disabled' : ''}>Send</button></div>`;
-  }
-  out += `<h3>Trade</h3>`;
-  if (t.tradeOpen) {
-    const rate = tradeRate(s);
-    out += `<p>They give ${def.trade.gives} for ${def.trade.wants} at ${n(rate)} : 1.</p>`;
-    for (const amt of [20, 50, 100]) {
-      out += `<button class="act" data-trade="${amt}" ${s.resources[def.trade.wants] < amt * rate ? 'disabled' : ''}>${amt} ${def.trade.gives} for ${Math.ceil(amt * rate)} ${def.trade.wants}</button> `;
+  let out = `<h2>The tribes</h2><p class="muted">Three peoples, and they watch each other. Warming to one cools those who hate it (DESIGN §7).</p>`;
+  out += `<p>Your walls hold at <b>${n(defenceStrength(s))}</b> with ${homeMilitia(s)} of ${militiaPool(s)} men at home.</p>`;
+  for (const def of activeTribes()) {
+    const t = s.tribes[def.id];
+    if (!t) continue;
+    const rel = [
+      ...def.likes.map((o) => `friendly to ${esc(tribeDef(o).name)}`),
+      ...def.hates.map((o) => `hostile to ${esc(tribeDef(o).name)}`),
+    ].join(', ');
+    out += `<div class="card ${t.allied ? 'player' : 'rival'}"><b>${esc(def.name)}</b> <span class="muted">${esc(def.archetype)}${rel ? ` · ${rel}` : ''}</span>
+      <p class="muted">${esc(def.description)}</p>
+      <p>Fear <b>${n(t.fear)}</b></p><div class="meter fear"><i style="width:${t.fear}%"></i></div>
+      <p>Trust <b>${n(t.trust)}</b></p><div class="meter trust"><i style="width:${t.trust}%"></i></div>
+      <p class="muted">Strength ${n(raidStrength(s, t))} · raid chance ${Math.round(raidChance(s, t) * 100)}% a round</p>`;
+    if (t.allied) out += `<p style="color:var(--moss)">Allied. They do not raid.</p>`;
+    if (t.hostagesUntilRound > s.round) out += `<p>Hostages held: no raids until round ${t.hostagesUntilRound}.</p>`;
+    if (t.leakedUntilRound > s.round) out += `<p style="color:var(--terracotta)">They know the size of your stores (until round ${t.leakedUntilRound}).</p>`;
+    if (t.massingForRound >= s.round) {
+      const price = appeasePrice(s, def.id);
+      const odds = raidStrength(s, t) > defenceStrength(s) ? 'Your walls will not hold them.' : 'Your walls should hold.';
+      out += `<div class="card demand"><b>Massing. The raid lands on round ${t.massingForRound}.</b><p>${odds}</p>
+        <button class="act" data-political="appease" data-tribe="${def.id}" ${s.resources.denarii < price ? 'disabled' : ''}>Pay ${price} denarii to turn them back</button></div>`;
     }
-  } else {
-    out += `<p class="muted">No trade agreement. Send an envoy to offer trade (needs a market).</p>`;
+    if (t.pendingEnvoy) {
+      out += `<p>An envoy is on the road: <b>${esc(envoys.find((e) => e.id === t.pendingEnvoy)?.name ?? t.pendingEnvoy)}</b>.</p>`;
+    } else {
+      out += `<select data-select-envoy="${def.id}">${envoys.map((e) => `<option value="${e.id}">${esc(e.name)} — ${esc(e.description)}</option>`).join('')}</select>
+        <button class="act" data-envoy="${def.id}">Send an envoy</button>`;
+    }
+    if (t.tradeOpen) {
+      const rate = tradeRate(s, def.id);
+      out += `<p class="muted">Trades ${def.trade.gives} for ${def.trade.wants} at ${n(rate)} : 1.</p>`;
+      for (const amt of [20, 50]) {
+        out += `<button class="act secondary" data-trade="${amt}" data-tribe="${def.id}" ${s.resources[def.trade.wants] < amt * rate ? 'disabled' : ''}>${amt} ${def.trade.gives} for ${Math.ceil(amt * rate)} ${def.trade.wants}</button> `;
+      }
+    }
+    out += `</div>`;
   }
   return out;
 }
@@ -441,8 +448,13 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.refuse) return h.onPolitical({ type: 'refuse_demand', familyId: d.refuse });
     if (d.political === 'bribe' && d.family) return h.onPolitical({ type: 'bribe', familyId: d.family });
     if (d.political) return h.onPolitical({ type: d.political as Exclude<Political['type'], 'appoint' | 'dismiss' | 'bribe'> } as Political);
-    if (d.envoy) return h.onEnvoy(d.envoy);
-    if (d.trade) return h.onTrade(Number(d.trade));
+    if (d.envoy) {
+      const sel = panel.querySelector<HTMLSelectElement>(`select[data-select-envoy="${d.envoy}"]`);
+      if (sel) return h.onEnvoy(d.envoy, sel.value);
+      return;
+    }
+    if (d.trade && d.tribe) return h.onTrade(d.tribe, Number(d.trade));
+    if (d.political === 'appease' && d.tribe) return h.onPolitical({ type: 'appease', tribeId: d.tribe });
     if ('export' in d) return h.onExport();
     if ('import' in d) {
       const ta = panel.querySelector<HTMLTextAreaElement>('textarea[data-import-text]');

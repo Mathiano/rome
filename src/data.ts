@@ -173,8 +173,19 @@ export function post(id: string): PostDef {
   if (!p) throw new Error(`unknown post ${id}`);
   return p;
 }
-export function activeTribe(): TribeDef {
-  const t = tribes.find((x) => x.active);
-  if (!t) throw new Error('no active tribe');
+export function activeTribes(): TribeDef[] {
+  const list = tribes.filter((x) => x.active);
+  if (!list.length) throw new Error('no active tribe');
+  return list;
+}
+
+export function tribeDef(id: string): TribeDef {
+  const t = tribes.find((x) => x.id === id);
+  if (!t) throw new Error(`unknown tribe ${id}`);
   return t;
+}
+
+/** The first active tribe. Kept for the few places that need one by default. */
+export function activeTribe(): TribeDef {
+  return activeTribes()[0];
 }

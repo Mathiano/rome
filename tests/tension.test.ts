@@ -4,8 +4,15 @@ import { Game } from '../src/game';
 import { acceptDemand, refuseDemand, rivalTurn } from '../src/politics/families';
 import { applyEffect, pendingChoices, resolveChoice, rollEvent } from '../src/politics/events';
 import { appease, appeasePrice, tribeTurn } from '../src/tribes/turn';
+import { dispatchEnvoy, propagateWeb, resolveEnvoy } from '../src/tribes/envoys';
+import { serialise, deserialise } from '../src/state/store';
 import { holderOf } from '../src/politics/posts';
 import { config, events } from '../src/data';
+import type { GameState } from '../src/state/types';
+/** v0.1 woke the other two tribes; these tests speak to the raider. */
+const TRIBE_ID = 'chatti';
+const TRIBE = (s: GameState) => s.tribes[TRIBE_ID];
+
 
 describe('rival ambitions', () => {
   function withDemand(seed = 4) {
@@ -102,7 +109,7 @@ describe('choice events', () => {
     applyEffect(s, { grain: -30, corruption: 5, fear: 10, trust: -5, romeFavour: 3, attitude: -4 });
     expect(s.resources.grain).toBe(70);
     expect(s.corruption).toBe(5);
-    expect(s.tribe.fear).toBe(35);
+    expect(TRIBE(s).fear).toBe(35);
     expect(s.rome.favour).toBe(config.rome.startFavour + 3);
   });
 });
@@ -110,48 +117,48 @@ describe('choice events', () => {
 describe('raid foreshadowing', () => {
   it('a raid is announced a round before it lands', () => {
     const s = createInitialState(0, 1);
-    s.tribe.fear = 0;
-    s.tribe.strength = 500;
+    TRIBE(s).fear = 0;
+    TRIBE(s).strength = 500;
     s.round = 10;
     let warned = false;
     for (let i = 0; i < 40 && !warned; i++) {
       s.round += 1;
       tribeTurn(s);
-      warned = s.tribe.massingForRound >= s.round;
+      warned = TRIBE(s).massingForRound >= s.round;
     }
     expect(warned).toBe(true);
     const wood = s.resources.wood;
     expect(s.resources.wood).toBe(wood); // nothing taken yet
-    s.round = s.tribe.massingForRound;
+    s.round = TRIBE(s).massingForRound;
     tribeTurn(s);
-    expect(s.tribe.massingForRound).toBeLessThan(s.round);
-    expect(s.tribe.lastRaidRound).toBe(s.round);
+    expect(TRIBE(s).massingForRound).toBeLessThan(s.round);
+    expect(TRIBE(s).lastRaidRound).toBe(s.round);
   });
   it('paying them off cancels the raid and teaches them you pay', () => {
     const s = createInitialState(0, 1);
     s.round = 5;
-    s.tribe.massingForRound = 6;
+    TRIBE(s).massingForRound = 6;
     s.resources.denarii = 5000;
-    const price = appeasePrice(s);
-    const trust = s.tribe.trust;
-    const fear = s.tribe.fear;
-    appease(s);
+    const price = appeasePrice(s, TRIBE_ID);
+    const trust = TRIBE(s).trust;
+    const fear = TRIBE(s).fear;
+    appease(s, TRIBE_ID);
     expect(s.resources.denarii).toBe(5000 - price);
-    expect(s.tribe.trust).toBe(trust + config.tribe.appeaseTrust);
-    expect(s.tribe.fear).toBe(fear + config.tribe.appeaseFear);
+    expect(TRIBE(s).trust).toBe(trust + config.tribe.appeaseTrust);
+    expect(TRIBE(s).fear).toBe(fear + config.tribe.appeaseFear);
     s.round = 6;
     tribeTurn(s);
-    expect(s.tribe.lastRaidRound).toBeLessThan(0);
-    expect(() => appease(s)).toThrow(/massing/);
+    expect(TRIBE(s).lastRaidRound).toBeLessThan(0);
+    expect(() => appease(s, TRIBE_ID)).toThrow(/massing/);
   });
   it('the warning turn does not also raid', () => {
     const g = new Game(createInitialState(0, 6));
-    g.state.tribe.strength = 400;
-    g.state.tribe.fear = 0;
+    TRIBE(g.state).strength = 400;
+    TRIBE(g.state).fear = 0;
     for (let i = 0; i < 12; i++) {
       const before = g.state.resources.wood;
       g.act({ type: 'convene' }, i + 1);
-      if (g.state.tribe.massingForRound === g.state.round + 1) {
+      if (TRIBE(g.state).massingForRound === g.state.round + 1) {
         expect(g.state.resources.wood).toBeGreaterThanOrEqual(before - 0.001);
         return;
       }
@@ -172,5 +179,54 @@ describe('choice events reach the player in normal play', () => {
     }
     expect(firedIn).toBeGreaterThan(0);
     expect(firedIn).toBeLessThan(60);
+  });
+});
+
+describe('the tribes watch each other (DESIGN §7)', () => {
+  it('warming to one cools those who hate it and warms its friends', () => {
+    const s = createInitialState(0, 1);
+    const before = { cherusci: s.tribes.cherusci.trust, sugambri: s.tribes.sugambri.trust };
+    propagateWeb(s, 'chatti', 20);
+    // the Cherusci hate the Chatti; the Sugambri are friendly to them
+    expect(s.tribes.cherusci.trust).toBeLessThan(before.cherusci);
+    expect(s.tribes.sugambri.trust).toBeGreaterThan(before.sugambri);
+    expect(s.tribes.chatti.trust).toBe(createInitialState(0, 1).tribes.chatti.trust);
+  });
+
+  it('an alliance moves the web hardest', () => {
+    const s = createInitialState(0, 1);
+    s.tribes.chatti.trust = 100;
+    s.tribes.chatti.fear = 0;
+    const hostileBefore = s.tribes.cherusci.trust;
+    dispatchEnvoy(s, 'chatti', 'propose_alliance');
+    resolveEnvoy(s, s.tribes.chatti);
+    expect(s.tribes.chatti.allied).toBe(true);
+    expect(s.tribes.cherusci.trust).toBeLessThan(hostileBefore);
+  });
+
+  it('every tribe raids on its own account, and an ally does not', () => {
+    const s = createInitialState(0, 1);
+    s.round = 40;
+    for (const t of Object.values(s.tribes)) { t.fear = 0; t.strength = 300; }
+    s.tribes.sugambri.allied = true;
+    const massed = new Set<string>();
+    for (let i = 0; i < 40; i++) {
+      s.round += 1;
+      tribeTurn(s);
+      for (const t of Object.values(s.tribes)) if (t.massingForRound >= s.round) massed.add(t.id);
+    }
+    expect(massed.has('chatti') || massed.has('cherusci')).toBe(true);
+    expect(massed.has('sugambri')).toBe(false);
+  });
+
+  it('a single-tribe save from before v0.1 migrates to three', () => {
+    const s = createInitialState(0, 1);
+    const raw = JSON.parse(serialise(s)) as Record<string, unknown> & { tribes?: unknown; tribe?: unknown };
+    raw.tribe = { ...(raw.tribes as Record<string, unknown>).chatti as object, trust: 77 };
+    delete raw.tribes;
+    const back = deserialise(JSON.stringify(raw));
+    expect(Object.keys(back.tribes).sort()).toEqual(['chatti', 'cherusci', 'sugambri']);
+    expect(back.tribes.chatti.trust).toBe(77);
+    expect((back as unknown as { tribe?: unknown }).tribe).toBeUndefined();
   });
 });

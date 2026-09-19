@@ -6,7 +6,7 @@
  */
 import type { GameState, ClaimedSite } from '../state/types';
 import type { Cost, ResourceId } from '../data';
-import { config, activeTribe } from '../data';
+import { config, tribeDef } from '../data';
 import { log } from '../state/store';
 import { chance, nextRandom } from '../state/rng';
 import { key as hexKey, parseKey, ring } from './grid';
@@ -67,7 +67,7 @@ export function resolveScout(state: GameState): void {
     const sc = mapConfig.scout;
     state.population = Math.max(1, state.population - sc.campCasualties);
     state.resources.denarii = Math.max(0, state.resources.denarii + sc.campDenarii);
-    state.tribe.fear = Math.max(0, Math.min(100, state.tribe.fear + sc.campFear));
+    for (const t of Object.values(state.tribes)) t.fear = Math.max(0, Math.min(100, t.fear + sc.campFear));
     state.stats.scoutsLost += 1;
     log(state, 'map', `${def.name} at ${k}: the scouts are ambushed. ${sc.campCasualties} men do not come back.`);
     return;
@@ -134,10 +134,16 @@ export function siteDefence(c: ClaimedSite): number {
   return c.garrison * mapConfig.hold.garrisonStrengthPerMan;
 }
 
+/** Whoever is strongest and not sworn to you is who comes for the far holdings. */
+export function siteAggressor(state: GameState) {
+  const hostile = Object.values(state.tribes).filter((t) => !t.allied);
+  return hostile.sort((a, b) => b.strength - a.strength)[0] ?? null;
+}
+
 export function siteRaidChance(state: GameState, c: ClaimedSite): number {
   const h = mapConfig.hold;
   if (state.round < h.graceRounds) return 0;
-  if (state.tribe.allied) return 0;
+  if (!siteAggressor(state)) return 0;
   return Math.max(0, Math.min(0.9, h.raidChanceBase + h.raidChancePerRing * ringOf(c.key)));
 }
 
@@ -185,20 +191,22 @@ export function mapTurn(state: GameState): void {
     }
   }
 
-  const tribeStrength = state.tribe.strength * mapConfig.hold.tribeShareAgainstSite;
+  const aggressor = siteAggressor(state);
+  if (!aggressor) return;
+  const tribeStrength = aggressor.strength * mapConfig.hold.tribeShareAgainstSite;
   for (const c of [...state.map.claimed]) {
     if (!chance(state, siteRaidChance(state, c))) continue;
     const def = siteDefence(c);
     const attack = tribeStrength * (0.75 + nextRandom(state) * 0.5);
     const name = site(c.siteId).name;
     if (def >= attack) {
-      log(state, 'raid', `${activeTribe().name} test the garrison at ${name} and are driven off.`);
-      state.tribe.fear = Math.min(100, state.tribe.fear + config.raid.fearGainOnRepulse / 2);
+      log(state, 'raid', `${tribeDef(aggressor.id).name} test the garrison at ${name} and are driven off.`);
+      aggressor.fear = Math.min(100, aggressor.fear + config.raid.fearGainOnRepulse / 2);
       state.stats.siteRaidsRepelled += 1;
     } else {
       state.map.claimed = state.map.claimed.filter((x) => x.key !== c.key);
       state.stats.sitesLost += 1;
-      log(state, 'raid', `${activeTribe().name} overrun ${name} at ${c.key}. ${c.garrison} men are lost and the holding with them.`);
+      log(state, 'raid', `${tribeDef(aggressor.id).name} overrun ${name} at ${c.key}. ${c.garrison} men are lost and the holding with them.`);
     }
   }
   void hexKey;

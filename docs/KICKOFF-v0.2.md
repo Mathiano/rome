@@ -60,9 +60,11 @@ Pillar 5 says politics carry the tension. Today they mostly tick over.
 
 ## 6. Recommended order
 
-> **Status 2026-09-19:** items 1–5 below are done on `claude/colony-depth`. See
-> `docs/CAPSULE-SESSION-2026-09-19.md`. Everything under "waits for a week of
-> play" is still open.
+> **Status 2026-09-19:** this whole list is done on `claude/colony-depth`, plus
+> portraits, tier-3 animation, lesser offices, Rome favour, telemetry and a
+> first balance pass. See `docs/CAPSULE-SESSION-2026-09-19.md`. Work then moved
+> on to v0.1 (world map, site claims, three tribes) — see
+> `docs/CAPSULE-SESSION-2026-09-19b.md`.
 
 
 1. **Sprites and ground.** Everything else is judged through them, and a playtester cannot form opinions about a village of labelled diamonds.

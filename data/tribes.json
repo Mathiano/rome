@@ -1,5 +1,5 @@
 {
-  "_comment": "\u2705 DESIGN \u00a77: v0 uses one tribe, the Chatti as the raider. The other two are listed inactive for v0.1 (\ud83d\udfe1 names). Disposition axes: fear and trust, 0\u2013100.",
+  "_comment": "Three hand-authored tribes (DESIGN \u00a77), each with its own fear and trust, envoys and raids. `likes` and `hates` are the Rome: Total War web: warming to one cools those who hate it and warms those who like it.",
   "tribes": [
     {
       "id": "chatti",
@@ -19,7 +19,9 @@
         "wants": "grain",
         "ratio": 1.5
       },
-      "likes": [],
+      "likes": [
+        "sugambri"
+      ],
       "hates": [
         "cherusci"
       ]
@@ -28,7 +30,7 @@
       "id": "cherusci",
       "name": "The Cherusci",
       "archetype": "wary",
-      "active": false,
+      "active": true,
       "description": "Forest people of the Weser. Slow to trust, slow to forgive.",
       "start": {
         "fear": 30,
@@ -44,14 +46,15 @@
       },
       "likes": [],
       "hates": [
-        "chatti"
+        "chatti",
+        "sugambri"
       ]
     },
     {
       "id": "sugambri",
       "name": "The Sugambri",
       "archetype": "trader",
-      "active": false,
+      "active": true,
       "description": "River people of the lower Rhine. They will sell anything to anyone.",
       "start": {
         "fear": 20,
@@ -68,7 +71,9 @@
       "likes": [
         "chatti"
       ],
-      "hates": []
+      "hates": [
+        "cherusci"
+      ]
     }
   ],
   "envoys": [

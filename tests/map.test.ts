@@ -10,6 +10,11 @@ import {
 } from '../src/map/sites';
 import { homeMilitia, militiaPool } from '../src/combat/militia';
 import { productionPerHour } from '../src/village/economy';
+import type { GameState } from '../src/state/types';
+/** v0.1 woke the other two tribes; these tests speak to the raider. */
+const TRIBE_ID = 'chatti';
+const TRIBE = (s: GameState) => s.tribes[TRIBE_ID];
+
 
 describe('hex grid', () => {
   it('rings, distance and neighbours agree', () => {
@@ -196,7 +201,7 @@ describe('claiming and holding', () => {
     const { s, k } = held(5);
     s.resources.denarii = 100000;
     s.round = mapConfig.hold.graceRounds + 1;
-    s.tribe.strength = 200;
+    TRIBE(s).strength = 200;
     for (let i = 0; i < 80 && claimOf(s, k); i++) { s.round += 1; mapTurn(s); }
     expect(claimOf(s, k)).toBeUndefined();
     expect(s.stats.sitesLost).toBeGreaterThan(0);
@@ -204,7 +209,7 @@ describe('claiming and holding', () => {
     const { s: s2, k: k2 } = held(5);
     s2.resources.denarii = 100000;
     s2.round = mapConfig.hold.graceRounds + 1;
-    s2.tribe.strength = 10;
+    TRIBE(s2).strength = 10;
     s2.population = 400;
     setGarrison(s2, k2, mapConfig.claim.garrisonMax, homeMilitia(s2));
     for (let i = 0; i < 40; i++) { s2.round += 1; mapTurn(s2); }

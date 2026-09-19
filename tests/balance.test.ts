@@ -4,6 +4,11 @@ import { Game } from '../src/game';
 import { checkBuild } from '../src/village/construction';
 import { defenceStrength, raidStrength } from '../src/combat/raids';
 import { config } from '../src/data';
+import type { GameState } from '../src/state/types';
+/** v0.1 woke the other two tribes; these tests speak to the raider. */
+const TRIBE_ID = 'chatti';
+const TRIBE = (s: GameState) => s.tribes[TRIBE_ID];
+
 
 const H = 3_600_000;
 const SEEDS = 12;
@@ -75,7 +80,7 @@ describe('balance: raids answer to the castellum', () => {
       repelled += g.state.stats.raidsRepelled;
       lost += g.state.stats.goodsLostToRaids;
       // the tribe keeps pace, so walls stay a race rather than a solved problem
-      expect(raidStrength(g.state), `seed ${seed}`).toBeGreaterThan(config.raid.baseDefence * 2);
+      expect(raidStrength(g.state, TRIBE(g.state)), `seed ${seed}`).toBeGreaterThan(config.raid.baseDefence * 2);
     }
     const rate = repelled / raids;
     expect(rate, `repelled ${repelled}/${raids}`).toBeGreaterThan(0.5);

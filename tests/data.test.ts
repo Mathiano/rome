@@ -21,9 +21,21 @@ describe('data integrity', () => {
   it('has five council posts in v0 (DESIGN §13)', () => {
     expect(posts).toHaveLength(5);
   });
-  it('has exactly one active tribe in v0 and three defined', () => {
+  it('has three tribes, all awake, with a coherent like and hate web (DESIGN §7)', () => {
     expect(tribes).toHaveLength(3);
-    expect(tribes.filter((t) => t.active)).toHaveLength(1);
+    expect(tribes.filter((t) => t.active)).toHaveLength(3);
+    const ids = new Set(tribes.map((t) => t.id));
+    for (const t of tribes) {
+      for (const other of [...t.likes, ...t.hates]) {
+        expect(ids.has(other), `${t.id} names ${other}`).toBe(true);
+        expect(other).not.toBe(t.id);
+      }
+      expect(t.likes.filter((x) => t.hates.includes(x)), `${t.id} both likes and hates`).toHaveLength(0);
+    }
+    // the web has to actually connect, or warming to one cools nobody
+    expect(tribes.some((t) => t.hates.length > 0)).toBe(true);
+    expect(tribes.some((t) => t.likes.length > 0)).toBe(true);
+    expect(new Set(tribes.map((t) => t.archetype)).size).toBe(3);
   });
   it('has two active families in v0', () => {
     expect(families.filter((f) => f.active)).toHaveLength(2);

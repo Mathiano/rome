@@ -183,7 +183,7 @@ export interface GameState {
   office: string | null;
   corruption: number;
   obstructed: Record<string, number>; // domain -> until round
-  tribe: TribeState;
+  tribes: Record<string, TribeState>;
   map: MapState;
   rome: RomeState;
   log: LogEntry[];

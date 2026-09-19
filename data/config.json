@@ -131,7 +131,9 @@
     "appeaseBase": 50,
     "appeasePerStrength": 1.4,
     "appeaseTrust": 9,
-    "appeaseFear": -7
+    "appeaseFear": -7,
+    "webShare": 0.45,
+    "allianceWebShare": 1.0
   },
   "rome": {
     "startFavour": 20,

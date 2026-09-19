@@ -82,7 +82,7 @@ function useLeverage(state: GameState, fam: Family): void {
       log(state, 'council', `Denarii go missing under the ${fam.name}'s ${postDef(postId).name}. Corruption rises.`);
       break;
     case 'leak':
-      state.tribe.leakedUntilRound = state.round + config.leverage.leakRounds;
+      for (const t of Object.values(state.tribes)) t.leakedUntilRound = state.round + config.leverage.leakRounds;
       log(state, 'council', `Word of the size of your stores reaches the tribes. The ${fam.name} deny everything.`);
       break;
   }

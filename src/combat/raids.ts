@@ -1,5 +1,5 @@
-import { config, unlocks, RESOURCE_IDS, activeTribe, type ResourceId } from '../data';
-import type { GameState } from '../state/types';
+import { config, unlocks, RESOURCE_IDS, tribeDef, type ResourceId } from '../data';
+import type { GameState, TribeState } from '../state/types';
 import { log } from '../state/store';
 import { buildingTier, hiddenPerResource } from '../village/storage';
 import { homeMilitia } from './militia';
@@ -20,22 +20,21 @@ export function defenceStrength(state: GameState): number {
   return d;
 }
 
-export function raidStrength(state: GameState): number {
-  const leaked = state.tribe.leakedUntilRound > state.round;
-  return state.tribe.strength * activeTribe().raidAppetite * (leaked ? config.raid.leakedStrengthMultiplier : 1);
+export function raidStrength(state: GameState, t: TribeState): number {
+  const leaked = t.leakedUntilRound > state.round;
+  return t.strength * tribeDef(t.id).raidAppetite * (leaked ? config.raid.leakedStrengthMultiplier : 1);
 }
 
 /** Probability the tribe raids this round. */
-export function raidChance(state: GameState): number {
+export function raidChance(state: GameState, t: TribeState): number {
   const r = config.raid;
-  const t = state.tribe;
   if (t.allied) return 0;
   if (state.round < r.graceRounds) return 0;
   if (t.hostagesUntilRound > state.round) return 0;
   if (state.round - t.lastRaidRound < r.minRoundsBetweenRaids) return 0;
   let p = r.baseChance + (100 - t.fear) * r.fearFactor - t.trust * r.trustFactor;
   if (t.leakedUntilRound > state.round) p += r.leakedChanceBonus;
-  return Math.max(0, Math.min(1, p * activeTribe().raidAppetite));
+  return Math.max(0, Math.min(1, p * tribeDef(t.id).raidAppetite));
 }
 
 /** Loss fraction from strength against strength (DESIGN §8.2). 0 when defence >= raid. */
@@ -52,8 +51,8 @@ export interface RaidResult {
   lost: Partial<Record<ResourceId, number>>;
 }
 
-export function resolveRaid(state: GameState): RaidResult {
-  const raid = raidStrength(state);
+export function resolveRaid(state: GameState, t: TribeState): RaidResult {
+  const raid = raidStrength(state, t);
   const defence = defenceStrength(state);
   const fraction = lossFraction(raid, defence);
   const hidden = hiddenPerResource(state);
@@ -67,16 +66,16 @@ export function resolveRaid(state: GameState): RaidResult {
       lost[id] = take;
     }
   }
-  state.tribe.lastRaidRound = state.round;
+  t.lastRaidRound = state.round;
   state.stats.raidsSuffered += 1;
   state.stats.goodsLostToRaids += Object.values(lost).reduce((a, b) => a + b, 0);
   if (fraction === 0) state.stats.raidsRepelled += 1;
-  const name = activeTribe().name;
+  const name = tribeDef(t.id).name;
   if (fraction === 0) {
-    state.tribe.fear = Math.min(100, state.tribe.fear + config.raid.fearGainOnRepulse);
+    t.fear = Math.min(100, t.fear + config.raid.fearGainOnRepulse);
     log(state, 'raid', `${name} raid the colony and are thrown back at the walls (${Math.round(raid)} against ${Math.round(defence)}).`);
   } else {
-    state.tribe.fear = Math.max(0, state.tribe.fear - config.raid.fearLossOnSuccess);
+    t.fear = Math.max(0, t.fear - config.raid.fearLossOnSuccess);
     const summary = Object.entries(lost).map(([k, v]) => `${v} ${k}`).join(', ') || 'nothing they could find';
     log(state, 'raid', `${name} raid the colony (${Math.round(raid)} against ${Math.round(defence)}) and carry off ${summary}.`);
   }

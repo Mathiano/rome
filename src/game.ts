@@ -29,7 +29,7 @@ export type Political =
   | { type: 'rome_decline' }
   | { type: 'accept_demand'; familyId: string }
   | { type: 'refuse_demand'; familyId: string }
-  | { type: 'appease' }
+  | { type: 'appease'; tribeId: string }
   | { type: 'claim'; hex: string }
   | { type: 'release'; hex: string }
   | { type: 'garrison'; hex: string; men: number }
@@ -52,9 +52,9 @@ export class Game {
     this.tick(now);
     rush(this.state, slotId, now);
   }
-  trade(amount: number, now = Date.now()): void {
+  trade(tribeId: string, amount: number, now = Date.now()): void {
     this.tick(now);
-    trade(this.state, amount);
+    trade(this.state, tribeId, amount);
   }
   /** Answering an event is not a move against anyone: no round runs. */
   choose(choiceId: string, now = Date.now()): void {
@@ -62,9 +62,9 @@ export class Game {
     resolveChoice(this.state, choiceId);
   }
   // --- preparation (no round) ---
-  dispatchEnvoy(envoyId: string, now = Date.now()): void {
+  dispatchEnvoy(tribeId: string, envoyId: string, now = Date.now()): void {
     this.tick(now);
-    dispatchEnvoy(this.state, envoyId);
+    dispatchEnvoy(this.state, tribeId, envoyId);
   }
   /** Scouts are prepared like an envoy and report at the next round. */
   scout(hex: string, now = Date.now()): void {
@@ -88,7 +88,7 @@ export class Game {
       case 'rome_decline': decline(s); break;
       case 'accept_demand': acceptDemand(s, a.familyId); break;
       case 'refuse_demand': refuseDemand(s, a.familyId); break;
-      case 'appease': appease(s); break;
+      case 'appease': appease(s, a.tribeId); break;
       case 'claim': claimSite(s, a.hex); break;
       case 'release': releaseSite(s, a.hex); break;
       case 'garrison': setGarrison(s, a.hex, a.men, spareMilitia(s)); break;

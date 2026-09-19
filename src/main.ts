@@ -97,7 +97,8 @@ function panelKey(now: number): string {
   const work = st.constructions.map((c) => `${c.slotId}:${Math.round(progressOf(c, now) * 40)}`).join(',');
   return [tab, selected, selectedHex, st.round, st.logSeq, res, work, Math.floor(st.population),
     Math.round(st.corruption), st.map.claimed.length, st.map.scouted.length, st.map.pendingScout,
-    st.tribe.pendingEnvoy, st.tribe.massingForRound, st.rome.activeRequestId].join('|');
+    Object.values(st.tribes).map((t) => `${t.pendingEnvoy}${t.massingForRound}${Math.round(t.trust)}${Math.round(t.fear)}`).join(''),
+    st.rome.activeRequestId].join('|');
 }
 
 function render(force = false): void {
@@ -133,8 +134,8 @@ bindPanel(panelEl, {
   onBuild: (slot, b) => guard(() => game.build(slot, b, dev.now())),
   onRush: (slot) => guard(() => game.rush(slot, dev.now())),
   onPolitical: (a) => guard(() => game.act(a, dev.now())),
-  onEnvoy: (id) => guard(() => game.dispatchEnvoy(id, dev.now())),
-  onTrade: (amt) => guard(() => game.trade(amt, dev.now())),
+  onEnvoy: (tribeId, envoyId) => guard(() => game.dispatchEnvoy(tribeId, envoyId, dev.now())),
+  onTrade: (tribeId, amt) => guard(() => game.trade(tribeId, amt, dev.now())),
   onExport: () => {
     const json = serialise(game.state);
     const blob = new Blob([json], { type: 'application/json' });

@@ -1,5 +1,5 @@
-import { config, families as familyDefs, layout, startResources, posts, lesserPosts, activeTribe, RESOURCE_IDS } from '../data';
-import type { GameState, Family, Character, Slot, LogEntry } from './types';
+import { config, families as familyDefs, layout, startResources, posts, lesserPosts, activeTribes, RESOURCE_IDS } from '../data';
+import type { GameState, Family, Character, Slot, LogEntry, TribeState } from './types';
 
 export function createInitialState(now: number = Date.now(), seed: number = (now ^ 0x9e3779b9) | 0): GameState {
   const slots: Slot[] = layout.slots.map((s) => ({
@@ -50,7 +50,6 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     }
   }
   const playerLeader = Object.values(characters).find((c) => c.familyId === 'player' && c.isLeader)!;
-  const tribe = activeTribe();
 
   const state: GameState = {
     version: config.saveVersion,
@@ -72,19 +71,19 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     office: playerLeader.id,
     corruption: 0,
     obstructed: {},
-    tribe: {
-      id: tribe.id,
-      fear: tribe.start.fear,
-      trust: tribe.start.trust,
-      strength: tribe.strength,
+    tribes: Object.fromEntries(activeTribes().map((t) => [t.id, {
+      id: t.id,
+      fear: t.start.fear,
+      trust: t.start.trust,
+      strength: t.strength,
       tradeOpen: false,
       allied: false,
       hostagesUntilRound: 0,
       leakedUntilRound: 0,
-      lastRaidRound: -999,
       massingForRound: -999,
+      lastRaidRound: -999,
       pendingEnvoy: null,
-    },
+    }])),
     map: {
       seed: (seed ^ 0x5bf03635) | 0,
       scouted: [],
@@ -168,10 +167,25 @@ export function migrate(state: GameState): GameState {
   if (!state.stats) state.stats = emptyStats();
   else state.stats = { ...emptyStats(), ...state.stats };
   if (!state.rome.withheldUnlocks) state.rome.withheldUnlocks = [];
+  // Saves from before the other two tribes woke up carry a single `tribe`.
+  const legacy = (state as unknown as { tribe?: TribeState }).tribe;
+  if (!state.tribes) state.tribes = {};
+  if (legacy && !state.tribes[legacy.id]) state.tribes[legacy.id] = legacy;
+  delete (state as unknown as { tribe?: TribeState }).tribe;
+  for (const t of activeTribes()) {
+    if (state.tribes[t.id]) continue;
+    state.tribes[t.id] = {
+      id: t.id, fear: t.start.fear, trust: t.start.trust, strength: t.strength,
+      tradeOpen: false, allied: false, hostagesUntilRound: 0, leakedUntilRound: 0,
+      massingForRound: -999, lastRaidRound: -999, pendingEnvoy: null,
+    };
+  }
   if (!state.map) {
     state.map = { seed: (state.seed ^ 0x5bf03635) | 0, scouted: [], claimed: [], pendingScout: null };
   }
-  if (state.tribe.massingForRound === undefined) state.tribe.massingForRound = -999;
+  for (const t of Object.values(state.tribes)) {
+    if (t.massingForRound === undefined) t.massingForRound = -999;
+  }
   for (const f of Object.values(state.families)) {
     if (f.grievances === undefined) f.grievances = 0;
     if (f.demand === undefined) f.demand = null;
