@@ -3,7 +3,7 @@ import { config } from './data';
 import { createInitialState, deserialise, loadFromLocalStorage, saveToLocalStorage, serialise, clearLocalStorage, SAVE_KEY } from './state/store';
 import { createDevClock, isDevRequested, DEV_SAVE_KEY, DEV_MULTIPLIERS } from './dev';
 import { createVillageView } from './render/village';
-import { bindPanel, renderHeader, renderPanel, type Tab } from './render/panel';
+import { bindPanel, pendingNews, renderHeader, renderNews, renderPanel, type Tab } from './render/panel';
 
 const dev = createDevClock(isDevRequested(location.search), () => Date.now(), (() => { try { return globalThis.localStorage ?? null; } catch { return null; } })());
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
@@ -48,9 +48,33 @@ function persist(): void {
   if (!saveToLocalStorage(game.state, saveKey)) toast('Could not save to this browser. Export your game.');
 }
 
+let newsEl: HTMLDivElement | null = null;
+function renderNewsOverlay(): void {
+  const news = pendingNews(game.state);
+  if (!news) {
+    newsEl?.remove();
+    newsEl = null;
+    return;
+  }
+  if (!newsEl) {
+    newsEl = document.createElement('div');
+    newsEl.className = 'news';
+    newsEl.addEventListener('click', (ev) => {
+      if (!(ev.target as HTMLElement).closest('[data-news-ok]')) return;
+      game.state.seenLogId = game.state.logSeq;
+      game.state.awayRounds = 0;
+      persist();
+      render(true);
+    });
+    villageEl.appendChild(newsEl);
+  }
+  newsEl.innerHTML = renderNews(news);
+}
+
 function render(force = false): void {
   const now = dev.now();
   header.innerHTML = renderHeader(game.state);
+  renderNewsOverlay();
   if (dev.enabled) renderDevBar(now);
   view.update(game.state, now, selected);
   const html = renderPanel(game, tab, selected, now);

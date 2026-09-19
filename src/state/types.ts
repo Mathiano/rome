@@ -88,10 +88,22 @@ export interface ActiveRequest {
 }
 
 export interface LogEntry {
+  id: number;
   round: number;
   at: number;
   kind: 'village' | 'council' | 'tribe' | 'rome' | 'raid' | 'event' | 'family' | 'system';
   text: string;
+}
+
+/** What a round produced, for the report the player is shown afterwards. */
+export interface RoundReport {
+  round: number;
+  at: number;
+  idle: boolean;
+  fromLogId: number;
+  population: number;
+  corruption: number;
+  resources: Resources;
 }
 
 export interface GameState {
@@ -116,4 +128,10 @@ export interface GameState {
   tribe: TribeState;
   rome: RomeState;
   log: LogEntry[];
+  logSeq: number;
+  /** Highest log id the player has acknowledged. Anything above it is news. */
+  seenLogId: number;
+  lastReport: RoundReport | null;
+  /** Rounds that ran while the player was away, pending a digest. */
+  awayRounds: number;
 }

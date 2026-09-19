@@ -32,6 +32,7 @@ describe('raids', () => {
   it('the garrison prefect adds discipline to defence; allies never raid', () => {
     const s = createInitialState(0, 1);
     const base = defenceStrength(s);
+    s.characters.c_nephew.gravitas = config.gravitas.rankThresholds[1];
     appoint(s, 'garrison', 'c_nephew');
     expect(defenceStrength(s)).toBe(base + s.characters.c_nephew.stats.discipline * config.raid.garrisonDisciplineWeight);
     s.tribe.allied = true;
