@@ -28,6 +28,9 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       colour: f.colour,
       attitude: f.attitude,
       memberIds: f.members.map((m) => m.id),
+      grievances: 0,
+      demand: null,
+      denounced: false,
     };
     for (const m of f.members) {
       characters[m.id] = {
@@ -77,6 +80,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       hostagesUntilRound: 0,
       leakedUntilRound: 0,
       lastRaidRound: -999,
+      massingForRound: -999,
       pendingEnvoy: null,
     },
     rome: {
@@ -96,6 +100,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     logSeq: 0,
     seenLogId: 0,
     lastReport: null,
+    pendingChoice: null,
     awayRounds: 0,
   };
   log(state, 'system', `${config.townName} is founded. ${playerLeader.name} holds the office of ${config.topOffice.title}.`);
@@ -136,6 +141,13 @@ export function migrate(state: GameState): GameState {
     state.seenLogId = state.logSeq;
     state.lastReport = null;
     state.awayRounds = 0;
+  }
+  if (state.pendingChoice === undefined) state.pendingChoice = null;
+  if (state.tribe.massingForRound === undefined) state.tribe.massingForRound = -999;
+  for (const f of Object.values(state.families)) {
+    if (f.grievances === undefined) f.grievances = 0;
+    if (f.demand === undefined) f.demand = null;
+    if (f.denounced === undefined) f.denounced = false;
   }
   state.version = config.saveVersion;
   return state;

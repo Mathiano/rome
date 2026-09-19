@@ -22,7 +22,9 @@ describe('news', () => {
     // a quiet round may produce nothing but the round marker, which is filtered out
     if (report) expect(report.title).toBe(`Round ${g.state.round}`);
     g.state.seenLogId = g.state.logSeq;
-    expect(pendingNews(g.state)).toBeNull();
+    // an unanswered event keeps the card up on purpose; otherwise it clears
+    if (g.state.pendingChoice) expect(pendingNews(g.state)).not.toBeNull();
+    else expect(pendingNews(g.state)).toBeNull();
   });
 
   it('digests the rounds that ran while the game was closed', () => {

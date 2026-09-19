@@ -60,7 +60,10 @@ function renderNewsOverlay(): void {
     newsEl = document.createElement('div');
     newsEl.className = 'news';
     newsEl.addEventListener('click', (ev) => {
-      if (!(ev.target as HTMLElement).closest('[data-news-ok]')) return;
+      const btn = (ev.target as HTMLElement).closest('button') as HTMLButtonElement | null;
+      if (!btn || btn.disabled) return;
+      if (btn.dataset.choice) return guard(() => game.choose(btn.dataset.choice!, dev.now()));
+      if (!btn.hasAttribute('data-news-ok')) return;
       game.state.seenLogId = game.state.logSeq;
       game.state.awayRounds = 0;
       persist();
@@ -68,7 +71,7 @@ function renderNewsOverlay(): void {
     });
     villageEl.appendChild(newsEl);
   }
-  newsEl.innerHTML = renderNews(news);
+  newsEl.innerHTML = renderNews(news, game.state);
 }
 
 function render(force = false): void {
@@ -89,6 +92,7 @@ function render(force = false): void {
 
 bindPanel(panelEl, {
   onTab: (t) => { tab = t; render(true); },
+  onChoice: (id) => guard(() => game.choose(id, dev.now())),
   onBuild: (slot, b) => guard(() => game.build(slot, b, dev.now())),
   onRush: (slot) => guard(() => game.rush(slot, dev.now())),
   onPolitical: (a) => guard(() => game.act(a, dev.now())),

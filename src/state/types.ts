@@ -34,6 +34,15 @@ export interface Character {
   causeOfDeath?: string;
 }
 
+/** What a rival house has asked of the player, and by when. */
+export interface Demand {
+  kind: 'post' | 'denarii';
+  postId?: string;
+  denarii?: number;
+  issuedRound: number;
+  dueRound: number;
+}
+
 export interface Family {
   id: string;
   name: string;
@@ -43,6 +52,10 @@ export interface Family {
   colour: string;
   attitude: number; // toward the player, -100..100
   memberIds: string[];
+  /** Refusals and slights remembered. Drives how far the house will go. */
+  grievances: number;
+  demand: Demand | null;
+  denounced: boolean;
 }
 
 export interface TribeState {
@@ -54,6 +67,8 @@ export interface TribeState {
   allied: boolean;
   hostagesUntilRound: number;
   leakedUntilRound: number;
+  /** The round a raid will land on, once scouts have seen them massing. */
+  massingForRound: number;
   lastRaidRound: number;
   pendingEnvoy: string | null;
 }
@@ -132,6 +147,8 @@ export interface GameState {
   /** Highest log id the player has acknowledged. Anything above it is news. */
   seenLogId: number;
   lastReport: RoundReport | null;
+  /** An event waiting on the player's answer. Nothing else is blocked by it. */
+  pendingChoice: { eventId: string; title: string; text: string } | null;
   /** Rounds that ran while the player was away, pending a digest. */
   awayRounds: number;
 }

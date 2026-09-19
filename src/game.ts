@@ -9,6 +9,9 @@ import { appoint, dismiss } from './politics/posts';
 import { bribe, seekRomeBacking } from './politics/intrigue';
 import { runRound } from './politics/rounds';
 import { dispatchEnvoy, trade } from './tribes/envoys';
+import { appease } from './tribes/turn';
+import { acceptDemand, refuseDemand } from './politics/families';
+import { resolveChoice } from './politics/events';
 import { deliver, sendRecruits, hostOfficial, decline } from './rome/requests';
 
 export type Political =
@@ -20,6 +23,9 @@ export type Political =
   | { type: 'rome_recruits' }
   | { type: 'rome_host' }
   | { type: 'rome_decline' }
+  | { type: 'accept_demand'; familyId: string }
+  | { type: 'refuse_demand'; familyId: string }
+  | { type: 'appease' }
   | { type: 'convene' };
 
 export class Game {
@@ -43,6 +49,11 @@ export class Game {
     this.tick(now);
     trade(this.state, amount);
   }
+  /** Answering an event is not a move against anyone: no round runs. */
+  choose(choiceId: string, now = Date.now()): void {
+    this.tick(now);
+    resolveChoice(this.state, choiceId);
+  }
   // --- preparation (no round) ---
   dispatchEnvoy(envoyId: string, now = Date.now()): void {
     this.tick(now);
@@ -61,6 +72,9 @@ export class Game {
       case 'rome_recruits': sendRecruits(s); break;
       case 'rome_host': hostOfficial(s); break;
       case 'rome_decline': decline(s); break;
+      case 'accept_demand': acceptDemand(s, a.familyId); break;
+      case 'refuse_demand': refuseDemand(s, a.familyId); break;
+      case 'appease': appease(s); break;
       case 'convene': break;
     }
     runRound(s, now);

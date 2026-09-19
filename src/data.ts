@@ -111,12 +111,23 @@ export interface UnlockDef {
   militiaBonus?: number;
   gravitas?: number;
 }
+export type EventEffect = Partial<Record<
+  'wood' | 'clay' | 'iron' | 'grain' | 'denarii' | 'population' | 'attitude' | 'gravitas' |
+  'corruption' | 'fear' | 'trust' | 'romeFavour' | 'illness' | 'grievance', number>>;
+export interface EventChoice {
+  id: string;
+  label: string;
+  text: string;
+  cost?: Cost;
+  effect: EventEffect;
+}
 export interface EventDef {
   id: string;
   weight: number;
   title: string;
   text: string;
-  effect: { type: string; [k: string]: number | string };
+  effect?: EventEffect;
+  choices?: EventChoice[];
 }
 
 export const config = configJson;
