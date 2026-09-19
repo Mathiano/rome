@@ -1,0 +1,52 @@
+{
+  "tileWidth": 64,
+  "ppu": 4,
+  "sprites": {
+    "lumber-camp-t1": {
+      "file": "lumber-camp-t1.png",
+      "width": 262,
+      "height": 177,
+      "ax": 130.6,
+      "ay": 107.21,
+      "ppu": 4,
+      "plateWidth": 64,
+      "source": "assets/src/lumber-camp-t1.jpg",
+      "trimOffset": [
+        110,
+        14
+      ],
+      "sourceScale": 0.324873,
+      "slopes": {
+        "left": 0.5129,
+        "right": -0.5275
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "lumber-camp-t3": {
+      "file": "lumber-camp-t3.png",
+      "width": 263,
+      "height": 179,
+      "ax": 129.06,
+      "ay": 111.8,
+      "ppu": 4,
+      "plateWidth": 64,
+      "source": "assets/src/lumber-camp-t3.jpg",
+      "trimOffset": [
+        318,
+        0
+      ],
+      "sourceScale": 0.118245,
+      "slopes": {
+        "left": 0.511,
+        "right": -0.528
+      },
+      "overhangPx": [
+        1.0,
+        41.0
+      ]
+    }
+  }
+}

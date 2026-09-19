@@ -17,3 +17,8 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install -r tools/artgen/requirements.txt
+      - run: npm run assets:selftest

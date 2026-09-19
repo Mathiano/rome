@@ -72,3 +72,114 @@ Also not in the doc and decided here (all 🟡):
   - Multiplier and virtual offset persist under `rome.dev.clock` so a reload in dev mode continues where it was. That key is not part of any save.
   - Without the flag there is no dev bar, no dev code path runs, and the save format has no dev fields (tested).
 - **Verified** ✅ 90 tests. Headless Chromium: no dev bar on the normal URL; with `?dev=1` a 24 h skip runs the idle round and fills the stores; the 600× multiplier is covered by the unit test, not the browser run; the real save slot is byte-identical before and after; returning to the normal URL shows the unwarped colony.
+
+---
+
+## Addendum — 2026-09-17, real art through the pipeline and the loop tool
+
+Inputs landed on the branch by upload: `assets/style/PROMPTS.md`, `assets/style/anchor-v1.jpg`, `assets/src/lumber-camp-t1.jpg`, `assets/src/lumber-camp-t3-trees.mp4`.
+
+### artgen on real art ✅
+
+| Input | Result |
+|---|---|
+| `lumber-camp-t1.jpg` | passes: slopes +0.513 / −0.528, sprite 262×177 px, anchor (130.6, 107.2). In the village. |
+| `anchor-v1.jpg` | failed first: it sits on a painted grey checkerboard (140 / 195), not white. The keyer now also keys the neutral-grey band between the two dominant border greys and despeckles, so it passes: slopes +0.528 / −0.528. Output in `assets/style/`, not in the buildings manifest. |
+
+`build.py` entries now record `trimOffset` and `sourceScale` so overlays can be mapped from source pixels into sprite space. Older entries without them are rejected by `loop.py` with a message to regenerate.
+
+### `tools/artgen/loop.py` ✅ (spec from Mathias, 2026-09-17)
+
+Frames via ffmpeg at 12 fps (system ffmpeg, else `imageio-ffmpeg`'s static build; the Playwright ffmpeg in this sandbox has no H.264 decoder). Best loop window over N = 12..18 by mean absolute grey difference, top three printed. Envelope of the window frames against the still registered into frame space (plate corners; correlation-search fallback; `--identity` when the still is a frame). Moving pixel = envelope > 40 (max channel) **and** at least 40% of its 9×9 neighbourhood also moves, so codec flicker on every outline does not count; without that filter the real clip measured 73% of the frame and would fail. Bounding box printed as % of frame area; `LoopError` above 40%. Crop + pad, border-connected keying, horizontal sheet ≤ 16 frames ≤ 256 px tall, manifest entry `{type:"loop", x, y, width, height, frames, fps, frameWidth, frameHeight, file, licence, source, window, movingArea}` positioned relative to the plate anchor in sprite pixels. `--selftest` covers the exact-period case, the position maths, the whole-frame re-render rejection and the identity path; CI runs it.
+
+### The real clip 🟡
+
+- **Loop:** best window start 49, N 12, score 1.88 (top three: 49/12, 49/13, 48/15).
+- **Moving region:** trees and crane, x 734–1151, y 1–428 = **19.3%** of the frame. Passes.
+- **Sheet:** `assets/overlays/lumber-camp-t3-trees.png`, 12 frames of 254×256 at 12 fps, 1.4 MB. Licence field as instructed.
+- 🔴 **The clip is not an animation of a still we have.** It shows a tier-3 lumber camp (chimney, crane, three pines) and the only still in the repo is tier 1, a different building. There is no `lumber-camp-t3.jpg`. I ran the tool with the clip's own first frame as the still (`--identity`) and a manual anchor (`--anchor 634,445`, the plate's left-corner height and bottom-corner x). The overlay is therefore in a **standalone** `assets/overlays/manifest.json`, not attached to a sprite, and it does not render in the village. That is the honest state, not a bug.
+- 🔴 **The t3 render will fail artgen as drawn.** The pines overhang the plate on the right, so the rightmost opaque pixel is a tree and the plate test fails (measured right slope −0.92 on the frame). Per PROMPTS.md, one structure on one plate: the trees need to stand inside the plate. Re-prompt before generating `lumber-camp-t3.jpg`.
+- 🟡 The clip also has a low-amplitude wobble on every edge. The density filter hides it for detection, but the cropped sheet still carries static shed and log-pile pixels that will shimmer over the sprite. Acceptable for a PoC; a cleaner clip fixes it.
+
+### Renderer ✅
+
+`place()` resolves `overlays` on a sprite entry into scene units; `loopOverlay()` draws a nested `<svg>` clipped to one frame with the sheet stepping left via `steps(frames)`. Unit-tested with a synthetic entry; not yet seen with real art because no sprite carries an overlay.
+
+### Verified ✅
+
+56 tests; `npm run build`; both self-tests; headless render of the village with the real lumber camp sprite on its tile (screenshot sent).
+
+---
+
+## Addendum — 2026-09-18, real t3 still and clip
+
+Inputs: `assets/src/lumber-camp-t3.jpg` and a re-uploaded `lumber-camp-t3-trees.mp4`.
+
+### Plate detection is now robust to overhangs ✅
+
+The t3 still failed the plate assertion: right slope −0.851. Cause confirmed by inspection — the rightmost opaque pixel is a **pine branch overhanging the plate**, not the plate's corner. The trees are intended art (the clip animates them), so the detector was the thing at fault, not the render.
+
+`plate_corners()` no longer takes the plain extreme pixels. It fits each of the plate's two bottom edges to the bottom silhouette with a Theil-Sen (median-of-pairwise-slopes) line, then takes the furthest point still on that line. Overhanging foliage, eaves and crane arms sit *above* the plate edge, so they fall off the fit and no longer drag the corner out. The loud assertion is unchanged.
+
+| Image | Slopes | Anchor | Overhang L/R (source px) |
+|---|---|---|---|
+| `anchor-v1` | +0.511 / −0.528 | (129.30, 109.14) | 0 / 0 |
+| `lumber-camp-t1` | +0.513 / −0.528 | (130.60, 107.21) | 0 / 0 |
+| `lumber-camp-t3` | +0.511 / −0.528 | (129.06, 111.80) | 1 / 41 |
+
+The t1 anchor is **unchanged to the pixel**, so the new detector is backwards compatible on art that never overhung. Entries now carry `overhangPx`. A self-test case with a blob overhanging the plate locks this in, and the skewed-plate rejection still passes.
+
+🟡 **Consequence for the anchor convention.** The anchor is the plate centre, which is only the sprite's horizontal centre when nothing overhangs. `tests/sprites.test.ts` asserted the latter; it now asserts the real invariant — the plate fits either side of the anchor, and any off-centre amount is explained by `overhangPx`.
+
+### The t3 sprite is in the village ✅
+
+`assets/buildings/lumber-camp-t3.png`, 263×179, renders on its tile with the correct anchor, production +200/h, panel reading "at its top tier". Screenshot sent.
+
+### The clip is rejected, and the gate is right 🔴
+
+`loop.py` with the real still (no `--identity`) fails: **moving region 65.3%** of the frame, above the 40% limit.
+
+I did not take that at face value, because the same clip measured 19.3% when its own frame was used as the reference. Three checks:
+
+1. **Registration is correct.** Plate-corner registration gives scale 2.1319, offset (−19.9, −0.6). An independent brute-force search over scale and offset, minimising grey difference, lands on 2.130 / (−20, 0). At that alignment only 5.2% of pixels differ by more than 40.
+2. **The moving mass is everywhere, and it is not the trees.** Painting the dense moving mask over the frame shows it on the roof tiles, the log pile, the sawhorse, the crane and the plate edge — the trees are comparatively clean. 44% of the moving pixels sit in the middle quarter of the frame, where the shed is.
+3. **Within the clip itself, that window barely moves.** Against its own first frame, the chosen window's dense moving fraction is 0.00%.
+
+So Veo re-rendered the whole scene rather than animating a region of the still, which is exactly what the gate is worded to catch. Verdict: re-generate the clip, do not weaken the gate.
+
+### A real defect in the window rule, found by this clip 🟡
+
+The specified rule — lowest mean absolute difference between frame *s* and frame *s+N* — has a degenerate optimum: **the most frozen stretch of a clip loops most seamlessly**. It picked frames 48–60, the quietest block in the whole ten seconds.
+
+| | seam | motion |
+|---|---|---|
+| Best by seam (the rule) | 1.571 | 0.503 |
+| Best among windows that actually animate | 4.111 | 1.024 |
+
+Only 13 of 735 candidate windows have meaningful motion, all near the start. `best_windows()` now reports motion beside the seam score, warns on stderr when the chosen window is below 1.0, and takes an opt-in `--min-motion` to exclude frozen windows. **The default ranking is unchanged** — the rule is yours, so the tool reports the problem rather than silently overriding it. Motion is computed from consecutive-frame differences through a prefix sum, so the whole search still runs in about 12 seconds.
+
+### Numbers asked for
+
+Measured with the gate overridden into a scratch directory (nothing written to the repo):
+
+| | lowest seam (default) | with `--min-motion 1.0` |
+|---|---|---|
+| Window | start 48, N 12 (1.00 s) | start 15, N 12 (1.00 s) |
+| Seam score | 1.571 | 4.111 |
+| Motion | 0.503 | 1.024 |
+| Moving box | 65.3% of frame (untrimmed 78.8%) | 63.5% (untrimmed 74.9%) |
+| Sheet | 12 frames of 385×256, 1.4 MB | 12 frames of 407×256 |
+| Static shimmer | 0.7% of static pixels above 6/255, mean 1.65/255 | 3.1%, mean 2.09/255 |
+
+**Shimmer: yes, still present, and worse in the windows that animate.** It is low-amplitude (mean under 2/255) but it covers the shed and log pile, which would sit inside the overlay rectangle and wobble against a still sprite underneath.
+
+### Also changed
+
+- The bounding box now follows the moving **mass**: columns and rows are trimmed to the central 99% (`--mass`), so a few stray specks cannot stretch the box across the frame. Both trimmed and untrimmed extents are printed, and the whole-frame re-render case still fails the self-test. On this clip trimming moved the box from 78.8% to 65.3% — not enough to pass, because the mass genuinely is spread out.
+- `shimmer()` measures the temporal wobble of static opaque pixels inside the crop; it prints and is stored as `staticShimmer`.
+- The previous `assets/overlays/lumber-camp-t3-trees.png` is **deleted**. It was cut with a stand-in still and a superseded clip, and its manifest entry was standalone rather than attached to a sprite. Keeping it would have implied a working overlay that does not exist.
+
+### Next
+
+1. Re-generate the tier-3 clip as an animation of `lumber-camp-t3.jpg`, not a fresh render: the trees should move while the shed, log pile and plate stay pixel-identical. If the generator cannot do that, the fallback is the original plan in DESIGN §10 — hand-authored SVG overlays driven by CSS, which cost nothing and never shimmer.
+2. 37 of 39 building tiers still have no art.

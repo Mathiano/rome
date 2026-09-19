@@ -9,7 +9,9 @@ npm install
 npm run dev        # Vite dev server
 npm test           # vitest
 npm run build      # typecheck + production build to dist/
-npm run assets     # regenerate assets/buildings/*.svg from data/buildings.json (Python 3)
+npm run assets     # assets/src/*.jpg → assets/buildings/*.png + manifest.json (Python 3, pip install -r tools/artgen/requirements.txt)
+npm run assets:selftest
+npm run assets:loop -- assets/src/<b>-t3.jpg assets/src/<b>-t3-<feature>.mp4 --sprite <b>-t3   # still + clip → assets/overlays sheet + manifest overlay
 ```
 
 All balance and content lives in `data/*.json`. Game logic is in `src/`. The save is the serialised state store, kept in localStorage with export/import on the Save tab.
