@@ -1,7 +1,7 @@
 import { layout, building } from '../data';
 import type { GameState, Slot } from '../state/types';
 import { progress } from '../village/construction';
-import { sprite, type OverlayPlacement } from './sprites';
+import { sprite, type AnimPlacement, type LoopPlacement } from './sprites';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -71,7 +71,7 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
           if (s) {
             const img = el('image', { href: s.url, x: s.x, y: s.y, width: s.width, height: s.height, 'data-ax': s.ax, 'data-ay': s.ay });
             gr.spriteG.appendChild(img);
-            for (const o of s.overlays) gr.spriteG.appendChild(loopOverlay(o));
+            for (const o of s.overlays) gr.spriteG.appendChild(o.kind === 'loop' ? loopOverlay(o) : animOverlay(o));
           }
         }
       }
@@ -119,8 +119,34 @@ function siteGlyph(site: string): SVGGElement {
   return g;
 }
 
+/**
+ * The tier-3 animation set (DESIGN §10): smoke, a swinging crane hook, a
+ * fluttering standard, a furnace glow. Drawn as SVG over the sprite and driven
+ * by CSS keyframes, positioned from the same plate anchor as the sprite.
+ */
+export function animOverlay(o: AnimPlacement): SVGGElement {
+  const g = el('g', { class: `anim anim-${o.anim}`, transform: `translate(${o.x},${o.y}) scale(${o.scale})` });
+  if (o.anim === 'smoke') {
+    for (let i = 0; i < 3; i++) {
+      const c = el('circle', { class: `puff p${i}`, cx: 0, cy: 0, r: 1.5 + i * 0.55 });
+      g.appendChild(c);
+    }
+  } else if (o.anim === 'flag') {
+    g.appendChild(el('polygon', { class: 'cloth', points: '0,0 7.5,1.6 6.4,5.4 0,6.6' }));
+  } else if (o.anim === 'glow') {
+    g.appendChild(el('circle', { class: 'halo', cx: 0, cy: 0, r: 4.2 }));
+    g.appendChild(el('circle', { class: 'core', cx: 0, cy: 0, r: 1.8 }));
+  } else {
+    const rope = el('g', { class: 'arm' });
+    rope.appendChild(el('line', { x1: 0, y1: 0, x2: 0, y2: 7.5 }));
+    rope.appendChild(el('polyline', { points: '-1.8,7.5 0,9.6 1.8,7.5' }));
+    g.appendChild(rope);
+  }
+  return g;
+}
+
 /** A sprite-sheet loop: a nested <svg> clips one frame; the sheet steps left one frame per tick. */
-export function loopOverlay(o: OverlayPlacement): SVGSVGElement {
+export function loopOverlay(o: LoopPlacement): SVGSVGElement {
   const clip = el('svg', { class: 'overlay', x: o.x, y: o.y, width: o.width, height: o.height, viewBox: `0 0 ${o.frameWidth} ${o.frameHeight}`, preserveAspectRatio: 'none' });
   const sheet = el('image', { href: o.url, x: 0, y: 0, width: o.frameWidth * o.frames, height: o.frameHeight, preserveAspectRatio: 'none' });
   const seconds = o.frames / o.fps;

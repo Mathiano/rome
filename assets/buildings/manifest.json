@@ -10,7 +10,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/castellum-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/castellum-t1.png",
       "trimOffset": [
         117,
         493
@@ -33,7 +33,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/castellum-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/castellum-t2.png",
       "trimOffset": [
         117,
         493
@@ -56,7 +56,7 @@
       "ay": 153.25,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/castellum-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/castellum-t3.png",
       "trimOffset": [
         117,
         416
@@ -69,6 +69,22 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": -164.18,
+          "y": -103.57,
+          "scale": 1.0
+        },
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": -2.57,
+          "y": -22.77,
+          "scale": 1.0
+        }
       ]
     },
     "cellars-t1": {
@@ -79,7 +95,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/cellars-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/cellars-t1.png",
       "trimOffset": [
         117,
         493
@@ -102,7 +118,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/cellars-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/cellars-t2.png",
       "trimOffset": [
         117,
         493
@@ -125,7 +141,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/cellars-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/cellars-t3.png",
       "trimOffset": [
         117,
         493
@@ -138,6 +154,22 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "glow",
+          "x": -70.83,
+          "y": -3.57,
+          "scale": 0.8
+        },
+        {
+          "type": "anim",
+          "kind": "glow",
+          "x": -23.46,
+          "y": 20.11,
+          "scale": 0.8
+        }
       ]
     },
     "clay-works-t1": {
@@ -148,7 +180,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/clay-works-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/clay-works-t1.png",
       "trimOffset": [
         117,
         493
@@ -171,7 +203,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/clay-works-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/clay-works-t2.png",
       "trimOffset": [
         117,
         493
@@ -194,7 +226,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/clay-works-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/clay-works-t3.png",
       "trimOffset": [
         117,
         493
@@ -207,6 +239,22 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "smoke",
+          "x": 89.39,
+          "y": -57.38,
+          "scale": 1.0
+        },
+        {
+          "type": "anim",
+          "kind": "glow",
+          "x": 85.21,
+          "y": -11.8,
+          "scale": 0.9
+        }
       ]
     },
     "farm-t1": {
@@ -217,7 +265,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/farm-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/farm-t1.png",
       "trimOffset": [
         117,
         493
@@ -240,7 +288,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/farm-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/farm-t2.png",
       "trimOffset": [
         117,
         493
@@ -263,7 +311,7 @@
       "ay": 129.74,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/farm-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/farm-t3.png",
       "trimOffset": [
         117,
         470
@@ -276,6 +324,15 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "smoke",
+          "x": 16.94,
+          "y": -129.65,
+          "scale": 0.8
+        }
       ]
     },
     "forum-t1": {
@@ -286,7 +343,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/forum-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/forum-t1.png",
       "trimOffset": [
         117,
         493
@@ -309,7 +366,7 @@
       "ay": 134.53,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/forum-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/forum-t2.png",
       "trimOffset": [
         117,
         459
@@ -332,7 +389,7 @@
       "ay": 162.39,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/forum-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/forum-t3.png",
       "trimOffset": [
         117,
         395
@@ -345,6 +402,15 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": 147.9,
+          "y": -96.39,
+          "scale": 1.0
+        }
       ]
     },
     "granary-t1": {
@@ -355,7 +421,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/granary-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/granary-t1.png",
       "trimOffset": [
         117,
         493
@@ -378,7 +444,7 @@
       "ay": 124.08,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/granary-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/granary-t2.png",
       "trimOffset": [
         117,
         483
@@ -401,7 +467,7 @@
       "ay": 155.86,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/granary-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/granary-t3.png",
       "trimOffset": [
         117,
         410
@@ -414,6 +480,15 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": -100.09,
+          "y": -49.63,
+          "scale": 0.8
+        }
       ]
     },
     "insulae-t1": {
@@ -424,7 +499,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/insulae-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/insulae-t1.png",
       "trimOffset": [
         117,
         493
@@ -447,7 +522,7 @@
       "ay": 140.63,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/insulae-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/insulae-t2.png",
       "trimOffset": [
         117,
         445
@@ -470,7 +545,7 @@
       "ay": 176.76,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/insulae-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/insulae-t3.png",
       "trimOffset": [
         117,
         362
@@ -483,6 +558,15 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "smoke",
+          "x": 14.15,
+          "y": -180.68,
+          "scale": 0.8
+        }
       ]
     },
     "iron-mine-t1": {
@@ -493,7 +577,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/iron-mine-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/iron-mine-t1.png",
       "trimOffset": [
         117,
         493
@@ -516,7 +600,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/iron-mine-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/iron-mine-t2.png",
       "trimOffset": [
         117,
         493
@@ -539,7 +623,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/iron-mine-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/iron-mine-t3.png",
       "trimOffset": [
         117,
         493
@@ -552,6 +636,22 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "smoke",
+          "x": 89.39,
+          "y": -36.27,
+          "scale": 1.0
+        },
+        {
+          "type": "anim",
+          "kind": "swing",
+          "x": -22.07,
+          "y": -69.84,
+          "scale": 0.9
+        }
       ]
     },
     "lumber-camp-t1": {
@@ -562,7 +662,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/lumber-camp-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/lumber-camp-t1.png",
       "trimOffset": [
         117,
         493
@@ -585,7 +685,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/lumber-camp-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/lumber-camp-t2.png",
       "trimOffset": [
         117,
         493
@@ -603,15 +703,15 @@
     "lumber-camp-t3": {
       "file": "lumber-camp-t3.png",
       "width": 455,
-      "height": 242,
+      "height": 236,
       "ax": 227.48,
-      "ay": 126.26,
+      "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/lumber-camp-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/lumber-camp-t3.png",
       "trimOffset": [
         117,
-        478
+        493
       ],
       "sourceScale": 0.435374,
       "slopes": {
@@ -621,6 +721,22 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "smoke",
+          "x": 101.92,
+          "y": -99.44,
+          "scale": 1.0
+        },
+        {
+          "type": "anim",
+          "kind": "swing",
+          "x": 3.01,
+          "y": -8.32,
+          "scale": 0.9
+        }
       ]
     },
     "market-t1": {
@@ -631,7 +747,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/market-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/market-t1.png",
       "trimOffset": [
         117,
         493
@@ -654,7 +770,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/market-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/market-t2.png",
       "trimOffset": [
         117,
         493
@@ -677,7 +793,7 @@
       "ay": 131.92,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/market-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/market-t3.png",
       "trimOffset": [
         117,
         465
@@ -690,6 +806,22 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": -119.59,
+          "y": -24.0,
+          "scale": 0.7
+        },
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": -41.58,
+          "y": 20.58,
+          "scale": 0.7
+        }
       ]
     },
     "temple-t1": {
@@ -700,7 +832,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/temple-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/temple-t1.png",
       "trimOffset": [
         117,
         493
@@ -723,7 +855,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/temple-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/temple-t2.png",
       "trimOffset": [
         117,
         493
@@ -746,7 +878,7 @@
       "ay": 139.76,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/temple-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/temple-t3.png",
       "trimOffset": [
         117,
         447
@@ -759,6 +891,22 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "smoke",
+          "x": 14.15,
+          "y": 39.23,
+          "scale": 0.85
+        },
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": -91.73,
+          "y": -80.12,
+          "scale": 1.0
+        }
       ]
     },
     "warehouse-t1": {
@@ -769,7 +917,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/warehouse-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/warehouse-t1.png",
       "trimOffset": [
         117,
         493
@@ -792,7 +940,7 @@
       "ay": 122.78,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/warehouse-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/warehouse-t2.png",
       "trimOffset": [
         117,
         486
@@ -815,7 +963,7 @@
       "ay": 154.12,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/warehouse-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/warehouse-t3.png",
       "trimOffset": [
         117,
         414
@@ -828,6 +976,15 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "swing",
+          "x": 8.58,
+          "y": -15.4,
+          "scale": 1.0
+        }
       ]
     },
     "waystation-t1": {
@@ -838,7 +995,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/waystation-t1.png",
+      "source": "../../../tmp/tmpriaf2de2/waystation-t1.png",
       "trimOffset": [
         117,
         493
@@ -861,7 +1018,7 @@
       "ay": 119.73,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/waystation-t2.png",
+      "source": "../../../tmp/tmpriaf2de2/waystation-t2.png",
       "trimOffset": [
         117,
         493
@@ -884,7 +1041,7 @@
       "ay": 125.82,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpfh65xck5/waystation-t3.png",
+      "source": "../../../tmp/tmpriaf2de2/waystation-t3.png",
       "trimOffset": [
         117,
         479
@@ -897,6 +1054,15 @@
       "overhangPx": [
         0.0,
         0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": 28.08,
+          "y": 23.77,
+          "scale": 0.7
+        }
       ]
     }
   },

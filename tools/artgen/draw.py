@@ -117,7 +117,15 @@ class Scene:
 
     def __init__(self):
         self.items = []
+        self.anims = []
         self._group = None
+
+    def anim(self, kind, gx, gy, gz=0.0, scale=1.0):
+        """Mark an animated feature (DESIGN §10, tier 3 only). Stored in viewBox
+        coordinates; draw.py converts to anchor-relative sprite pixels once the
+        sprite has been trimmed and scaled."""
+        vx, vy = iso(gx, gy, gz)
+        self.anims.append({"kind": kind, "vx": vx, "vy": vy, "scale": scale})
 
     @contextmanager
     def group(self, depth):
@@ -762,6 +770,7 @@ def forum(sc, tier):
             column(sc, 1.4, 4.5 + i * 0.9, 0, 1.25)
         statue(sc, 4.0, 5.9)
         banner(sc, 6.9, 1.6, 2.15, 0.95)
+        sc.anim("flag", 6.9, 1.6, 3.1)
         amphora(sc, 2.5, 6.6)
         amphora(sc, 2.8, 6.85)
         crate(sc, 5.6, 6.5)
@@ -836,6 +845,8 @@ def castellum(sc, tier):
             crenels(sc, 3.1, Y1 - 0.2, 4.9, Y1, 1.9, n=4)
         banner(sc, 1.1, 7.0, 2.2, 0.95)
         banner(sc, 6.9, 7.0, 2.2, 0.95)
+        sc.anim("flag", 1.1, 7.0, 3.15)
+        sc.anim("flag", 6.9, 7.0, 3.15)
 
 
 def warehouse(sc, tier):
@@ -877,6 +888,7 @@ def warehouse(sc, tier):
             hip_roof(sc, 1.7, 1.3, 6.5, 5.1, 2.1, 0.82, inset=1.8)
         box(sc, 2.9, 5.1, 5.3, 5.9, 0, 0.42, "timber")
         crane(sc, 6.0, 5.7, 0.42, 1.55)
+        sc.anim("swing", 6.0, 5.7, 1.97)
         crate(sc, 3.1, 6.1)
         crate(sc, 3.5, 6.4, 0.28)
         crate(sc, 3.2, 6.7, 0.24)
@@ -928,6 +940,7 @@ def granary(sc, tier):
             hip_roof(sc, 1.7, 1.4, 6.4, 5.2, 2.2, 0.85, inset=1.8)
         box(sc, 3.1, 5.2, 5.0, 6.0, 0, 0.44, "stone")
         cart(sc, 5.6, 6.0)
+        sc.anim("flag", 1.7, 5.3, 1.0, 0.8)
         sack(sc, 3.3, 6.2)
         sack(sc, 3.6, 6.5, 0.95)
         sack(sc, 3.0, 6.6, 0.85)
@@ -971,6 +984,8 @@ def cellars(sc, tier):
                 sc.add(0, poly([(p[0] - 12, p[1]), (p[0] + 12, p[1]), (p[0] + 12, p[1] - 15),
                                 (p[0] - 12, p[1] - 15)], PAL["stone_light"], W_HAIR))
         steps(sc, 3.9, 6.7, 4.7, 5.95, 3, 0.0, 0.1)
+        sc.anim("glow", 3.3, 5.85, 0.5, 0.8)
+        sc.anim("glow", 5.0, 5.85, 0.5, 0.8)
         amphora(sc, 1.6, 5.6)
         amphora(sc, 1.9, 5.85)
         barrel(sc, 6.5, 5.4)
@@ -1031,6 +1046,7 @@ def insulae(sc, tier):
             a, b = iso(gx - 0.45, 5.2, 1.0), iso(gx + 0.45, 5.2, 1.0)
             sc.add(gx + 5.35, poly([a, b, (b[0] + 5, b[1] + 28), (a[0] - 5, a[1] + 28)],
                                    [PAL["roof_light"], PAL["gold"], PAL["leaf_mid"]][i], W_DETAIL), 1.0)
+        sc.anim("smoke", 2.4, 1.9, 3.9, 0.8)
         crate(sc, 1.4, 6.0)
         barrel(sc, 6.6, 5.7)
         amphora(sc, 6.2, 6.3)
@@ -1075,6 +1091,8 @@ def market(sc, tier):
             column(sc, 6.6, 3.5 + i * 1.0, 0, 1.25, 0.13)
             column(sc, 1.5, 3.5 + i * 1.0, 0, 1.25, 0.13)
         tholos(sc, 4.0, 5.2)
+        sc.anim("flag", 1.9, 6.2, 0.68, 0.7)
+        sc.anim("flag", 4.9, 6.4, 0.68, 0.7)
         stall(sc, 1.9, 6.2, 0, PAL["gold"])
         stall(sc, 4.9, 6.4, 0, PAL["water"])
         amphora(sc, 6.7, 5.5)
@@ -1122,7 +1140,8 @@ def temple(sc, tier):
             gable(sc, 2.4, 1.6, 6.0, 4.8, 2.1, 0.82, "x")
         steps(sc, 2.9, 6.1, 5.5, 5.15, 4, 0.0, 0.21)
         box(sc, 6.1, 5.6, 6.9, 6.4, 0, 0.44, "stone", w=W_DETAIL)
-        smoke_puffs(sc, 6.5, 6.0, 0.6, 3)
+        sc.anim("smoke", 6.5, 6.0, 0.62, 0.85)
+        sc.anim("flag", 1.6, 4.9, 1.73)
         banner(sc, 1.6, 4.9, 0.85, 0.88)
         amphora(sc, 1.5, 5.8)
         amphora(sc, 1.8, 6.05)
@@ -1167,6 +1186,7 @@ def waystation(sc, tier):
             gable(sc, 4.9, 1.7, 6.6, 4.6, 1.1, 0.55, "y")
         box(sc, 6.2, 5.2, 6.55, 5.55, 0, 0.74, "stone", w=W_DETAIL)
         well(sc, 2.2, 4.9)
+        sc.anim("flag", 6.38, 5.38, 0.78, 0.7)
         cart(sc, 3.5, 5.4)
         barrel(sc, 6.7, 5.7)
         crate(sc, 5.0, 5.6)
@@ -1202,7 +1222,8 @@ def lumber_camp(sc, tier):
             frame_shed(sc, 2.8, 1.8, 5.4, 4.4, 0.45, 1.6, 4)
             gable(sc, 2.8, 1.8, 6.4, 4.4, 1.6, 0.72, "x")
             box(sc, 5.7, 2.0, 6.0, 2.4, 2.32, 2.9, "stone", w=W_DETAIL)
-        smoke_puffs(sc, 5.85, 2.2, 3.0, 3)
+        sc.anim("smoke", 5.85, 2.2, 3.0)
+        sc.anim("swing", 5.9, 5.8, 1.75, 0.9)
         log_pile(sc, 0.8, 4.8, 4, 5)
         sawhorse(sc, 3.4, 6.2)
         crane(sc, 5.9, 5.8, 0, 1.75)
@@ -1238,6 +1259,8 @@ def clay_works(sc, tier):
             gable(sc, 2.4, 1.7, 4.6, 3.6, 1.05, 0.55, "x")
         kiln(sc, 5.4, 2.2, 0, 1.1)
         kiln(sc, 6.5, 3.6, 0, 0.95)
+        sc.anim("smoke", 5.4, 2.2, 1.5)
+        sc.anim("glow", 5.4, 2.35, 0.15, 0.9)
         drying_rack(sc, 2.9, 4.0, 0, 5)
         for i in range(4):
             amphora(sc, 5.3 + (i % 2) * 0.36, 5.5 + i * 0.3)
@@ -1269,6 +1292,8 @@ def iron_mine(sc, tier):
             p0, p1 = iso(3.1, 3.3 + i * 0.5, 0), iso(3.5, 3.3 + i * 0.5, 0)
             sc.add(3.3 + 3.3 + i * 0.5, line(p0, p1, PAL["timber_deep"], W_HAIR), 0)
         kiln(sc, 6.1, 2.9, 0, 1.05)
+        sc.anim("smoke", 6.1, 2.9, 1.45)
+        sc.anim("swing", 3.3, 4.1, 1.8, 0.9)
         with sc.group(6.8 + 5.5):
             box(sc, 5.3, 4.4, 6.8, 5.5, 0, 0.9, "stone")
             stone_blocks(sc, 5.3, 4.4, 6.8, 5.5, 0, 0.9, 3)
@@ -1320,6 +1345,7 @@ def farm(sc, tier):
             gx = 0.8 + i * 0.64
             box(sc, gx, 4.05, gx + 0.48, 4.22, 0, 0.3, "stone", w=W_HAIR, depth=gx + 4.25)
         orchard(sc, 4.6, 3.6, 6.9, 4.3, 1, 3)
+        sc.anim("smoke", 2.2, 1.6, 2.1, 0.8)
         cart(sc, 4.4, 5.0)
         sack(sc, 2.5, 3.9)
         sack(sc, 2.8, 4.1, 0.9)
@@ -1339,7 +1365,24 @@ def compose(name, tier):
     sc = Scene()
     plate(sc, paved=name in PAVED)
     BUILDINGS[name](sc, tier)
-    return sc.svg()
+    return sc.svg(), sc.anims
+
+
+def anchor_relative(anims, entry):
+    """viewBox coords -> sprite pixels relative to the plate anchor."""
+    ox, oy = entry["trimOffset"]
+    k = entry["sourceScale"]
+    out = []
+    for a in anims:
+        px, py = a["vx"] - VIEWBOX[0], a["vy"] - VIEWBOX[1]
+        out.append({
+            "type": "anim",
+            "kind": a["kind"],
+            "x": round((px - ox) * k - entry["ax"], 2),
+            "y": round((py - oy) * k - entry["ay"], 2),
+            "scale": a["scale"],
+        })
+    return out
 
 
 def main(argv=None):
@@ -1362,7 +1405,7 @@ def main(argv=None):
         for name in names:
             for tier in tiers:
                 key = f"{name}-t{tier}"
-                svg = compose(name, tier)
+                svg, anims = compose(name, tier)
                 svg_path = os.path.join(a.svg_dir, f"{key}.svg")
                 with open(svg_path, "w") as f:
                     f.write(svg)
@@ -1372,6 +1415,8 @@ def main(argv=None):
                 png = os.path.join(td, f"{key}.png")
                 cairosvg.svg2png(bytestring=svg.encode(), write_to=png)
                 n, e = artgen.process(png, a.out, tile_w, a.ppu, 8, 232)
+                if anims:
+                    e["overlays"] = anchor_relative(anims, e)
                 entries[n] = e
                 print(f"{key}: {e['width']}×{e['height']}  anchor ({e['ax']}, {e['ay']})  "
                       f"slopes {e['slopes']['left']:+.3f}/{e['slopes']['right']:+.3f}  overhang {e['overhangPx']}")

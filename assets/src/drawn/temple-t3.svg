@@ -209,9 +209,6 @@
 <polygon points="-204.8,32.0 -38.4,115.2 -38.4,99.7 -204.8,16.5" fill="#ad8c75" stroke="#1e0702" stroke-width="2.6" stroke-linejoin="round"/>
 <polygon points="-38.4,115.2 -23.2,107.6 -23.2,92.1 -38.4,99.7" fill="#846859" stroke="#1e0702" stroke-width="2.6" stroke-linejoin="round"/>
 <polygon points="-189.6,8.9 -23.2,92.1 -38.4,99.7 -204.8,16.5" fill="#d7b791" stroke="#1e0702" stroke-width="2.6" stroke-linejoin="round"/>
-<circle cx="28.0" cy="89.6" r="4.5" fill="#c9c0b2" stroke="none" fill-opacity="0.62"/>
-<circle cx="35.0" cy="72.6" r="7.1" fill="#c9c0b2" stroke="none" fill-opacity="0.48"/>
-<circle cx="42.0" cy="55.6" r="9.7" fill="#c9c0b2" stroke="none" fill-opacity="0.34"/>
 <circle cx="147.2" cy="144.6" r="11.6" fill="#6e7d48" stroke="#1e0702" stroke-width="2.6"/>
 <circle cx="140.2" cy="148.1" r="8.2" fill="#4d5a36" stroke="#1e0702" stroke-width="1.6"/>
 <circle cx="153.6" cy="146.9" r="7.2" fill="#8a9a5c" stroke="#1e0702" stroke-width="1.6"/>

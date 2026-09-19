@@ -109,3 +109,30 @@ header .res .neg b { color: #e0885a; }
 #panel .card.demand { border-left: 4px solid var(--gold); background: rgba(201,162,74,0.12); }
 .news-card .choices { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
 .news-card .choices button { text-align: left; }
+
+/* Tier-3 animation set (DESIGN §10). One reusable vocabulary over every sprite. */
+#village .anim { pointer-events: none; }
+#village .anim-smoke .puff { fill: #c9c0b2; stroke: none; opacity: 0; animation: puff-rise 3.4s linear infinite; }
+#village .anim-smoke .p1 { animation-delay: -1.13s; }
+#village .anim-smoke .p2 { animation-delay: -2.26s; }
+@keyframes puff-rise {
+  0%   { opacity: 0;    transform: translate(0, 0) scale(0.5); }
+  18%  { opacity: 0.62; }
+  100% { opacity: 0;    transform: translate(3px, -15px) scale(1.5); }
+}
+#village .anim-flag .cloth { fill: #b5563a; stroke: #2a2118; stroke-width: 0.6; stroke-linejoin: round;
+  transform-box: fill-box; transform-origin: 0% 50%; animation: cloth-wave 2.1s ease-in-out infinite; }
+@keyframes cloth-wave {
+  0%, 100% { transform: skewY(-4deg) scaleX(0.96); }
+  50%      { transform: skewY(5deg)  scaleX(1.03); }
+}
+#village .anim-glow .halo { fill: #e06a2a; stroke: none; opacity: 0.18; animation: glow-pulse 2.6s ease-in-out infinite; }
+#village .anim-glow .core { fill: #e9a05d; stroke: none; opacity: 0.6; animation: glow-pulse 2.6s ease-in-out infinite reverse; }
+@keyframes glow-pulse { 0%, 100% { opacity: 0.16; } 50% { opacity: 0.66; } }
+#village .anim-swing .arm { transform-box: fill-box; transform-origin: 50% 0%; animation: hook-swing 3.8s ease-in-out infinite; }
+#village .anim-swing line, #village .anim-swing polyline { stroke: #3f1c0d; stroke-width: 0.9; fill: none; stroke-linecap: round; }
+@keyframes hook-swing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) {
+  #village .anim * { animation: none !important; }
+  #village .anim-smoke .puff { opacity: 0.35; }
+}
