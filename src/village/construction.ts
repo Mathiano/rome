@@ -89,6 +89,7 @@ export function rush(state: GameState, slotId: string, now: number): void {
   const price = rushPrice(state, c, now);
   if (state.resources.denarii < price) throw new Error('Not enough denarii');
   state.resources.denarii -= price;
+  state.stats.denariiSpentOnHaste += price;
   c.finishAt = now;
   log(state, 'village', `Hired hands finish the ${building(c.buildingId).name} for ${price} denarii.`);
   completeFinished(state, now);

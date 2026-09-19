@@ -81,6 +81,14 @@ export interface TribeDef {
   likes: string[];
   hates: string[];
 }
+export interface LesserPostDef {
+  id: string;
+  name: string;
+  stat: StatId;
+  effect: 'corruptionFall' | 'buildSpeed' | 'gravitasPerRound' | 'attitudeDrift' | 'defence';
+  perStat: number;
+  description: string;
+}
 export interface EnvoyDef { id: string; name: string; description: string }
 export interface Reward { denarii?: number; scrolls?: number; unlock?: string; gravitas?: number }
 export interface RequestDef {
@@ -138,6 +146,7 @@ export const layout = layoutJson as { tile: { w: number; h: number }; slots: Slo
 export const families = familiesJson.families as FamilyDef[];
 export const newMen = familiesJson.newMen;
 export const posts = postsJson.posts as PostDef[];
+export const lesserPosts = postsJson.lesser as LesserPostDef[];
 export const tribes = tribesJson.tribes as TribeDef[];
 export const envoys = tribesJson.envoys as EnvoyDef[];
 export const requestProgression = requestsJson.progression as RequestDef[];
@@ -153,6 +162,11 @@ export function building(id: string): BuildingDef {
   const b = buildings.find((x) => x.id === id);
   if (!b) throw new Error(`unknown building ${id}`);
   return b;
+}
+export function lesserPost(id: string): LesserPostDef {
+  const p = lesserPosts.find((x) => x.id === id);
+  if (!p) throw new Error(`unknown lesser post ${id}`);
+  return p;
 }
 export function post(id: string): PostDef {
   const p = posts.find((x) => x.id === id);

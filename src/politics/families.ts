@@ -114,6 +114,7 @@ export function acceptDemand(state: GameState, familyId: string): void {
     log(state, 'council', `${who.name} of the ${fam.name} takes the post of ${p.name}, as they asked.`);
   }
   fam.demand = null;
+  state.stats.demandsGranted += 1;
   fam.grievances = Math.max(0, fam.grievances - 1);
   fam.attitude = clampAtt(fam.attitude + config.rival.acceptAttitude);
 }
@@ -123,6 +124,7 @@ export function refuseDemand(state: GameState, familyId: string): void {
   if (!fam?.demand) throw new Error('They have asked for nothing');
   fam.demand = null;
   fam.grievances += 1;
+  state.stats.demandsRefused += 1;
   fam.attitude = clampAtt(fam.attitude + config.rival.refuseAttitude);
   log(state, 'council', `You refuse the ${fam.name}. It is noted.`);
 }

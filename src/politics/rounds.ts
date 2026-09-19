@@ -19,6 +19,9 @@ export function runRound(state: GameState, now: number, idle = false): void {
   const fromLogId = state.logSeq;
   state.round += 1;
   state.lastRoundAt = now;
+  state.stats.rounds += 1;
+  if (idle) state.stats.idleRounds += 1;
+  state.stats.peakPopulation = Math.max(state.stats.peakPopulation, Math.floor(state.population));
   if (idle) log(state, 'system', `Round ${state.round}: the council meets without you.`);
   else log(state, 'system', `Round ${state.round}.`);
   for (const f of rivalFamilies(state)) rivalTurn(state, f);

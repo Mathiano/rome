@@ -82,5 +82,6 @@ export function resolveChoice(state: GameState, choiceId: string): void {
   if (choice.cost) pay(state, choice.cost);
   applyEffect(state, choice.effect);
   log(state, 'event', fill(choice.text, state, ''));
+  state.stats.choicesAnswered += 1;
   state.pendingChoice = null;
 }

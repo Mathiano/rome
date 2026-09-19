@@ -1,15 +1,17 @@
-import { activeTribe, building, config, envoys, posts as postDefs, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
+import { activeTribe, building, config, envoys, lesserPosts as lesserDefs, posts as postDefs, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, eligibleBuildings, rushPrice, slotById } from '../village/construction';
 import { canAfford, netPerHour } from '../village/economy';
 import { capacity, hiddenPerResource, populationCap, forumTier } from '../village/storage';
 import { gravitasRank, leaderOf, livingMembers, playerFamily, rivalFamilies, standing } from '../politics/characters';
-import { holderOf, meetsRank, postsHeldBy } from '../politics/posts';
+import { holderOf, lesserEffect, lesserHolderOf, meetsRank, postsHeldBy } from '../politics/posts';
 import { militiaPool, homeMilitia } from '../combat/militia';
 import { defenceStrength, raidChance, raidStrength } from '../combat/raids';
 import { tradeRate } from '../tribes/envoys';
 import { portraitSvg } from './portrait';
+import { backingCost } from '../politics/intrigue';
+import { favourRewardMultiplier } from '../rome/requests';
 import { appeasePrice } from '../tribes/turn';
 import { pendingChoices } from '../politics/events';
 import { roundsUntilIdle } from '../politics/rounds';
@@ -182,12 +184,23 @@ function renderCouncil(s: GameState, now: number): string {
     if (h) out += `<button class="act secondary" data-dismiss="${p.id}">Dismiss</button>`;
     out += `</div>`;
   }
+  out += `<h3>Lesser offices</h3><p class="muted">Outside the council: a little standing, no leverage. Somewhere to keep a house content without handing it anything to obstruct with.</p>`;
+  for (const p of lesserDefs) {
+    const h = lesserHolderOf(s, p.id);
+    out += `<div class="card lesser ${h ? (s.families[h.familyId].isPlayer ? 'player' : 'rival') : ''}"><b>${esc(p.name)}</b> <span class="muted">(${p.stat})</span>
+      <p class="muted">${esc(p.description)}</p>
+      <p>${h ? `${esc(h.name)} of the ${s.families[h.familyId].name}` : '<em>vacant</em>'}</p>
+      <select data-select-lesser="${p.id}">${living.filter((c) => !c.post).map((c) => `<option value="${c.id}">${esc(c.name)} — ${s.families[c.familyId].name}, ${p.stat} ${c.stats[p.stat]}</option>`).join('')}</select>
+      <button class="act" data-appoint-lesser="${p.id}">Appoint</button>${h ? `<button class="act secondary" data-dismiss-lesser="${p.id}">Dismiss</button>` : ''}</div>`;
+  }
   out += `<h3>Actions</h3>`;
   const leader = leaderOf(s, playerFamily(s).id);
   const g = config.gravitas;
   out += `<p>Your leader holds <b>${n(leader?.gravitasStock ?? 0)}</b> spendable gravitas (rank ${leader ? gravitasRank(leader) : 0}).</p>`;
-  const backingOk = leader && gravitasRank(leader) >= g.romeBackingMinRank && leader.gravitasStock >= g.romeBackingCost;
-  out += `<button class="act" data-political="rome_backing" ${backingOk ? '' : 'disabled'}>Seek Rome's backing (${g.romeBackingCost} gravitas, rank ${g.romeBackingMinRank})</button> `;
+  const backingOk = !!leader && gravitasRank(leader) >= g.romeBackingMinRank && leader.gravitasStock >= backingCost(s);
+  const cost = backingCost(s);
+  const backingOk2 = backingOk && s.rome.favour >= config.rome.backingMinFavour;
+  out += `<button class="act" data-political="rome_backing" ${backingOk2 ? '' : 'disabled'}>Seek Rome's backing (${cost} gravitas, rank ${g.romeBackingMinRank}, favour ${config.rome.backingMinFavour})</button> `;
   out += `<button class="act secondary" data-political="convene">Convene the council (pass)</button>`;
   out += `<p class="muted">Every action here runs a political round: the rival house, the tribe and Rome all act, and everyone ages. If you stay away ${config.calendarFloorHours} hours the council meets without you (${Math.ceil(roundsUntilIdle(s, now) / 3_600_000)}h left).</p>`;
   return out;
@@ -272,7 +285,12 @@ function renderTribe(s: GameState): string {
 
 function renderRome(s: GameState): string {
   const r = s.rome;
+  const mult = favourRewardMultiplier(s);
   let out = `<h2>Rome</h2><p>Favour <b>${n(r.favour)}</b> · research scrolls <b>${r.scrolls}</b> · requests completed <b>${r.completedIds.length}</b></p>`;
+  out += `<p class="muted">Favour pays: rewards at <b>${Math.round(mult * 100)}%</b>. Unique gifts need favour ${config.rome.unlockMinFavour}; Rome's backing needs ${config.rome.backingMinFavour} and costs less the better you stand.</p>`;
+  if (r.withheldUnlocks.length) {
+    out += `<div class="card demand"><b>Rome is holding back ${r.withheldUnlocks.map((u) => esc(unlocks[u]?.name ?? u)).join(', ')}.</b><p class="muted">It will be sent once favour reaches ${config.rome.unlockMinFavour}.</p></div>`;
+  }
   if (r.administeringUntilRound > s.round) out += `<p style="color:var(--river)">A procurator administers the colony until round ${r.administeringUntilRound}.</p>`;
   const a = r.activeRequest;
   if (a) {
@@ -316,10 +334,23 @@ function renderLog(s: GameState): string {
 }
 
 function renderSave(s: GameState): string {
+  const st = s.stats;
   return `<h2>Save</h2><p class="muted">The game saves itself to this browser. Export to carry it to another device; import replaces the current game.</p>
   <button class="act" data-export>Export save</button>
   <h3>Import</h3><textarea data-import-text placeholder="Paste a save here"></textarea><br><button class="act secondary" data-import>Import</button>
   <h3>Start over</h3><button class="act secondary" data-reset>New colony</button>
+  <h3>This colony so far</h3>
+  <table>
+    <tr><td>Rounds</td><td>${st.rounds}${st.idleRounds ? ` (${st.idleRounds} without you)` : ''}</td></tr>
+    <tr><td>Raids</td><td>${st.raidsSuffered} suffered, ${st.raidsRepelled} thrown back, ${Math.round(st.goodsLostToRaids)} goods carried off</td></tr>
+    <tr><td>Demands</td><td>${st.demandsGranted} granted, ${st.demandsRefused} refused</td></tr>
+    <tr><td>Decisions</td><td>${st.choicesAnswered} answered</td></tr>
+    <tr><td>Rome</td><td>${st.romeRequestsCompleted} completed, ${st.romeRequestsDeclined} declined</td></tr>
+    <tr><td>Deaths</td><td>${st.deaths}</td></tr>
+    <tr><td>Peak population</td><td>${st.peakPopulation}</td></tr>
+    <tr><td>Denarii spent on haste</td><td>${Math.round(st.denariiSpentOnHaste)}</td></tr>
+    <tr><td>Lesser offices</td><td>corruption ${n(lesserEffect(s, 'corruptionFall'))}/round, build ${Math.round(lesserEffect(s, 'buildSpeed') * 100)}% faster, defence +${n(lesserEffect(s, 'defence'))}</td></tr>
+  </table>
   <p class="muted">Founded ${new Date(s.createdAt).toLocaleDateString()} · save version ${s.version}</p>`;
 }
 
@@ -337,6 +368,12 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
       if (sel) return h.onPolitical({ type: 'appoint', postId: d.appoint, characterId: sel.value });
       return;
     }
+    if (d.appointLesser) {
+      const sel = panel.querySelector<HTMLSelectElement>(`select[data-select-lesser="${d.appointLesser}"]`);
+      if (sel) return h.onPolitical({ type: 'appoint_lesser', postId: d.appointLesser, characterId: sel.value });
+      return;
+    }
+    if (d.dismissLesser) return h.onPolitical({ type: 'dismiss_lesser', postId: d.dismissLesser });
     if (d.dismiss) return h.onPolitical({ type: 'dismiss', postId: d.dismiss });
     if (d.choice) return h.onChoice(d.choice);
     if (d.accept) return h.onPolitical({ type: 'accept_demand', familyId: d.accept });

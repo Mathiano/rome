@@ -143,3 +143,7 @@ header .res .neg b { color: #e0885a; }
 #panel .member.dead { opacity: 0.55; }
 #panel .member .who { flex: 1; min-width: 0; }
 #panel .portrait { flex: none; border: 1px solid var(--ink); border-radius: 2px; background: var(--parchment-dark); }
+
+#panel .card.lesser { border-left: 3px solid var(--parchment-dark); }
+#panel .card.lesser.rival { border-left-color: var(--river); }
+#panel .card.lesser.player { border-left-color: var(--terracotta); }

@@ -61,7 +61,9 @@
     "romeBackingCost": 10,
     "romeBackingAttitude": 15,
     "romeBackingFavour": 5,
-    "romeBackingMinRank": 2
+    "romeBackingMinRank": 2,
+    "romeBackingFavourDiscount": 0.15,
+    "romeBackingMinCostFraction": 0.4
   },
   "posts": {
     "bonusPerStatPoint": 0.03,
@@ -89,8 +91,8 @@
     "actChance": 0.6
   },
   "raid": {
-    "baseChance": 0.12,
-    "fearFactor": 0.0025,
+    "baseChance": 0.06,
+    "fearFactor": 0.0018,
     "trustFactor": 0.0015,
     "leakedStrengthMultiplier": 1.5,
     "leakedChanceBonus": 0.15,
@@ -100,7 +102,9 @@
     "militiaWeight": 1,
     "minRoundsBetweenRaids": 2,
     "fearGainOnRepulse": 10,
-    "fearLossOnSuccess": 5
+    "fearLossOnSuccess": 5,
+    "graceRounds": 8,
+    "baseDefence": 10
   },
   "tribe": {
     "tributeFearThreshold": 60,
@@ -134,7 +138,12 @@
     "declineFavour": -5,
     "declineLoyalistAttitude": -8,
     "fillerEveryRounds": 2,
-    "hostOfficialRounds": 2
+    "hostOfficialRounds": 2,
+    "rewardFavourScale": 0.004,
+    "rewardFavourFloor": -0.3,
+    "rewardFavourCeiling": 0.5,
+    "unlockMinFavour": 25,
+    "backingMinFavour": 10
   },
   "collapse": {
     "populationFloor": 5,

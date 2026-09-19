@@ -1,4 +1,4 @@
-import { config, families as familyDefs, layout, startResources, posts, activeTribe, RESOURCE_IDS } from '../data';
+import { config, families as familyDefs, layout, startResources, posts, lesserPosts, activeTribe, RESOURCE_IDS } from '../data';
 import type { GameState, Family, Character, Slot, LogEntry } from './types';
 
 export function createInitialState(now: number = Date.now(), seed: number = (now ^ 0x9e3779b9) | 0): GameState {
@@ -45,6 +45,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
         gravitas: 0,
         gravitasStock: 0,
         post: null,
+        lesserPost: null,
       };
     }
   }
@@ -67,6 +68,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     families,
     characters,
     posts: Object.fromEntries(posts.map((p) => [p.id, null])),
+    lesserPosts: Object.fromEntries(lesserPosts.map((p) => [p.id, null])),
     office: playerLeader.id,
     corruption: 0,
     obstructed: {},
@@ -93,6 +95,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       fillerCounter: 0,
       scrolls: 0,
       unlocks: [],
+      withheldUnlocks: [],
       administeringUntilRound: 0,
       hostingUntilRound: 0,
     },
@@ -102,9 +105,18 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     lastReport: null,
     pendingChoice: null,
     awayRounds: 0,
+    stats: emptyStats(),
   };
   log(state, 'system', `${config.townName} is founded. ${playerLeader.name} holds the office of ${config.topOffice.title}.`);
   return state;
+}
+
+export function emptyStats() {
+  return {
+    rounds: 0, idleRounds: 0, raidsSuffered: 0, raidsRepelled: 0, goodsLostToRaids: 0, deaths: 0,
+    demandsGranted: 0, demandsRefused: 0, choicesAnswered: 0, romeRequestsCompleted: 0,
+    romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
+  };
 }
 
 export function log(state: GameState, kind: LogEntry['kind'], text: string): void {
@@ -143,6 +155,11 @@ export function migrate(state: GameState): GameState {
     state.awayRounds = 0;
   }
   if (state.pendingChoice === undefined) state.pendingChoice = null;
+  if (!state.lesserPosts) state.lesserPosts = {};
+  for (const p of lesserPosts) if (!(p.id in state.lesserPosts)) state.lesserPosts[p.id] = null;
+  for (const c of Object.values(state.characters)) if (c.lesserPost === undefined) c.lesserPost = null;
+  if (!state.stats) state.stats = emptyStats();
+  if (!state.rome.withheldUnlocks) state.rome.withheldUnlocks = [];
   if (state.tribe.massingForRound === undefined) state.tribe.massingForRound = -999;
   for (const f of Object.values(state.families)) {
     if (f.grievances === undefined) f.grievances = 0;

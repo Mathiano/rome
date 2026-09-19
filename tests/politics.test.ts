@@ -4,7 +4,7 @@ import { Game } from '../src/game';
 import { runRound } from '../src/politics/rounds';
 import { appoint, holderOf, updateCorruption, postsHeldBy } from '../src/politics/posts';
 import { deathChance, kill, livingMembers, leaderOf, gravitasRank } from '../src/politics/characters';
-import { bribe, seekRomeBacking } from '../src/politics/intrigue';
+import { backingCost, bribe, seekRomeBacking } from '../src/politics/intrigue';
 import { config } from '../src/data';
 
 describe('rounds', () => {
@@ -97,8 +97,10 @@ describe('intrigue', () => {
     expect(() => seekRomeBacking(s)).toThrow();
     leader.gravitas = 50;
     leader.gravitasStock = 20;
+    const cost = backingCost(s);
+    expect(cost).toBeGreaterThanOrEqual(Math.ceil(config.gravitas.romeBackingCost * config.gravitas.romeBackingMinCostFraction));
     seekRomeBacking(s);
-    expect(leader.gravitasStock).toBe(20 - config.gravitas.romeBackingCost);
+    expect(leader.gravitasStock).toBe(20 - cost);
     expect(leader.gravitas).toBe(50);
   });
 });

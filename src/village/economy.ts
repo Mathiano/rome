@@ -1,4 +1,5 @@
 import { building, config, post as postDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
+import { lesserEffect } from '../politics/posts';
 import type { GameState, Resources } from '../state/types';
 import { capacity, populationCap, sumEffect } from './storage';
 
@@ -52,7 +53,7 @@ export function netPerHour(state: GameState): Resources {
 }
 
 export function buildTimeMultiplier(state: GameState): number {
-  let m = 1 - postBonus(state, 'works');
+  let m = 1 - postBonus(state, 'works') - lesserEffect(state, 'buildSpeed');
   for (const u of state.rome.unlocks) m *= unlocks[u]?.buildTimeMultiplier ?? 1;
   return Math.max(0.2, m);
 }

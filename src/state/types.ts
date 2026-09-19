@@ -31,6 +31,7 @@ export interface Character {
   gravitas: number; // cumulative — rank is derived from this
   gravitasStock: number; // spendable
   post: string | null;
+  lesserPost: string | null;
   causeOfDeath?: string;
 }
 
@@ -83,6 +84,8 @@ export interface RomeState {
   fillerCounter: number;
   scrolls: number;
   unlocks: string[];
+  /** Rewards Rome has promised but is holding back until favour recovers. */
+  withheldUnlocks: string[];
   administeringUntilRound: number;
   hostingUntilRound: number;
 }
@@ -121,6 +124,23 @@ export interface RoundReport {
   resources: Resources;
 }
 
+/** Counters a playtester can quote back without keeping notes. */
+export interface PlaytestStats {
+  rounds: number;
+  idleRounds: number;
+  raidsSuffered: number;
+  raidsRepelled: number;
+  goodsLostToRaids: number;
+  deaths: number;
+  demandsGranted: number;
+  demandsRefused: number;
+  choicesAnswered: number;
+  romeRequestsCompleted: number;
+  romeRequestsDeclined: number;
+  peakPopulation: number;
+  denariiSpentOnHaste: number;
+}
+
 export interface GameState {
   version: number;
   seed: number;
@@ -137,6 +157,8 @@ export interface GameState {
   families: Record<string, Family>;
   characters: Record<string, Character>;
   posts: Record<string, string | null>;
+  /** Offices outside the council: standing without leverage (DESIGN §9.3). */
+  lesserPosts: Record<string, string | null>;
   office: string | null;
   corruption: number;
   obstructed: Record<string, number>; // domain -> until round
@@ -151,4 +173,6 @@ export interface GameState {
   pendingChoice: { eventId: string; title: string; text: string } | null;
   /** Rounds that ran while the player was away, pending a digest. */
   awayRounds: number;
+  /** Local playtest record. Never read by the game; written for the Save tab. */
+  stats: PlaytestStats;
 }

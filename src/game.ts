@@ -5,7 +5,7 @@ import type { GameState } from './state/types';
 import { createInitialState } from './state/store';
 import { tick } from './village/clock';
 import { startBuild, rush } from './village/construction';
-import { appoint, dismiss } from './politics/posts';
+import { appoint, appointLesser, dismiss, dismissLesser } from './politics/posts';
 import { bribe, seekRomeBacking } from './politics/intrigue';
 import { runRound } from './politics/rounds';
 import { dispatchEnvoy, trade } from './tribes/envoys';
@@ -17,6 +17,8 @@ import { deliver, sendRecruits, hostOfficial, decline } from './rome/requests';
 export type Political =
   | { type: 'appoint'; postId: string; characterId: string }
   | { type: 'dismiss'; postId: string }
+  | { type: 'appoint_lesser'; postId: string; characterId: string }
+  | { type: 'dismiss_lesser'; postId: string }
   | { type: 'bribe'; familyId: string }
   | { type: 'rome_backing' }
   | { type: 'rome_deliver' }
@@ -66,6 +68,8 @@ export class Game {
     switch (a.type) {
       case 'appoint': appoint(s, a.postId, a.characterId); break;
       case 'dismiss': dismiss(s, a.postId); break;
+      case 'appoint_lesser': appointLesser(s, a.postId, a.characterId); break;
+      case 'dismiss_lesser': dismissLesser(s, a.postId); break;
       case 'bribe': bribe(s, a.familyId); break;
       case 'rome_backing': seekRomeBacking(s); break;
       case 'rome_deliver': deliver(s); break;

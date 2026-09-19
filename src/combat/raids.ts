@@ -3,17 +3,20 @@ import type { GameState } from '../state/types';
 import { log } from '../state/store';
 import { buildingTier, hiddenPerResource } from '../village/storage';
 import { homeMilitia } from './militia';
-import { holderOf } from '../politics/posts';
+import { holderOf, lesserEffect } from '../politics/posts';
 
 export function defenceStrength(state: GameState): number {
   const r = config.raid;
-  let d = buildingTier(state, 'castellum') * r.wallStrengthPerCastellumTier + homeMilitia(state) * r.militiaWeight;
+  // Even before a castellum, a colonia sits behind its own ditch and bank.
+  let d = r.baseDefence + buildingTier(state, 'castellum') * r.wallStrengthPerCastellumTier
+    + homeMilitia(state) * r.militiaWeight;
   const g = holderOf(state, 'garrison');
   if (g) {
     const obstructed = (state.obstructed['defence'] ?? 0) > state.round;
     d += obstructed ? 0 : g.stats.discipline * r.garrisonDisciplineWeight;
   }
   for (const u of state.rome.unlocks) d += unlocks[u]?.defenceBonus ?? 0;
+  d += lesserEffect(state, 'defence');
   return d;
 }
 
@@ -27,6 +30,7 @@ export function raidChance(state: GameState): number {
   const r = config.raid;
   const t = state.tribe;
   if (t.allied) return 0;
+  if (state.round < r.graceRounds) return 0;
   if (t.hostagesUntilRound > state.round) return 0;
   if (state.round - t.lastRaidRound < r.minRoundsBetweenRaids) return 0;
   let p = r.baseChance + (100 - t.fear) * r.fearFactor - t.trust * r.trustFactor;
@@ -64,6 +68,9 @@ export function resolveRaid(state: GameState): RaidResult {
     }
   }
   state.tribe.lastRaidRound = state.round;
+  state.stats.raidsSuffered += 1;
+  state.stats.goodsLostToRaids += Object.values(lost).reduce((a, b) => a + b, 0);
+  if (fraction === 0) state.stats.raidsRepelled += 1;
   const name = activeTribe().name;
   if (fraction === 0) {
     state.tribe.fear = Math.min(100, state.tribe.fear + config.raid.fearGainOnRepulse);

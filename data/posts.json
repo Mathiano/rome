@@ -41,5 +41,48 @@
       "description": "Runs the market. His connections raise denarii income.",
       "minRank": 0
     }
+  ],
+  "_lesserComment": "DESIGN \u00a79.3: posts outside the council. Less gravitas, less threat \u2014 a lesser post keeps a house content without handing it leverage, and it cannot be used to obstruct, skim or leak. `effect` names what the holder's stat feeds, and `perStat` how much per point.",
+  "lesser": [
+    {
+      "id": "scriba",
+      "name": "Scribe of the tablets",
+      "stat": "discipline",
+      "effect": "corruptionFall",
+      "perStat": 0.22,
+      "description": "Keeps the records straight. Corruption falls a little faster."
+    },
+    {
+      "id": "agrimensor",
+      "name": "Surveyor",
+      "stat": "craft",
+      "effect": "buildSpeed",
+      "perStat": 0.012,
+      "description": "Sets out the lines. Construction goes a little quicker."
+    },
+    {
+      "id": "haruspex",
+      "name": "Diviner",
+      "stat": "piety",
+      "effect": "gravitasPerRound",
+      "perStat": 0.09,
+      "description": "Reads the entrails before the council sits. Your office gains standing."
+    },
+    {
+      "id": "praeco",
+      "name": "Herald",
+      "stat": "connections",
+      "effect": "attitudeDrift",
+      "perStat": 0.14,
+      "description": "Carries your word to the houses. Their regard cools more slowly."
+    },
+    {
+      "id": "custos",
+      "name": "Warden of the gate",
+      "stat": "discipline",
+      "effect": "defence",
+      "perStat": 0.7,
+      "description": "Keeps the watch. A little more strength on the walls."
+    }
   ]
 }

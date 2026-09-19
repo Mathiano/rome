@@ -20,19 +20,31 @@ export function bribe(state: GameState, familyId: string): void {
   log(state, 'council', `${cost} denarii find their way to the ${fam.name}. Their regard for you rises.`);
 }
 
+/** Standing well with Rome makes its backing cheaper to call on. */
+export function backingCost(state: GameState): number {
+  const g = config.gravitas;
+  const discount = Math.max(0, state.rome.favour) * g.romeBackingFavourDiscount;
+  const floor = Math.ceil(g.romeBackingCost * g.romeBackingMinCostFraction);
+  return Math.max(floor, Math.round(g.romeBackingCost - discount));
+}
+
 /** Spend gravitas stock to buy Rome's backing (DESIGN §6, §9.2). Rome leans on the rival houses. */
 export function seekRomeBacking(state: GameState): void {
   const leader = leaderOf(state, playerFamily(state).id);
   if (!leader) throw new Error('No leader');
   const g = config.gravitas;
+  if (state.rome.favour < config.rome.backingMinFavour) {
+    throw new Error(`Rome will not back a colony it thinks little of (favour ${config.rome.backingMinFavour} needed, you have ${Math.round(state.rome.favour)})`);
+  }
   if (gravitasRank(leader) < g.romeBackingMinRank) {
     throw new Error(`Rome listens from gravitas rank ${g.romeBackingMinRank}; ${leader.name} is rank ${gravitasRank(leader)}`);
   }
-  if (leader.gravitasStock < g.romeBackingCost) throw new Error('Not enough gravitas');
-  leader.gravitasStock -= g.romeBackingCost;
+  const cost = backingCost(state);
+  if (leader.gravitasStock < cost) throw new Error('Not enough gravitas');
+  leader.gravitasStock -= cost;
   state.rome.favour += g.romeBackingFavour;
   for (const f of Object.values(state.families)) {
     if (!f.isPlayer) f.attitude = clampAtt(f.attitude + g.romeBackingAttitude);
   }
-  log(state, 'council', `${leader.name} spends ${g.romeBackingCost} gravitas and Rome's letters arrive in your favour.`);
+  log(state, 'council', `${leader.name} spends ${cost} gravitas and Rome's letters arrive in your favour.`);
 }

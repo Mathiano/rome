@@ -82,3 +82,87 @@ it should start before a week of play against these five.
 - PR #2 is still unmerged, so this branch stacks on it.
 - Balance is still untested by a human. The numbers most likely to be wrong:
   demand frequency, grievance escalation, and the appeasement price.
+
+---
+
+## Addendum — the rest of the kickoff list
+
+Mathias asked for the remaining recommendations rather than waiting for a week
+of play. Noted disagreement, and done.
+
+### Tier-3 animation ✅ (DESIGN §10)
+
+`draw.py` marks animated features while it composes a scene and converts them
+to anchor-relative sprite pixels after the sprite is trimmed and scaled, so a
+flag can never drift from its pole. The renderer draws four reusable kinds —
+smoke, a fluttering standard, a furnace glow, a swinging crane hook — as SVG
+over the PNG, driven by CSS keyframes, and honours `prefers-reduced-motion`.
+All 13 tier-3 tiers animate; no other tier does, asserted against the manifest.
+Verified in the browser by diffing two frames 0.7 s apart: 906 pixels moved.
+
+### Portraits ✅ (DESIGN §10)
+
+Monochrome ink-and-wash busts with the family accent in the frame and the tunic
+stripe. 🟡 The doc assumes a batch from a fixed style prompt, committed; there
+is no image model here, so each bust is drawn deterministically from the
+character's id. That also covers new men, whose ids nobody could pre-render.
+Skin, hair colour and cut, brow, nose, mouth and beard vary; hair greys and
+lines deepen with age; the dead are greyed with closed eyes.
+
+A first pass painted half the faces solid black: signed right-shifts on the hash
+gave negative array indices, so `fill` reached the DOM as the string
+`undefined`. Shifts are unsigned now and a test asserts no portrait can emit an
+invalid paint.
+
+### Lesser offices ✅ (DESIGN §9.3)
+
+Five offices outside the council: scribe, surveyor, diviner, herald, warden of
+the gate. Each feeds one channel from its holder's stat — corruption, build
+speed, the office's standing, attitude drift, defence. They need no rank, give
+40% of a council post's gravitas, and **grant no leverage**: a house parked in
+one stops souring but gets nothing to obstruct, skim or leak with. That is the
+"less gravitas, less threat" the doc asks for, and it is a real lever.
+
+### Rome favour does something ✅
+
+Favour was an inert number. It now scales every reward between −30% and +50%,
+gates the unique gifts (below 25 they are withheld and released automatically
+once favour recovers, rather than lost), and gates and discounts Rome's backing
+with a floor so it never becomes free.
+
+### Playtest telemetry ✅ — and what it immediately found 🔴→✅
+
+A per-colony record in the save, shown on the Save tab: rounds, raids suffered
+and repelled, goods lost, demands granted and refused, decisions answered,
+Rome's tally, deaths, peak population, denarii spent on haste.
+
+It paid for itself in one screenshot: **2 raids by round 9, none repelled,
+stores at zero.** A probe over 12 colonies × 40 rounds confirmed it:
+
+| | before | after |
+|---|---|---|
+| Raids per colony (40 rounds) | 8.1 | 4.5 |
+| First raid, median round | 4 | 13 |
+| Repelled, colony that never builds | 0% | 0% |
+| Repelled, colony that raises its castellum | — | 73% |
+
+Defence was 10 for a new colony against a tribe of 40, so every raid took the
+maximum. 🟡 Data-only fixes: eight rounds of grace before the first raid, base
+raid chance halved, the colonia gets its own ditch and bank as base defence, the
+Chatti start weaker but **grow faster**, so walls stay an arms race rather than a
+solved problem. `tests/balance.test.ts` now guards that shape: nobody is raided
+before they could build, a colony that ignores its walls is stripped but never
+ends (Pillar 7), and one that builds throws most raids back but is never safe.
+
+## Verified ✅
+
+136 tests, clean build, no page errors driving the real UI.
+
+## Still open 🔴
+
+- PR #2 unmerged, so this branch still stacks on it.
+- Research scrolls still cannot be spent. The tree is ❓ in DESIGN §15.11 and
+  CLAUDE.md forbids resolving an open question unasked, so it waits for Mathias.
+- Tribe likes and hates, and the militia's site garrisons, need v0.1 content.
+- The balance numbers above are one model's judgement against a simulated
+  player. They want a human.

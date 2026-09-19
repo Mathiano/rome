@@ -1,4 +1,4 @@
-import { config, post as postDef, posts as postDefs } from '../data';
+import { config, lesserPost as lesserDef, lesserPosts as lesserDefs, post as postDef, posts as postDefs } from '../data';
 import { chance } from '../state/rng';
 import type { GameState } from '../state/types';
 import { log } from '../state/store';
@@ -11,6 +11,48 @@ export function holderOf(state: GameState, postId: string) {
 
 export function postsHeldBy(state: GameState, familyId: string): string[] {
   return postDefs.filter((p) => holderOf(state, p.id)?.familyId === familyId).map((p) => p.id);
+}
+
+export function lesserHolderOf(state: GameState, id: string) {
+  const who = state.lesserPosts[id];
+  return who ? state.characters[who] : null;
+}
+
+export function lesserPostsHeldBy(state: GameState, familyId: string): string[] {
+  return lesserDefs.filter((p) => lesserHolderOf(state, p.id)?.familyId === familyId).map((p) => p.id);
+}
+
+/** A lesser office: no rank gate, no leverage, a little standing (DESIGN §9.3). */
+export function appointLesser(state: GameState, id: string, characterId: string): void {
+  const c = state.characters[characterId];
+  if (!c || !c.alive) throw new Error('No such living character');
+  const def = lesserDef(id);
+  if (c.post) throw new Error(`${c.name} already sits on the council`);
+  const prev = lesserHolderOf(state, id);
+  if (prev) prev.lesserPost = null;
+  if (c.lesserPost) state.lesserPosts[c.lesserPost] = null;
+  state.lesserPosts[id] = characterId;
+  c.lesserPost = id;
+  log(state, 'council', `${c.name} is made ${def.name}.`);
+}
+
+export function dismissLesser(state: GameState, id: string): void {
+  const prev = lesserHolderOf(state, id);
+  if (!prev) throw new Error('Post is vacant');
+  prev.lesserPost = null;
+  state.lesserPosts[id] = null;
+  log(state, 'council', `${prev.name} is relieved as ${lesserDef(id).name}.`);
+}
+
+/** Total contribution of lesser offices to one effect channel. */
+export function lesserEffect(state: GameState, effect: string): number {
+  let total = 0;
+  for (const p of lesserDefs) {
+    if (p.effect !== effect) continue;
+    const h = lesserHolderOf(state, p.id);
+    if (h?.alive) total += h.stats[p.stat] * p.perStat;
+  }
+  return total;
 }
 
 /** Gravitas rank a character must hold to take a post (DESIGN §9.2). */
@@ -61,9 +103,13 @@ export function clampAtt(v: number): number {
 
 /** Rival families without posts grow angry; with posts they mellow (DESIGN §9.3). */
 export function driftAttitudes(state: GameState): void {
+  const herald = lesserEffect(state, 'attitudeDrift');
   for (const f of rivalFamilies(state)) {
-    const n = postsHeldBy(state, f.id).length;
-    f.attitude = clampAtt(f.attitude + (n === 0 ? config.posts.attitudeDriftNoPosts : config.posts.attitudeDriftWithPosts));
+    // A lesser office counts as being kept in office: it stops the slide
+    // without handing the house anything to obstruct with.
+    const n = postsHeldBy(state, f.id).length + lesserPostsHeldBy(state, f.id).length;
+    const base = n === 0 ? config.posts.attitudeDriftNoPosts : config.posts.attitudeDriftWithPosts;
+    f.attitude = clampAtt(f.attitude + base + herald);
   }
 }
 
@@ -85,11 +131,24 @@ export function updateCorruption(state: GameState): void {
   if (treasurer && treasurer.familyId === playerFamily(state).id) {
     delta -= c.fallWhenPlayerTreasury + treasurer.stats.discipline * c.fallPerTreasurerDiscipline;
   }
+  delta -= lesserEffect(state, 'corruptionFall');
   state.corruption = Math.max(c.min, Math.min(c.max, state.corruption + delta));
 }
 
 /** Post-holders and office-holders gain gravitas each round scaled by authority. */
 export function accrueGravitas(state: GameState, forumGravitas: number): void {
+  // Lesser offices teach too, at half the rate, and give a little standing.
+  for (const p of lesserDefs) {
+    const h = lesserHolderOf(state, p.id);
+    if (!h?.alive) continue;
+    const g = config.gravitas.gainPerRoundInPost * 0.4;
+    h.gravitas += g;
+    h.gravitasStock += g;
+    if (h.stats[p.stat] < config.levelling.statMax && chance(state, config.levelling.chancePerRoundInPost * 0.5)) {
+      h.stats[p.stat] += 1;
+      log(state, 'family', `${h.name} grows abler as ${p.name}: ${p.stat} ${h.stats[p.stat]}.`);
+    }
+  }
   for (const p of postDefs) {
     const h = holderOf(state, p.id);
     if (!h) continue;
@@ -105,7 +164,8 @@ export function accrueGravitas(state: GameState, forumGravitas: number): void {
   if (state.office) {
     const o = state.characters[state.office];
     if (o?.alive) {
-      const gain = (config.gravitas.gainForOffice + forumGravitas) * (1 + o.stats.authority * config.gravitas.authorityWeight);
+      const gain = (config.gravitas.gainForOffice + forumGravitas + lesserEffect(state, 'gravitasPerRound'))
+        * (1 + o.stats.authority * config.gravitas.authorityWeight);
       o.gravitas += gain;
       o.gravitasStock += gain;
       if (o.stats.authority < config.levelling.statMax && chance(state, config.levelling.officeAuthorityChance)) {
