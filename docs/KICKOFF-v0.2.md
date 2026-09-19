@@ -75,7 +75,7 @@ Everything below that waits for a week of play: portraits, telemetry, Rome favou
 
 ## 7. Branch note
 
-This work starts from `claude/art-pipeline-pivot` (PR #2), not `main`, because
-every sprite depends on `tools/artgen/` and the manifest renderer that live
-there and have not merged. If PR #2 merges first, this branch rebases onto
-`main` cleanly.
+This work began on `claude/art-pipeline-pivot` (PR #2) rather than `main`,
+because every sprite depends on `tools/artgen/` and the manifest renderer that
+lived there. PR #2 merged on 2026-09-19 and `claude/colony-depth` was rebased
+onto `main`, so the stack is gone and future branches start from `main`.

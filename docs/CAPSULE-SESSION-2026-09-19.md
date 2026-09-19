@@ -1,7 +1,9 @@
 # Capsule — session 2026-09-19
 
-Branch `claude/colony-depth`, off `claude/art-pipeline-pivot` (PR #2), because
-every sprite depends on `tools/artgen/` which has not merged to `main` yet.
+Branch `claude/colony-depth`. It began on `claude/art-pipeline-pivot` (PR #2)
+because every sprite depends on `tools/artgen/`, which lived there. PR #2 was
+merged into `main` at the end of this session and this branch was rebased onto
+`main`, so it no longer stacks on anything.
 
 Backlog banked in `docs/KICKOFF-v0.2.md`. This session took the first five items
 in the recommended order.
@@ -160,7 +162,10 @@ ends (Pillar 7), and one that builds throws most raids back but is never safe.
 
 ## Still open 🔴
 
-- PR #2 unmerged, so this branch still stacks on it.
+- The merged branch `claude/art-pipeline-pivot` could not be deleted from the
+  remote: the token this session uses gets HTTP 403 on a branch delete. The same
+  is true of `claude/tender-faraday-68c706` from PR #1. Both are merged and safe
+  to delete by hand.
 - Research scrolls still cannot be spent. The tree is ❓ in DESIGN §15.11 and
   CLAUDE.md forbids resolving an open question unasked, so it waits for Mathias.
 - Tribe likes and hates, and the militia's site garrisons, need v0.1 content.
