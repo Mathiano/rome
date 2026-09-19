@@ -2,13 +2,15 @@ import { activeTribe, building, config, envoys, posts as postDefs, unlocks, RESO
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, eligibleBuildings, rushPrice, slotById } from '../village/construction';
-import { netPerHour } from '../village/economy';
+import { canAfford, netPerHour } from '../village/economy';
 import { capacity, hiddenPerResource, populationCap, forumTier } from '../village/storage';
 import { gravitasRank, leaderOf, livingMembers, playerFamily, rivalFamilies, standing } from '../politics/characters';
 import { holderOf, meetsRank, postsHeldBy } from '../politics/posts';
 import { militiaPool, homeMilitia } from '../combat/militia';
 import { defenceStrength, raidChance, raidStrength } from '../combat/raids';
 import { tradeRate } from '../tribes/envoys';
+import { appeasePrice } from '../tribes/turn';
+import { pendingChoices } from '../politics/events';
 import { roundsUntilIdle } from '../politics/rounds';
 
 export type Tab = 'village' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save';
@@ -24,6 +26,7 @@ const TABS: { id: Tab; name: string }[] = [
 
 export interface PanelHandlers {
   onTab(t: Tab): void;
+  onChoice(id: string): void;
   onBuild(slotId: string, buildingId: string): void;
   onRush(slotId: string): void;
   onPolitical(a: Political): void;
@@ -47,7 +50,7 @@ export interface News { title: string; subtitle: string; lines: LogEntry[] }
  */
 export function pendingNews(state: GameState): News | null {
   const lines = state.log.filter((e) => e.id > state.seenLogId && !/^Round \d+\.$/.test(e.text));
-  if (!lines.length) return null;
+  if (!lines.length && !state.pendingChoice) return null;
   if (state.awayRounds > 0) {
     return {
       title: 'While you were away',
@@ -66,10 +69,20 @@ export function pendingNews(state: GameState): News | null {
   };
 }
 
-export function renderNews(news: News): string {
+export function renderNews(news: News, state: GameState): string {
   const items = news.lines.map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('');
+  const choices = pendingChoices(state);
+  let foot: string;
+  if (state.pendingChoice && choices.length) {
+    foot = `<p><b>${esc(state.pendingChoice.title)}</b></p><div class="choices">` + choices.map((c) => {
+      const afford = !c.cost || canAfford(state, c.cost);
+      return `<button class="act" data-choice="${c.id}" ${afford ? '' : 'disabled'}>${esc(c.label)}</button>`;
+    }).join('') + `</div><p class="muted">This must be answered.</p>`;
+  } else {
+    foot = `<button class="act" data-news-ok>Continue</button>`;
+  }
   return `<div class="news-card"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
-    <ul>${items}</ul><button class="act" data-news-ok>Continue</button></div>`;
+    <ul>${items}</ul>${foot}</div>`;
 }
 
 export function renderHeader(state: GameState): string {
@@ -191,6 +204,15 @@ function renderFamilies(s: GameState): string {
       if (f.attitude <= config.posts.unhappyThreshold && held.length) out += `<p style="color:var(--terracotta)">Unhappy and in office: expect obstruction, skimming or leaks.</p>`;
       if (held.length === 0) out += `<p class="muted">Without a post their regard for you falls each round.</p>`;
       if (held.length >= config.posts.dangerousPostCount) out += `<p style="color:var(--terracotta)">They hold too many posts. Dangerous.</p>`;
+      if (f.grievances > 0) out += `<p class="muted">Grievances remembered: <b>${f.grievances}</b>${f.denounced ? ' · they have written to Rome' : ''}</p>`;
+      if (f.demand) {
+        const d = f.demand;
+        const what = d.kind === 'post' ? `the post of ${esc(postDefs.find((p) => p.id === d.postId)?.name ?? d.postId!)}` : `${d.denarii} denarii`;
+        const can = d.kind === 'denarii' ? s.resources.denarii >= (d.denarii ?? 0) : true;
+        out += `<div class="card demand"><b>They ask for ${what}.</b><p class="muted">An answer is expected by round ${d.dueRound}. Silence counts as refusal, and costs more.</p>
+          <button class="act" data-accept="${f.id}" ${can ? '' : 'disabled'}>Grant it</button>
+          <button class="act secondary" data-refuse="${f.id}">Refuse</button></div>`;
+      }
       const b = config.intrigue.bribe;
       const pl = leaderOf(s, playerFamily(s).id);
       const canBribe = s.resources.denarii >= b.cost && !!pl && gravitasRank(pl) >= b.minRank;
@@ -217,6 +239,13 @@ function renderTribe(s: GameState): string {
   if (t.allied) out += `<p style="color:var(--moss)">Allied. They do not raid.</p>`;
   if (t.hostagesUntilRound > s.round) out += `<p>Hostages held: no raids until round ${t.hostagesUntilRound}.</p>`;
   if (t.leakedUntilRound > s.round) out += `<p style="color:var(--terracotta)">They know the size of your stores (until round ${t.leakedUntilRound}).</p>`;
+  if (t.massingForRound >= s.round) {
+    const price = appeasePrice(s);
+    const odds = raidStrength(s) > defenceStrength(s) ? 'Your walls will not hold them.' : 'Your walls should hold.';
+    out += `<div class="card demand"><b>They are massing. The raid lands on round ${t.massingForRound}.</b>
+      <p>${odds}</p><p class="muted">Buying them off raises trust and lowers their fear of you: they learn that you pay.</p>
+      <button class="act" data-political="appease" ${s.resources.denarii < price ? 'disabled' : ''}>Pay ${price} denarii to turn them back</button></div>`;
+  }
   out += `<h3>Envoys</h3>`;
   if (t.pendingEnvoy) out += `<p>An envoy is on the road: <b>${esc(envoys.find((e) => e.id === t.pendingEnvoy)?.name ?? t.pendingEnvoy)}</b>. It resolves at the next round.</p>`;
   for (const e of envoys) {
@@ -303,6 +332,9 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
       return;
     }
     if (d.dismiss) return h.onPolitical({ type: 'dismiss', postId: d.dismiss });
+    if (d.choice) return h.onChoice(d.choice);
+    if (d.accept) return h.onPolitical({ type: 'accept_demand', familyId: d.accept });
+    if (d.refuse) return h.onPolitical({ type: 'refuse_demand', familyId: d.refuse });
     if (d.political === 'bribe' && d.family) return h.onPolitical({ type: 'bribe', familyId: d.family });
     if (d.political) return h.onPolitical({ type: d.political as Exclude<Political['type'], 'appoint' | 'dismiss' | 'bribe'> } as Political);
     if (d.envoy) return h.onEnvoy(d.envoy);

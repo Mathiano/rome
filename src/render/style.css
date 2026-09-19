@@ -105,3 +105,7 @@ header .res .neg b { color: #e0885a; }
 .news-card li.k-event { border-left-color: var(--moss); }
 .news-card li.k-family { border-left-color: var(--gold); }
 .news-card li.k-council { border-left-color: var(--ink); }
+
+#panel .card.demand { border-left: 4px solid var(--gold); background: rgba(201,162,74,0.12); }
+.news-card .choices { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.news-card .choices button { text-align: left; }

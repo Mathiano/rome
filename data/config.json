@@ -122,7 +122,12 @@
     "festivalTrust": 12,
     "festivalFear": -3,
     "trustDecayPerRound": 0.5,
-    "fearDecayPerRound": 0.5
+    "fearDecayPerRound": 0.5,
+    "warnRoundsBeforeRaid": 1,
+    "appeaseBase": 50,
+    "appeasePerStrength": 1.4,
+    "appeaseTrust": 9,
+    "appeaseFear": -7
   },
   "rome": {
     "startFavour": 20,
@@ -152,5 +157,21 @@
     "chancePerRoundInPost": 0.14,
     "statMax": 10,
     "officeAuthorityChance": 0.1
+  },
+  "rival": {
+    "_comment": "A rival house's own ambitions (DESIGN \u00a79.1, \u00a79.4). It asks for what it wants, and remembers refusals.",
+    "demandChancePerRound": 0.3,
+    "demandAttitudeCeiling": 55,
+    "demandDueRounds": 3,
+    "postDemandMinRound": 2,
+    "denariiDemandBase": 70,
+    "denariiDemandPerRound": 4,
+    "acceptAttitude": 16,
+    "refuseAttitude": -14,
+    "ignoreAttitude": -20,
+    "grievanceLeverageStep": 0.18,
+    "grievanceDenounceThreshold": 3,
+    "denounceFavour": -12,
+    "denounceCorruption": 8
   }
 }
