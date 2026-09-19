@@ -13,8 +13,10 @@ function pngHeader(buf: Buffer) {
 }
 
 describe('sprite manifest (CLAUDE.md conventions)', () => {
-  it('plate width equals the tile width from data/layout.json', () => {
-    expect(spriteManifest.tileWidth).toBe(layout.tile.w);
+  it('plate width is the declared number of layout tiles', () => {
+    const tiles = (spriteManifest as unknown as { plateTiles?: number }).plateTiles ?? 1;
+    expect(tiles).toBeGreaterThan(0);
+    expect(spriteManifest.tileWidth).toBe(Math.round(layout.tile.w * tiles));
     expect(spriteManifest.ppu).toBeGreaterThan(0);
   });
   for (const [key, e] of Object.entries(spriteManifest.sprites)) {

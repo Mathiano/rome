@@ -1,24 +1,599 @@
 {
-  "tileWidth": 64,
+  "tileWidth": 112,
   "ppu": 4,
   "sprites": {
+    "castellum-t1": {
+      "file": "castellum-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/castellum-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "castellum-t2": {
+      "file": "castellum-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/castellum-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "castellum-t3": {
+      "file": "castellum-t3.png",
+      "width": 455,
+      "height": 269,
+      "ax": 227.48,
+      "ay": 153.25,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/castellum-t3.png",
+      "trimOffset": [
+        117,
+        416
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "cellars-t1": {
+      "file": "cellars-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/cellars-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "cellars-t2": {
+      "file": "cellars-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/cellars-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "cellars-t3": {
+      "file": "cellars-t3.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/cellars-t3.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "clay-works-t1": {
+      "file": "clay-works-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/clay-works-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "clay-works-t2": {
+      "file": "clay-works-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/clay-works-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "clay-works-t3": {
+      "file": "clay-works-t3.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/clay-works-t3.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "farm-t1": {
+      "file": "farm-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/farm-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "farm-t2": {
+      "file": "farm-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/farm-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "farm-t3": {
+      "file": "farm-t3.png",
+      "width": 455,
+      "height": 246,
+      "ax": 227.48,
+      "ay": 129.74,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/farm-t3.png",
+      "trimOffset": [
+        117,
+        470
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "forum-t1": {
+      "file": "forum-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/forum-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "forum-t2": {
+      "file": "forum-t2.png",
+      "width": 455,
+      "height": 250,
+      "ax": 227.48,
+      "ay": 134.53,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/forum-t2.png",
+      "trimOffset": [
+        117,
+        459
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "forum-t3": {
+      "file": "forum-t3.png",
+      "width": 455,
+      "height": 278,
+      "ax": 227.48,
+      "ay": 162.39,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/forum-t3.png",
+      "trimOffset": [
+        117,
+        395
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "granary-t1": {
+      "file": "granary-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/granary-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "granary-t2": {
+      "file": "granary-t2.png",
+      "width": 455,
+      "height": 240,
+      "ax": 227.48,
+      "ay": 124.08,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/granary-t2.png",
+      "trimOffset": [
+        117,
+        483
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "granary-t3": {
+      "file": "granary-t3.png",
+      "width": 455,
+      "height": 272,
+      "ax": 227.48,
+      "ay": 155.86,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/granary-t3.png",
+      "trimOffset": [
+        117,
+        410
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "insulae-t1": {
+      "file": "insulae-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/insulae-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "insulae-t2": {
+      "file": "insulae-t2.png",
+      "width": 455,
+      "height": 256,
+      "ax": 227.48,
+      "ay": 140.63,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/insulae-t2.png",
+      "trimOffset": [
+        117,
+        445
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "insulae-t3": {
+      "file": "insulae-t3.png",
+      "width": 455,
+      "height": 293,
+      "ax": 227.48,
+      "ay": 176.76,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/insulae-t3.png",
+      "trimOffset": [
+        117,
+        362
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "iron-mine-t1": {
+      "file": "iron-mine-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/iron-mine-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "iron-mine-t2": {
+      "file": "iron-mine-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/iron-mine-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "iron-mine-t3": {
+      "file": "iron-mine-t3.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/iron-mine-t3.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
     "lumber-camp-t1": {
       "file": "lumber-camp-t1.png",
-      "width": 262,
-      "height": 177,
-      "ax": 130.6,
-      "ay": 107.21,
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
       "ppu": 4,
-      "plateWidth": 64,
-      "source": "assets/src/lumber-camp-t1.jpg",
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/lumber-camp-t1.png",
       "trimOffset": [
-        110,
-        14
+        117,
+        493
       ],
-      "sourceScale": 0.324873,
+      "sourceScale": 0.435374,
       "slopes": {
-        "left": 0.5129,
-        "right": -0.5275
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "lumber-camp-t2": {
+      "file": "lumber-camp-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/lumber-camp-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
       },
       "overhangPx": [
         0.0,
@@ -27,26 +602,303 @@
     },
     "lumber-camp-t3": {
       "file": "lumber-camp-t3.png",
-      "width": 263,
-      "height": 179,
-      "ax": 129.06,
-      "ay": 111.8,
+      "width": 455,
+      "height": 242,
+      "ax": 227.48,
+      "ay": 126.26,
       "ppu": 4,
-      "plateWidth": 64,
-      "source": "assets/src/lumber-camp-t3.jpg",
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/lumber-camp-t3.png",
       "trimOffset": [
-        318,
-        0
+        117,
+        478
       ],
-      "sourceScale": 0.118245,
+      "sourceScale": 0.435374,
       "slopes": {
-        "left": 0.511,
-        "right": -0.528
+        "left": 0.4995,
+        "right": -0.4995
       },
       "overhangPx": [
-        1.0,
-        41.0
+        0.0,
+        0.0
+      ]
+    },
+    "market-t1": {
+      "file": "market-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/market-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "market-t2": {
+      "file": "market-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/market-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "market-t3": {
+      "file": "market-t3.png",
+      "width": 455,
+      "height": 248,
+      "ax": 227.48,
+      "ay": 131.92,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/market-t3.png",
+      "trimOffset": [
+        117,
+        465
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "temple-t1": {
+      "file": "temple-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/temple-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "temple-t2": {
+      "file": "temple-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/temple-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "temple-t3": {
+      "file": "temple-t3.png",
+      "width": 455,
+      "height": 256,
+      "ax": 227.48,
+      "ay": 139.76,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/temple-t3.png",
+      "trimOffset": [
+        117,
+        447
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "warehouse-t1": {
+      "file": "warehouse-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/warehouse-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "warehouse-t2": {
+      "file": "warehouse-t2.png",
+      "width": 455,
+      "height": 239,
+      "ax": 227.48,
+      "ay": 122.78,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/warehouse-t2.png",
+      "trimOffset": [
+        117,
+        486
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "warehouse-t3": {
+      "file": "warehouse-t3.png",
+      "width": 455,
+      "height": 270,
+      "ax": 227.48,
+      "ay": 154.12,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/warehouse-t3.png",
+      "trimOffset": [
+        117,
+        414
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "waystation-t1": {
+      "file": "waystation-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/waystation-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "waystation-t2": {
+      "file": "waystation-t2.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/waystation-t2.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "waystation-t3": {
+      "file": "waystation-t3.png",
+      "width": 455,
+      "height": 242,
+      "ax": 227.48,
+      "ay": 125.82,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpfh65xck5/waystation-t3.png",
+      "trimOffset": [
+        117,
+        479
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
       ]
     }
-  }
+  },
+  "plateTiles": 1.75
 }

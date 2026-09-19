@@ -19,10 +19,26 @@ header .res span { display: inline-flex; flex-direction: column; align-items: fl
 header .res b { font-weight: normal; font-size: 15px; }
 header .res small { opacity: 0.7; font-size: 11px; }
 header .res .neg b { color: #e0885a; }
-#village { position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 60%, #cbbf9a 0%, #b9ae8c 60%, #a89d7d 100%); }
+#village { position: relative; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 58%, rgba(214,201,168,0.95) 0%, rgba(186,174,142,0.6) 55%, rgba(150,140,112,0) 100%),
+    linear-gradient(170deg, #a9a081 0%, #9d9678 45%, #8e8869 100%);
+}
 #village svg { width: 100%; height: 100%; display: block; }
 #village .slot { cursor: pointer; }
-#village .slot .tile { fill: rgba(255,255,255,0.06); stroke: rgba(42,33,24,0.25); stroke-width: 1; }
+#village .slot .tile { fill: rgba(207,162,120,0.16); stroke: rgba(42,33,24,0.3); stroke-width: 1; stroke-dasharray: 5 4; }
+#village .slot.built .tile { fill: none; stroke: none; }
+#village .slot.selected .tile, #village .slot.built.selected .tile { fill: rgba(201,162,74,0.28); stroke: var(--gold); stroke-width: 2; stroke-dasharray: none; }
+#village .slot.built .empty-marks { display: none; }
+#village .empty-marks .stake { stroke: rgba(42,33,24,0.45); stroke-width: 1.4; stroke-linecap: round; }
+#village .glyph { opacity: 0.75; }
+#village .gl-leaf { fill: #6e7d48; stroke: #2a2118; stroke-width: 0.8; }
+#village .gl-wood { fill: #6d4d3d; }
+#village .gl-clay { fill: #b8674a; stroke: #2a2118; stroke-width: 0.8; }
+#village .gl-claydark { fill: #7e3a26; }
+#village .gl-rock { fill: #ad8c75; stroke: #2a2118; stroke-width: 0.8; }
+#village .gl-iron { fill: #6b6258; }
+#village .gl-furrow { stroke: #a67c4e; stroke-width: 1.6; stroke-linecap: round; }
 #village .slot:hover .tile, #village .slot.selected .tile { fill: rgba(201,162,74,0.35); stroke: var(--gold); }
 #village .slot.site-forest .tile { fill: rgba(60,90,40,0.18); }
 #village .slot.site-clay_bank .tile { fill: rgba(181,86,58,0.18); }
@@ -30,7 +46,8 @@ header .res .neg b { color: #e0885a; }
 #village .slot.site-farmland .tile { fill: rgba(201,162,74,0.2); }
 #village .progress { fill: var(--ink); opacity: 0.85; }
 #village .progress-bar { fill: var(--gold); }
-#village .label { font-size: 9px; fill: var(--ink); text-anchor: middle; pointer-events: none; }
+#village .label { font-size: 9.5px; fill: var(--ink); text-anchor: middle; pointer-events: none;
+  paint-order: stroke; stroke: rgba(239,230,210,0.85); stroke-width: 2.5; stroke-linejoin: round; }
 #panel { border-left: 2px solid var(--ink); background: var(--parchment); display: flex; flex-direction: column; overflow: hidden; }
 #panel nav { display: flex; border-bottom: 1px solid var(--ink); }
 #panel nav button { flex: 1; border: 0; background: var(--parchment-dark); padding: 8px 4px; font: inherit; cursor: pointer; border-right: 1px solid var(--shadow); }
@@ -72,3 +89,6 @@ header .res .neg b { color: #e0885a; }
 
 @keyframes sheet-loop { to { transform: translateX(calc(-1 * var(--sheet-width))); } }
 #village .overlay image { transform-box: view-box; }
+
+#village .labels { pointer-events: none; }
+#village .slot { pointer-events: all; }
