@@ -38,6 +38,8 @@ const PAL = {
   iron: '#6b6258',
   road: '#c2996f',
   roadEdge: '#8f6f4f',
+  square: '#d3ad84',
+  squareLine: '#b08a63',
   wallLight: '#cfc3ab',
   wallMid: '#a19683',
   wallDark: '#726a5c',
@@ -240,11 +242,16 @@ export function createEnvironment(view: { x: number; y: number; w: number; h: nu
   // --- roads: one way in from the gate, and a ring inside the wall. Spurs to
   // every plot made a star that swallowed the town, so the plots meet the ring
   // road instead of the centre.
+  const roadEdges = el('g', { class: 'road-edges', opacity: 0.4 });
   const roads = el('g', { class: 'roads' });
   const [gx, gy] = ring(WALL_R, GATE_AT);
   const [cx0, cy0] = project(0.5, 0); // the forum and castellum stand here
+  // Every lane used to carry a semi-transparent darker underlay. Where the ring
+  // road, the gate road and the cross street met at the square, three of those
+  // compounded into a dark blot that read as a mud pit. The edge is opaque and
+  // painted once, under all of them.
   const lane = (d: string, w: number) => {
-    roads.appendChild(el('path', { d, fill: 'none', stroke: PAL.roadEdge, 'stroke-width': w + 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round', opacity: 0.5 }));
+    roadEdges.appendChild(el('path', { d, fill: 'none', stroke: PAL.roadEdge, 'stroke-width': w + 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
     roads.appendChild(el('path', { d, fill: 'none', stroke: PAL.road, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
   };
   // the ring road, just inside the wall
@@ -260,15 +267,16 @@ export function createEnvironment(view: { x: number; y: number; w: number; h: nu
   // one cross street, so the square is not only reachable from the south
   const [ax, ay] = ring(WALL_R * 0.82, GATE_AT + Math.PI);
   lane(`M ${ax.toFixed(1)},${ay.toFixed(1)} L ${cx0.toFixed(1)},${cy0.toFixed(1)}`, 11);
+  root.appendChild(roadEdges);
   root.appendChild(roads);
 
   // the square: paved, with a well at its centre
-  root.appendChild(el('ellipse', { cx: cx0.toFixed(1), cy: cy0.toFixed(1), rx: 62, ry: 31, fill: PAL.road, stroke: PAL.roadEdge, 'stroke-width': 1.6 }));
-  for (let i = 0; i < 5; i++) {
-    const t = (i / 5) * Math.PI * 2 + 0.4;
+  root.appendChild(el('ellipse', { cx: cx0.toFixed(1), cy: cy0.toFixed(1), rx: 62, ry: 31, fill: PAL.square, stroke: PAL.roadEdge, 'stroke-width': 1.2, opacity: 0.95 }));
+  // flagstones, as light rings rather than dark patches
+  for (let i = 0; i < 3; i++) {
     root.appendChild(el('ellipse', {
-      cx: (cx0 + Math.cos(t) * 34).toFixed(1), cy: (cy0 + Math.sin(t) * 16).toFixed(1),
-      rx: 12, ry: 6, fill: PAL.roadEdge, opacity: 0.35,
+      cx: cx0.toFixed(1), cy: cy0.toFixed(1), rx: 20 + i * 14, ry: 10 + i * 7,
+      fill: 'none', stroke: PAL.squareLine, 'stroke-width': 0.9, opacity: 0.5,
     }));
   }
 

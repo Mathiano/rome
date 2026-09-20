@@ -58,13 +58,33 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
     const label = el('text', { class: 'label', x: 0, y: h / 2 + 14 });
     g.append(barBg, bar);
     g.addEventListener('click', () => onSelect(def.id));
-    g.addEventListener('mouseenter', () => { hovered = def.id; });
-    g.addEventListener('mouseleave', () => { if (hovered === def.id) hovered = null; });
+    // The label is painted in update(), which runs on the village tick — so a
+    // hover took up to a second to answer. Paint it on the spot instead.
+    g.addEventListener('mouseenter', () => { hovered = def.id; paintLabel(); });
+    g.addEventListener('mouseleave', () => { if (hovered === def.id) hovered = null; paintLabel(); });
     world.appendChild(g);
     groups.set(def.id, { g, spriteG, key: '', bar, barBg, label });
   }
 
+  /** Whatever update() last drew, so a hover can answer without waiting for it. */
+  let last: { state: GameState; now: number; selected: string | null } | null = null;
+
+  function paintLabel(): void {
+    if (!last) return;
+    const named = hovered ?? last.selected;
+    if (!named) { hoverLabel.textContent = ''; return; }
+    const def = layout.slots.find((s) => s.id === named)!;
+    const slot = last.state.slots.find((s) => s.id === named)!;
+    const { sx, sy } = project(def.x, def.y);
+    hoverLabel.setAttribute('transform', `translate(${sx},${sy + h * 1.1})`);
+    const work = last.state.constructions.find((x) => x.slotId === named);
+    hoverLabel.textContent = work
+      ? `${labelFor(slot)} — ${remainingText(work.finishAt - last.now)}`
+      : labelFor(slot);
+  }
+
   function update(state: GameState, now: number, selected: string | null): void {
+    last = { state, now, selected };
     for (const slot of state.slots) {
       const gr = groups.get(slot.id)!;
       gr.g.classList.toggle('selected', selected === slot.id);
@@ -88,19 +108,7 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
       gr.barBg.setAttribute('visibility', vis);
       if (c) gr.bar.setAttribute('width', String(40 * progress(c, now)));
     }
-    const named = hovered ?? selected;
-    if (named) {
-      const def = layout.slots.find((s) => s.id === named)!;
-      const slot = state.slots.find((s) => s.id === named)!;
-      const { sx, sy } = project(def.x, def.y);
-      hoverLabel.setAttribute('transform', `translate(${sx},${sy + h * 1.1})`);
-      const work = state.constructions.find((x) => x.slotId === named);
-      hoverLabel.textContent = work
-        ? `${labelFor(slot)} — ${remainingText(work.finishAt - now)}`
-        : labelFor(slot);
-    } else {
-      hoverLabel.textContent = '';
-    }
+    paintLabel();
   }
   return { root, update };
 }

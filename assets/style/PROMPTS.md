@@ -52,3 +52,63 @@ To generate (edit freely before running):
 ## Naming
 
 `assets/src/{building}-t{tier}.jpg` (as generated) → pipeline → `assets/buildings/{building}-t{tier}.png` + entry in `manifest.json` (plate corners, anchor = plate centre, scale).
+
+---
+
+## Base map — the country the colony stands in
+
+**Status: 🟡 proposed, not yet generated.** Approved as a single experiment
+(2026-09-20): one painted terrain asset behind the drawn environment, to judge
+painted-versus-drawn on real evidence before anything is decided about the
+building sprites. Claude cannot generate this; it has to be produced and
+committed to `assets/src/`, and it is wired in behind the `.env` group.
+
+### Geometry, which is not negotiable
+
+The village SVG's viewBox is `-330 -190 660 360` — **aspect exactly 11:6
+(1.8333)**. Generate at **1980 × 1080** (3×). The centre of the world, where
+the forum stands, is the pixel at **(990, 570)**.
+
+The wall is an isometric circle, so on screen it is an axis-aligned ellipse
+centred on that point with **semi-axes 835 × 417 px**. Everything inside that
+ellipse is the town and is drawn in code — the painted map must not compete
+with it.
+
+### What the image must contain
+
+Everything *outside* the wall, in the 2:1 isometric projection the sprites use,
+**lit from the upper left** like every building:
+
+- grass, with real variation — worn patches, tracks, tonal drift
+- a **river** running down the east and south-east, past where the clay banks
+  are (right of frame, roughly x 1450–1750 at 3×)
+- a **wood** across the north and north-east (top of frame)
+- **ploughed strips** to the south-west and south (bottom left)
+- **rock outcrops** at the south-east, where the iron is
+
+### What the image must NOT contain
+
+The wall, the towers, the gate, the town floor, the roads, the square, any
+building, any figure, any text or watermark. All of those are drawn, and a
+painted copy would double them.
+
+Inside the wall ellipse, paint flat packed earth (`#cfa278`) — it is covered by
+the drawn town floor, and matching the colour hides any seam.
+
+### Palette
+
+Match `tools/artgen/palette.json` or the seam at the wall will read as two
+different worlds: grass `#8d9a5f`, leaf mid `#6e7d48`, leaf dark `#4d5a36`,
+water `#7d94a0`, earth light `#cfa278`, stone mid `#ad8c75`, grain `#d9b969`.
+
+### Edges
+
+The viewport letterboxes with `xMidYMid meet`, so the frame's own edges show
+against a `#8d9a5f` background. Keep the outermost ~40px grass so the join is
+invisible.
+
+### Delivery
+
+`assets/src/base-map-v1.jpg` (or `.png`), ideally under 600 KB. Claude wires it
+in as an `<image>` at the bottom of the `.env` group and removes the drawn
+grass, river, wood, fields and rocks — the wall, floor, roads and square stay.

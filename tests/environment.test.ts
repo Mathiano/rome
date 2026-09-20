@@ -58,3 +58,25 @@ describe('the colony environment (DESIGN §10)', () => {
     expect(view.root.querySelectorAll('.env')).toHaveLength(1);
   });
 });
+
+describe('the village answers the pointer without waiting for a tick', () => {
+  it('names a plot the moment it is hovered', () => {
+    const view = createVillageView(() => {});
+    const state = createInitialState(0, 4);
+    view.update(state, 0, null);
+    const label = () => view.root.querySelector('.labels .label')!.textContent ?? '';
+    expect(label()).toBe('');
+    const plot = view.root.querySelector('.slot[data-slot="o1"]')! as SVGGElement;
+    plot.dispatchEvent(new Event('mouseenter'));
+    // no second update() call: the label must already be right
+    expect(label().length).toBeGreaterThan(0);
+    plot.dispatchEvent(new Event('mouseleave'));
+    expect(label()).toBe('');
+  });
+
+  it('says nothing before the first update, rather than throwing', () => {
+    const view = createVillageView(() => {});
+    const plot = view.root.querySelector('.slot[data-slot="o1"]')! as SVGGElement;
+    expect(() => plot.dispatchEvent(new Event('mouseenter'))).not.toThrow();
+  });
+});
