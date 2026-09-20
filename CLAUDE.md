@@ -55,6 +55,8 @@ assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites +
 
 - **Anchors:** buildings anchor at the ground-plate centre, the midpoint of the plate's left and right corners (`data-ax` / `data-ay`, and `ax` / `ay` in `assets/buildings/manifest.json`). Never the south vertex — it floats half a tile.
 - **Sprites:** PNG with alpha. The ground plate is the base diamond. One structure per sprite. A plot is `plateTiles` layout tiles wide (1.75, so neighbouring plates meet); `tools/artgen/` enforces the plate's 2:1 edges and writes the manifest. `tools/artgen/draw.py` draws the tiers this repo ships.
+- **The colony around them:** `src/render/environment.ts` draws the wall, the town floor, the roads and the country in SVG, once, behind every plot. The plate still carries the anchor, so it keeps its geometry, but it is toned to the town floor rather than outlined — an outlined plate turns the colony into a quilt of tiles.
+- **A yard is not a building:** a resource plot carries the stock, tools and clutter of its trade, and people working it. One tree in a lumber camp is a bug, not a style.
 - **Animation:** tier 3 only. SVG overlays on the PNG sprite, CSS keyframes and the Web Animations API, positioned from the same anchor.
 - **Naming in code:** English. Latin only where the doc says so (`forum`, `castellum`).
 - **Gods:** Roman names. Jupiter, not Zeus.
