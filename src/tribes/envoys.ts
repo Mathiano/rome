@@ -1,19 +1,46 @@
-import { config, activeTribe, building } from '../data';
-import type { GameState } from '../state/types';
+import { config, tribeDef, building } from '../data';
+import type { GameState, TribeState } from '../state/types';
 import { log } from '../state/store';
 import { clampToCapacity, buildingTier } from '../village/storage';
 import { canAfford, pay } from '../village/economy';
+import { claimedEffect } from '../map/sites';
+import { researchEffect } from '../village/storage';
 
 const T = () => config.tribe;
 
-export function dispatchEnvoy(state: GameState, envoyId: string): void {
-  if (state.tribe.pendingEnvoy) throw new Error('An envoy is already on the road');
+export function tribeState(state: GameState, id: string): TribeState {
+  const t = state.tribes[id];
+  if (!t) throw new Error(`unknown tribe ${id}`);
+  return t;
+}
+
+/**
+ * Tribes watch each other (DESIGN §7). Warming to one cools those who hate it
+ * and warms those who like it, so there is no way to be everyone's friend.
+ */
+export function propagateWeb(state: GameState, id: string, trustDelta: number, share = config.tribe.webShare): void {
+  if (!trustDelta) return;
+  const def = tribeDef(id);
+  for (const other of Object.values(state.tribes)) {
+    if (other.id === id) continue;
+    const likes = def.likes.includes(other.id) || tribeDef(other.id).likes.includes(id);
+    const hates = def.hates.includes(other.id) || tribeDef(other.id).hates.includes(id);
+    if (!likes && !hates) continue;
+    const move = trustDelta * share * (likes ? 1 : -1);
+    other.trust = clamp(other.trust + move);
+    if (hates && trustDelta > 0) other.fear = clamp(other.fear + move * -0.5);
+  }
+}
+
+export function dispatchEnvoy(state: GameState, tribeId: string, envoyId: string): void {
+  const t = tribeState(state, tribeId);
+  if (t.pendingEnvoy) throw new Error('An envoy is already on the road');
   if (envoyId === 'invite_festival') {
     if (!canAfford(state, T().festivalCost)) throw new Error('Not enough for a festival');
     pay(state, T().festivalCost);
   }
-  state.tribe.pendingEnvoy = envoyId;
-  log(state, 'tribe', `An envoy sets out for ${activeTribe().name}: ${envoyId.replace(/_/g, ' ')}.`);
+  t.pendingEnvoy = envoyId;
+  log(state, 'tribe', `An envoy sets out for ${tribeDef(tribeId).name}: ${envoyId.replace(/_/g, ' ')}.`);
 }
 
 function clamp(v: number): number {
@@ -21,13 +48,13 @@ function clamp(v: number): number {
 }
 
 /** Resolves at the tribe's step of the next round (DESIGN §3.2). */
-export function resolveEnvoy(state: GameState): void {
-  const id = state.tribe.pendingEnvoy;
+export function resolveEnvoy(state: GameState, t: TribeState): void {
+  const id = t.pendingEnvoy;
   if (!id) return;
-  state.tribe.pendingEnvoy = null;
-  const t = state.tribe;
-  const def = activeTribe();
+  t.pendingEnvoy = null;
+  const def = tribeDef(t.id);
   const c = T();
+  const trustBefore = t.trust;
   switch (id) {
     case 'demand_tribute':
       if (t.fear >= c.tributeFearThreshold) {
@@ -52,7 +79,8 @@ export function resolveEnvoy(state: GameState): void {
     case 'propose_alliance':
       if (t.trust >= c.allianceTrustThreshold && t.fear <= c.allianceFearThreshold) {
         t.allied = true;
-        log(state, 'tribe', `${def.name} swear alliance. They will not raid an ally.`);
+        propagateWeb(state, t.id, config.tribe.allianceTrustThreshold, config.tribe.allianceWebShare);
+        log(state, 'tribe', `${def.name} swear alliance. They will not raid an ally, and their enemies have noticed.`);
       } else {
         t.trust = clamp(t.trust + c.allianceRefusalTrust);
         log(state, 'tribe', `${def.name} are not ready for an alliance.`);
@@ -78,20 +106,23 @@ export function resolveEnvoy(state: GameState): void {
       log(state, 'tribe', `${def.name} feast with the colony. Trust rises.`);
       break;
   }
+  propagateWeb(state, t.id, t.trust - trustBefore);
 }
 
 /** Trade at the market once a trade agreement exists: give `wants`, receive `gives` at the tribe's ratio, improved by market tier. */
-export function tradeRate(state: GameState): number {
-  const def = activeTribe();
+export function tradeRate(state: GameState, tribeId: string): number {
+  const def = tribeDef(tribeId);
   const market = buildingTier(state, 'market');
   const marketRate = market > 0 ? building('market').tiers[market - 1].effects.tradeRate : def.trade.ratio;
-  return Math.max(def.trade.ratio, marketRate);
+  // Holding the ford sharpens the rate beyond what the market alone can do.
+  return Math.max(1, Math.max(def.trade.ratio, marketRate) + claimedEffect(state, 'tradeRate') + researchEffect(state, 'tradeRate'));
 }
 
-export function trade(state: GameState, amountWanted: number): void {
-  if (!state.tribe.tradeOpen) throw new Error('No trade agreement');
-  const def = activeTribe();
-  const rate = tradeRate(state);
+export function trade(state: GameState, tribeId: string, amountWanted: number): void {
+  const t = tribeState(state, tribeId);
+  if (!t.tradeOpen) throw new Error('No trade agreement');
+  const def = tribeDef(tribeId);
+  const rate = tradeRate(state, tribeId);
   const give = Math.ceil(amountWanted * rate);
   if (state.resources[def.trade.wants] < give) throw new Error(`Not enough ${def.trade.wants}`);
   state.resources[def.trade.wants] -= give;

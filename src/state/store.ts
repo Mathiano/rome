@@ -1,5 +1,5 @@
-import { config, families as familyDefs, layout, startResources, posts, activeTribe, RESOURCE_IDS } from '../data';
-import type { GameState, Family, Character, Slot, LogEntry } from './types';
+import { config, families as familyDefs, layout, startResources, posts, lesserPosts, activeTribes, RESOURCE_IDS } from '../data';
+import type { GameState, Family, Character, Slot, LogEntry, TribeState } from './types';
 
 export function createInitialState(now: number = Date.now(), seed: number = (now ^ 0x9e3779b9) | 0): GameState {
   const slots: Slot[] = layout.slots.map((s) => ({
@@ -28,6 +28,9 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       colour: f.colour,
       attitude: f.attitude,
       memberIds: f.members.map((m) => m.id),
+      grievances: 0,
+      demand: null,
+      denounced: false,
     };
     for (const m of f.members) {
       characters[m.id] = {
@@ -42,11 +45,12 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
         gravitas: 0,
         gravitasStock: 0,
         post: null,
+        lesserPost: null,
+        bodyguards: 0,
       };
     }
   }
   const playerLeader = Object.values(characters).find((c) => c.familyId === 'player' && c.isLeader)!;
-  const tribe = activeTribe();
 
   const state: GameState = {
     version: config.saveVersion,
@@ -64,20 +68,32 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     families,
     characters,
     posts: Object.fromEntries(posts.map((p) => [p.id, null])),
+    lesserPosts: Object.fromEntries(lesserPosts.map((p) => [p.id, null])),
     office: playerLeader.id,
+    research: { active: [], completed: [] },
+    challenge: null,
+    lastChallengeRound: -999,
+    lastAssassinationRound: -999,
     corruption: 0,
     obstructed: {},
-    tribe: {
-      id: tribe.id,
-      fear: tribe.start.fear,
-      trust: tribe.start.trust,
-      strength: tribe.strength,
+    tribes: Object.fromEntries(activeTribes().map((t) => [t.id, {
+      id: t.id,
+      fear: t.start.fear,
+      trust: t.start.trust,
+      strength: t.strength,
       tradeOpen: false,
       allied: false,
       hostagesUntilRound: 0,
       leakedUntilRound: 0,
+      massingForRound: -999,
       lastRaidRound: -999,
       pendingEnvoy: null,
+    }])),
+    map: {
+      seed: (seed ^ 0x5bf03635) | 0,
+      scouted: [],
+      claimed: [],
+      pendingScout: null,
     },
     rome: {
       favour: config.rome.startFavour,
@@ -89,17 +105,36 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       fillerCounter: 0,
       scrolls: 0,
       unlocks: [],
+      withheldUnlocks: [],
       administeringUntilRound: 0,
       hostingUntilRound: 0,
     },
     log: [],
+    logSeq: 0,
+    seenLogId: 0,
+    lastReport: null,
+    pendingChoice: null,
+    awayRounds: 0,
+    stats: emptyStats(),
   };
   log(state, 'system', `${config.townName} is founded. ${playerLeader.name} holds the office of ${config.topOffice.title}.`);
   return state;
 }
 
+export function emptyStats() {
+  return {
+    rounds: 0, idleRounds: 0, raidsSuffered: 0, raidsRepelled: 0, goodsLostToRaids: 0, deaths: 0,
+    demandsGranted: 0, demandsRefused: 0, choicesAnswered: 0, romeRequestsCompleted: 0,
+    romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
+    challengesFaced: 0, challengesWon: 0, roundsOutOfOffice: 0, assassinationsOrdered: 0,
+    assassinationsSucceeded: 0, marriages: 0, exiles: 0,
+    sitesClaimed: 0, sitesLost: 0, siteRaidsRepelled: 0, scoutsLost: 0, researchCompleted: 0,
+  };
+}
+
 export function log(state: GameState, kind: LogEntry['kind'], text: string): void {
-  state.log.push({ round: state.round, at: state.lastTick, kind, text });
+  state.logSeq = (state.logSeq ?? 0) + 1;
+  state.log.push({ id: state.logSeq, round: state.round, at: state.lastTick, kind, text });
   if (state.log.length > config.log.max) state.log.splice(0, state.log.length - config.log.max);
 }
 
@@ -124,6 +159,55 @@ export function migrate(state: GameState): GameState {
   }
   // New posts added in data after a save was made appear as vacant.
   for (const p of posts) if (!(p.id in state.posts)) state.posts[p.id] = null;
+  // v1 saves predate the report and digest; give their log entries ids.
+  if (typeof state.logSeq !== 'number') {
+    state.logSeq = 0;
+    for (const e of state.log) e.id = ++state.logSeq;
+    state.seenLogId = state.logSeq;
+    state.lastReport = null;
+    state.awayRounds = 0;
+  }
+  if (state.pendingChoice === undefined) state.pendingChoice = null;
+  if (!state.lesserPosts) state.lesserPosts = {};
+  for (const p of lesserPosts) if (!(p.id in state.lesserPosts)) state.lesserPosts[p.id] = null;
+  for (const c of Object.values(state.characters)) if (c.lesserPost === undefined) c.lesserPost = null;
+  if (!state.stats) state.stats = emptyStats();
+  else state.stats = { ...emptyStats(), ...state.stats };
+  if (!state.rome.withheldUnlocks) state.rome.withheldUnlocks = [];
+  // Saves from before the other two tribes woke up carry a single `tribe`.
+  const legacy = (state as unknown as { tribe?: TribeState }).tribe;
+  if (!state.tribes) state.tribes = {};
+  if (legacy && !state.tribes[legacy.id]) state.tribes[legacy.id] = legacy;
+  delete (state as unknown as { tribe?: TribeState }).tribe;
+  for (const t of activeTribes()) {
+    if (state.tribes[t.id]) continue;
+    state.tribes[t.id] = {
+      id: t.id, fear: t.start.fear, trust: t.start.trust, strength: t.strength,
+      tradeOpen: false, allied: false, hostagesUntilRound: 0, leakedUntilRound: 0,
+      massingForRound: -999, lastRaidRound: -999, pendingEnvoy: null,
+    };
+  }
+  for (const c of Object.values(state.characters)) if (c.bodyguards === undefined) c.bodyguards = 0;
+  if (!state.research) state.research = { active: [], completed: [] };
+  // Slots added to the layout after a save was made appear as empty ground.
+  for (const def of layout.slots) {
+    if (state.slots.some((s) => s.id === def.id)) continue;
+    state.slots.push({ id: def.id, ring: def.ring, site: def.site, building: null, tier: 0 });
+  }
+  if (state.challenge === undefined) state.challenge = null;
+  if (state.lastChallengeRound === undefined) state.lastChallengeRound = -999;
+  if (state.lastAssassinationRound === undefined) state.lastAssassinationRound = -999;
+  if (!state.map) {
+    state.map = { seed: (state.seed ^ 0x5bf03635) | 0, scouted: [], claimed: [], pendingScout: null };
+  }
+  for (const t of Object.values(state.tribes)) {
+    if (t.massingForRound === undefined) t.massingForRound = -999;
+  }
+  for (const f of Object.values(state.families)) {
+    if (f.grievances === undefined) f.grievances = 0;
+    if (f.demand === undefined) f.demand = null;
+    if (f.denounced === undefined) f.denounced = false;
+  }
   state.version = config.saveVersion;
   return state;
 }

@@ -1,14 +1,44 @@
 {
-  "_comment": "Round-based events (DESIGN §3.2 step 5). Weighted; one may fire per round. Effects are applied by src/politics/events.ts.",
+  "_comment": "Round events (DESIGN §3.2 step 5). `effect` is a bag of deltas applied by src/politics/events.ts: resources by name, population, attitude (every rival house), gravitas (the named character), corruption, fear/trust (the active tribe), romeFavour, illness (death chance for the named character). Events with `choices` stop and ask; the player's answer carries its own effect.",
   "events": [
-    { "id": "fever", "weight": 3, "title": "Marsh fever", "text": "{name} takes a fever from the marshes.", "effect": { "type": "illness", "deathChance": 0.25 } },
-    { "id": "good_harvest", "weight": 3, "title": "Good harvest", "text": "The fields yield beyond expectation.", "effect": { "type": "resources", "grain": 80 } },
-    { "id": "storm", "weight": 2, "title": "Storm", "text": "A storm takes the roof off a store.", "effect": { "type": "resources", "wood": -40, "clay": -30 } },
-    { "id": "merchant", "weight": 2, "title": "Merchant from the Rhine", "text": "A merchant pays well for the colony's goods.", "effect": { "type": "resources", "denarii": 50 } },
-    { "id": "omen", "weight": 2, "title": "Favourable omen", "text": "The augurs read the birds well. {name} gains standing.", "effect": { "type": "gravitas", "amount": 3 } },
-    { "id": "brawl", "weight": 2, "title": "Brawl in the forum", "text": "Men of the two houses come to blows.", "effect": { "type": "attitude", "amount": -6 } },
-    { "id": "feast", "weight": 2, "title": "Shared feast", "text": "The houses dine together and old quarrels cool.", "effect": { "type": "attitude", "amount": 5 } },
-    { "id": "deserters", "weight": 1, "title": "Deserters", "text": "Men slip away into the forest.", "effect": { "type": "population", "amount": -3 } },
-    { "id": "settlers", "weight": 2, "title": "Settlers", "text": "A party of veterans and their families arrive from the Rhine.", "effect": { "type": "population", "amount": 6 } }
+    { "id": "fever", "weight": 3, "title": "Marsh fever", "text": "{name} takes a fever from the marshes.", "effect": { "illness": 0.25 } },
+    { "id": "good_harvest", "weight": 3, "title": "Good harvest", "text": "The fields yield beyond expectation.", "effect": { "grain": 80 } },
+    { "id": "storm", "weight": 2, "title": "Storm", "text": "A storm takes the roof off a store.", "effect": { "wood": -40, "clay": -30 } },
+    { "id": "merchant", "weight": 2, "title": "Merchant from the Rhine", "text": "A merchant pays well for the colony's goods.", "effect": { "denarii": 50 } },
+    { "id": "omen", "weight": 2, "title": "Favourable omen", "text": "The augurs read the birds well. {name} gains standing.", "effect": { "gravitas": 3 } },
+    { "id": "brawl", "weight": 2, "title": "Brawl in the forum", "text": "Men of the two houses come to blows.", "effect": { "attitude": -6 } },
+    { "id": "feast", "weight": 2, "title": "Shared feast", "text": "The houses dine together and old quarrels cool.", "effect": { "attitude": 5 } },
+    { "id": "settlers", "weight": 2, "title": "Settlers", "text": "A party of veterans and their families arrive from the Rhine.", "effect": { "population": 6 } },
+
+    { "id": "deserters", "weight": 3, "title": "Men slip away",
+      "text": "A dozen men have gone into the forest in the night. The prefect asks whether to hunt them down.",
+      "choices": [
+        { "id": "hunt", "label": "Send the militia after them", "text": "Most are dragged back. The colony is quieter, and colder.", "effect": { "population": 3, "attitude": -5, "fear": 4 } },
+        { "id": "let_go", "label": "Let them go", "text": "They are not pursued. Others notice how little it cost them.", "effect": { "population": -7 } }
+      ] },
+    { "id": "rival_debt", "weight": 3, "title": "A debt in Rome",
+      "text": "The {rival} have borrowed badly and ask you to cover the shortfall. Refusing would be remembered; so would paying.",
+      "choices": [
+        { "id": "pay", "label": "Cover the debt (90 denarii)", "text": "The money goes west. The {rival} are in your debt, and know it.", "cost": { "denarii": 90 }, "effect": { "attitude": 14 } },
+        { "id": "refuse", "label": "Let them answer for it", "text": "They settle it themselves, and do not forget who watched.", "effect": { "attitude": -10, "grievance": 1 } }
+      ] },
+    { "id": "bad_omen", "weight": 2, "title": "The augurs are uneasy",
+      "text": "The birds flew wrong over the altar. The colony wants games to set it right.",
+      "choices": [
+        { "id": "games", "label": "Hold the games (70 denarii)", "text": "Three days of games. The gods are thanked and the crowd is loud in your favour.", "cost": { "denarii": 70 }, "effect": { "gravitas": 5, "attitude": 4 } },
+        { "id": "ignore", "label": "The gods can wait", "text": "No games are held. The priests say little and the forum says a great deal.", "effect": { "corruption": 5, "attitude": -5 } }
+      ] },
+    { "id": "hostage_escape", "weight": 2, "title": "A hostage runs",
+      "text": "A chief's son held in the colony has broken out and been caught at the ford.",
+      "choices": [
+        { "id": "return", "label": "Return him under escort", "text": "He is delivered to his father with courtesy. The tribe marks it.", "effect": { "trust": 14, "fear": -6 } },
+        { "id": "example", "label": "Make an example of him", "text": "The tribe is told what was done. They will think twice, and they will remember.", "effect": { "fear": 16, "trust": -12 } }
+      ] },
+    { "id": "grain_short", "weight": 2, "title": "The granary is short",
+      "text": "The tally does not match the store. Either the granary prefect is careless or someone is selling your grain.",
+      "choices": [
+        { "id": "investigate", "label": "Open an inquiry", "text": "The inquiry finds a clerk and embarrasses a house.", "effect": { "corruption": -8, "attitude": -7 } },
+        { "id": "overlook", "label": "Say nothing", "text": "The books are closed. The loss is quietly absorbed.", "effect": { "grain": -70, "corruption": 4 } }
+      ] }
   ]
 }

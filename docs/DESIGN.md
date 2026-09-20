@@ -117,7 +117,7 @@ One number. Needs housing and grain upkeep. Grows with buildings. More populatio
 | Iron mine | outer | iron site |
 | Farm | outer | grain site |
 
-Library (research, §4.6) is v0.2.
+Library (research, §4.6). ✅ Built 2026-09-20: inner ring, three tiers, and an eighth inner plot added to §4.5's layout to stand on. Its tier is the gate on how far the tree opens, and it reads faster at each tier.
 
 ### 4.5 Layout ✅
 
@@ -132,6 +132,10 @@ This is Travian's fixed-slot model with player-chosen placement, and it preserve
 ### 4.6 Research ✅ (system) / ❓ (contents)
 
 A research system driven by three inputs: denarii (pay for experiments), research scrolls (earned from Rome rewards, ruins on the map, and trade), and the Library building. The tree is data-driven (`data/research.json`). Research is never lost, even through collapse and Rome's intervention. ❓ Tree contents — first pass in v0.2.
+
+Built 2026-09-20 (`src/village/research.ts`). A study runs on the village clock like a construction — real time, no political round — and can be finished early for denarii at the same Pillar 3 price. One study at a time. A node costs denarii and scrolls, needs a Library of its own rank, and needs whatever it stands on. Research and buildings share one vocabulary of effects, so anything already reading a building effect picks research up unchanged.
+
+🟡 **Tree contents, first pass, 2026-09-20.** Eleven nodes in three ranks, written as a data-file default in an unattended session (CLAUDE.md, *Ways of working*) and listed in `docs/CAPSULE-SESSION-2026-09-20.md` for confirmation. §15.11 stays open until Mathias ratifies or replaces them.
 
 ---
 
@@ -239,12 +243,16 @@ An unhappy family holding a post can: **obstruct** (its domain underperforms), *
 - **So:** a bigger family and members who like you more than their peers is the defence.
 - **Losing** the office is not game over. The player continues as the family out of power and must win the office back. Losing it is very much not ideal.
 
+Built 2026-09-20 (`src/politics/challenge.ts`). A rival calls only when it has soured on the player (attitude ≤ `challenge.callerAttitudeCeiling`) **and** a simulated count says it would carry the council — not on a gravitas comparison, which whoever holds the office always wins. Houses with no standing put nobody up and become the swing vote, which is where "members who like you more than their peers" bites. A tie leaves the office where it is. Out of power the council's business (appointments, dismissals, claims) is closed to the player; the houses, the tribes, Rome and intrigue are not (Pillar 7). The player wins it back by calling a vote themselves at `challenge.playerCallCost` and rank `challenge.playerCallMinRank`; either way the vote falls `challenge.roundsToVote` rounds later, and that round is the campaign.
+
 ### 9.6 Intrigue ✅
 
 Menu: bribe, expose, marry, exile, promote, demote, denounce to Rome, assassinate.
 
 - **Assassination** is in, and the player can order one. It is rare, blocked by bodyguards, and generates large grievances from **all** families — nobody takes it lightly.
 - **Marriage** between families strengthens relations and produces heirs under the patrilineal rule (§9.2). Marriage with tribal nobles is also in, and shifts that tribe's disposition.
+
+Built 2026-09-20 (`src/politics/intrigue.ts`). In: bribe, expose, denounce to Rome, marry (house or tribe), exile, assassinate, and bodyguards. Promote and demote are the appointment and dismissal of §9.3 rather than separate moves. Every one of them runs a political round and is remembered as a grievance; an exile also empties the man's post and takes his vote out of §9.5. Heirs by birth still wait on §15.7, so a marriage binds the houses without yet producing children. Bodyguards are the militia pool's third sink (§8.1): `bodyguard.maxPerCharacter` each, `bodyguard.blockPerGuard` off an attempt, and every guard is a man off the walls. Standing men over your own kin runs no round — it is household business, not a move against another actor (§3.2).
 
 ### 9.7 Failure states ✅
 
@@ -302,7 +310,7 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 |---|---|
 | **v0 — vertical slice** | Village, five resources, ~12 buildings, storage, timed construction with hired help, Rome requests, one tribe with envoys and raids, two families (yours + one rival), five council posts, gravitas, basic intrigue (bribe, promote, demote), abstract raids, localStorage save with export/import. No world map. |
 | **v0.1** | World map with scouting and "?" sites, site claiming and garrisons, all three tribes with the like/hate web. |
-| **v0.2** | Research system and Library. Families three and four. Marriage, heirs by birth and adoption, bodyguards, assassination. Top-office challenge. |
+| **v0.2** | Research system and Library ✅. Families three and four ✅. Marriage ✅, heirs by birth and adoption (§15.7 open), bodyguards ✅, assassination ✅. Top-office challenge ✅. |
 | **v0.3** | First content drop: stone, marble, salt and their buildings; first processed goods. Temples per god. Supabase sync. |
 | **later** | Offence and Rome-ordered attacks. Citizen tiers. Mobile. Latin UI names. Traits. The Teutoburg event. |
 
@@ -326,7 +334,7 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 8. One temple or a temple per god.
 9. ~~Tribe names and personalities.~~ ✅ Resolved 2026-09-15 for v0: the Chatti, raider. The other two are 🟡 pending v0.1 (§7).
 10. Map size.
-11. Research tree contents.
+11. Research tree contents. 🟡 First pass in `data/research.json` 2026-09-20 — eleven nodes, three ranks. Awaiting confirmation.
 12. Whether Rome's request to attack a tribe can exist before offence does (recommend no).
 
 ---
@@ -335,3 +343,5 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 v0.1.1 — 2026-09-15 — first implementation session. Open questions 2, 5, 6 and 9 resolved; seven implementation defaults from `docs/CAPSULE-SESSION-2026-09-15.md` confirmed by the Owner and recorded as ✅ in §3.1, §3.3, §3.4, §4.3, §6, §9.4. Inactive family Iulii renamed Valerii (the Iulii are the imperial gens in year 0).
 v0.1.2 — 2026-09-16 — town named Arctown (§15.1). CI on every pull request. Dev-only time control documented in the session capsule, not here: it is tooling, not design.
 v0.1.3 — 2026-09-16 — §10 art pipeline pivot: buildings are raster PNG sprites from a style anchor via `tools/artgen/`; SVG kept for map, UI and animated overlays; isobuild retired.
+v0.1.4 — 2026-09-20 — §9.5 and §9.6 built: the top-office challenge with a live vote count, losing and winning back power, and the full intrigue menu with bodyguards. All four houses (§9.1) and all three tribes (§7) are awake.
+v0.2.0 — 2026-09-20 — §4.6 built: the Library, an eighth inner plot to stand it on, and a first-pass research tree (🟡, §15.11).

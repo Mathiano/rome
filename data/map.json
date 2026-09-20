@@ -1,0 +1,57 @@
+{
+  "_comment": "The world map (DESIGN §5). Terrain and site placement are derived from a stable map seed, so the save stores only what the player has done. Sites whose resources do not exist yet (a quarry needs stone, a salt spring needs salt) wait for their content drop per §4.1 — banked, not dropped.",
+  "_proposed": {
+    "radius": "DESIGN §15.10 — map size is ❓ open. 12 gives 25 hexes across, the doc's proposal."
+  },
+  "radius": 12,
+  "hexSize": 22,
+  "siteCount": 34,
+  "minSiteDistance": 2,
+  "terrain": [
+    { "id": "plain", "name": "Open ground", "weight": 30 },
+    { "id": "forest", "name": "Forest", "weight": 27 },
+    { "id": "hills", "name": "Hills", "weight": 16 },
+    { "id": "marsh", "name": "Marsh", "weight": 13 },
+    { "id": "water", "name": "River", "weight": 14 }
+  ],
+  "sites": [
+    { "id": "timber", "name": "Timber stand", "weight": 11, "terrain": ["forest"],
+      "produces": { "wood": 16 }, "description": "Standing oak within a day's haul." },
+    { "id": "clay_bank", "name": "Clay bank", "weight": 9, "terrain": ["water", "marsh"],
+      "produces": { "clay": 16 }, "description": "A cut bank of good throwing clay." },
+    { "id": "iron_seam", "name": "Iron seam", "weight": 8, "terrain": ["hills"],
+      "produces": { "iron": 10 }, "description": "Bog ore near the surface." },
+    { "id": "meadow", "name": "River meadow", "weight": 8, "terrain": ["plain", "water"],
+      "produces": { "grain": 18 }, "description": "Flat ground the river floods and feeds." },
+    { "id": "ford", "name": "River ford", "weight": 6, "terrain": ["water"],
+      "effect": { "tradeRate": -0.25 }, "description": "A crossing the traders use. Holding it sharpens your rates." },
+    { "id": "shrine", "name": "Old shrine", "weight": 6, "terrain": ["forest", "hills", "marsh"],
+      "effect": { "gravitasPerRound": 1 }, "description": "A grove the tribes hold sacred. Rome's men are watched here." },
+    { "id": "ruins", "name": "Ruins", "weight": 6, "terrain": ["plain", "forest", "hills"],
+      "reward": { "scrolls": 1 }, "description": "Older than Rome, and someone wrote things down." },
+    { "id": "camp", "name": "Barbarian camp", "weight": 8, "hostile": true,
+      "description": "Warriors, and they saw your scout first." }
+  ],
+  "scout": {
+    "_comment": "Prepared like an envoy (DESIGN §3.2): dispatched now, resolves at the next round.",
+    "cost": { "denarii": 25 },
+    "campCasualties": 2,
+    "campFear": -4,
+    "campDenarii": -15
+  },
+  "claim": {
+    "costBase": { "denarii": 90 },
+    "costPerRing": { "denarii": 12 },
+    "upkeepPerRound": 5,
+    "upkeepPerRing": 1,
+    "garrisonMax": 12
+  },
+  "hold": {
+    "_comment": "Exposure rises with distance (DESIGN §5.3). A garrison is the only thing that answers it.",
+    "raidChanceBase": 0.05,
+    "raidChancePerRing": 0.022,
+    "garrisonStrengthPerMan": 3.2,
+    "tribeShareAgainstSite": 0.45,
+    "graceRounds": 10
+  }
+}

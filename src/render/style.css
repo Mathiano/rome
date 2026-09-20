@@ -12,6 +12,8 @@
 * { box-sizing: border-box; }
 html, body { margin: 0; height: 100%; background: var(--parchment); color: var(--ink); font: 14px/1.4 Georgia, 'Times New Roman', serif; }
 #app { display: grid; grid-template-rows: auto 1fr; grid-template-columns: 1fr 380px; height: 100vh; min-width: 960px; }
+#stage { position: relative; overflow: hidden; }
+#stage > div { position: absolute; inset: 0; }
 header { grid-column: 1 / 3; display: flex; align-items: center; gap: 18px; padding: 8px 14px; background: var(--ink); color: var(--parchment); }
 header h1 { font-size: 18px; margin: 0; font-weight: normal; letter-spacing: 0.08em; }
 header .res { display: flex; gap: 14px; margin-left: auto; font-variant-numeric: tabular-nums; }
@@ -19,10 +21,26 @@ header .res span { display: inline-flex; flex-direction: column; align-items: fl
 header .res b { font-weight: normal; font-size: 15px; }
 header .res small { opacity: 0.7; font-size: 11px; }
 header .res .neg b { color: #e0885a; }
-#village { position: relative; overflow: hidden; background: radial-gradient(ellipse at 50% 60%, #cbbf9a 0%, #b9ae8c 60%, #a89d7d 100%); }
+#village { position: relative; overflow: hidden;
+  background:
+    radial-gradient(ellipse 70% 55% at 50% 58%, rgba(214,201,168,0.95) 0%, rgba(186,174,142,0.6) 55%, rgba(150,140,112,0) 100%),
+    linear-gradient(170deg, #a9a081 0%, #9d9678 45%, #8e8869 100%);
+}
 #village svg { width: 100%; height: 100%; display: block; }
 #village .slot { cursor: pointer; }
-#village .slot .tile { fill: rgba(255,255,255,0.06); stroke: rgba(42,33,24,0.25); stroke-width: 1; }
+#village .slot .tile { fill: rgba(207,162,120,0.16); stroke: rgba(42,33,24,0.3); stroke-width: 1; stroke-dasharray: 5 4; }
+#village .slot.built .tile { fill: none; stroke: none; }
+#village .slot.selected .tile, #village .slot.built.selected .tile { fill: rgba(201,162,74,0.28); stroke: var(--gold); stroke-width: 2; stroke-dasharray: none; }
+#village .slot.built .empty-marks { display: none; }
+#village .empty-marks .stake { stroke: rgba(42,33,24,0.45); stroke-width: 1.4; stroke-linecap: round; }
+#village .glyph { opacity: 0.75; }
+#village .gl-leaf { fill: #6e7d48; stroke: #2a2118; stroke-width: 0.8; }
+#village .gl-wood { fill: #6d4d3d; }
+#village .gl-clay { fill: #b8674a; stroke: #2a2118; stroke-width: 0.8; }
+#village .gl-claydark { fill: #7e3a26; }
+#village .gl-rock { fill: #ad8c75; stroke: #2a2118; stroke-width: 0.8; }
+#village .gl-iron { fill: #6b6258; }
+#village .gl-furrow { stroke: #a67c4e; stroke-width: 1.6; stroke-linecap: round; }
 #village .slot:hover .tile, #village .slot.selected .tile { fill: rgba(201,162,74,0.35); stroke: var(--gold); }
 #village .slot.site-forest .tile { fill: rgba(60,90,40,0.18); }
 #village .slot.site-clay_bank .tile { fill: rgba(181,86,58,0.18); }
@@ -30,10 +48,13 @@ header .res .neg b { color: #e0885a; }
 #village .slot.site-farmland .tile { fill: rgba(201,162,74,0.2); }
 #village .progress { fill: var(--ink); opacity: 0.85; }
 #village .progress-bar { fill: var(--gold); }
-#village .label { font-size: 9px; fill: var(--ink); text-anchor: middle; pointer-events: none; }
+#village .label { font-size: 9.5px; fill: var(--ink); text-anchor: middle; pointer-events: none;
+  paint-order: stroke; stroke: rgba(239,230,210,0.85); stroke-width: 2.5; stroke-linejoin: round; }
 #panel { border-left: 2px solid var(--ink); background: var(--parchment); display: flex; flex-direction: column; overflow: hidden; }
-#panel nav { display: flex; border-bottom: 1px solid var(--ink); }
-#panel nav button { flex: 1; border: 0; background: var(--parchment-dark); padding: 8px 4px; font: inherit; cursor: pointer; border-right: 1px solid var(--shadow); }
+/* Nine tabs. At 12px they fit the 380px panel on one row with 2px to spare;
+   they wrap rather than overflow if the panel is ever narrower. */
+#panel nav { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--ink); }
+#panel nav button { flex: 1 0 auto; border: 0; background: var(--parchment-dark); padding: 8px 4px; font: inherit; font-size: 12px; cursor: pointer; border-right: 1px solid var(--shadow); }
 #panel nav button.active { background: var(--parchment); font-weight: bold; }
 #panel nav button .badge { display: inline-block; background: var(--terracotta); color: #fff; border-radius: 8px; font-size: 10px; padding: 0 5px; margin-left: 3px; }
 #panel section { padding: 12px; overflow-y: auto; flex: 1; }
@@ -72,3 +93,111 @@ header .res .neg b { color: #e0885a; }
 
 @keyframes sheet-loop { to { transform: translateX(calc(-1 * var(--sheet-width))); } }
 #village .overlay image { transform-box: view-box; }
+
+#village .labels { pointer-events: none; }
+#village .slot { pointer-events: all; }
+
+.news { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+  background: rgba(42,33,24,0.45); z-index: 20; }
+.news-card { background: var(--parchment); border: 2px solid var(--ink); border-radius: 3px;
+  padding: 16px 20px; max-width: 520px; max-height: 76%; overflow-y: auto; box-shadow: 0 8px 24px var(--shadow); }
+.news-card h2 { margin: 0 0 2px; font-size: 20px; letter-spacing: 0.04em; }
+.news-card ul { list-style: none; padding: 0; margin: 10px 0 14px; }
+.news-card li { padding: 5px 0 5px 10px; border-left: 3px solid var(--parchment-dark); margin-bottom: 3px; }
+.news-card li.k-raid { border-left-color: var(--terracotta); }
+.news-card li.k-rome { border-left-color: var(--river); }
+.news-card li.k-event { border-left-color: var(--moss); }
+.news-card li.k-family { border-left-color: var(--gold); }
+.news-card li.k-council { border-left-color: var(--ink); }
+
+#panel .card.demand { border-left: 4px solid var(--gold); background: rgba(201,162,74,0.12); }
+.news-card .choices { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
+.news-card .choices button { text-align: left; }
+
+/* Tier-3 animation set (DESIGN §10). One reusable vocabulary over every sprite. */
+#village .anim { pointer-events: none; }
+#village .anim-smoke .puff { fill: #c9c0b2; stroke: none; opacity: 0; animation: puff-rise 3.4s linear infinite; }
+#village .anim-smoke .p1 { animation-delay: -1.13s; }
+#village .anim-smoke .p2 { animation-delay: -2.26s; }
+@keyframes puff-rise {
+  0%   { opacity: 0;    transform: translate(0, 0) scale(0.5); }
+  18%  { opacity: 0.62; }
+  100% { opacity: 0;    transform: translate(3px, -15px) scale(1.5); }
+}
+#village .anim-flag .cloth { fill: #b5563a; stroke: #2a2118; stroke-width: 0.6; stroke-linejoin: round;
+  transform-box: fill-box; transform-origin: 0% 50%; animation: cloth-wave 2.1s ease-in-out infinite; }
+@keyframes cloth-wave {
+  0%, 100% { transform: skewY(-4deg) scaleX(0.96); }
+  50%      { transform: skewY(5deg)  scaleX(1.03); }
+}
+#village .anim-glow .halo { fill: #e06a2a; stroke: none; opacity: 0.18; animation: glow-pulse 2.6s ease-in-out infinite; }
+#village .anim-glow .core { fill: #e9a05d; stroke: none; opacity: 0.6; animation: glow-pulse 2.6s ease-in-out infinite reverse; }
+@keyframes glow-pulse { 0%, 100% { opacity: 0.16; } 50% { opacity: 0.66; } }
+#village .anim-swing .arm { transform-box: fill-box; transform-origin: 50% 0%; animation: hook-swing 3.8s ease-in-out infinite; }
+#village .anim-swing line, #village .anim-swing polyline { stroke: #3f1c0d; stroke-width: 0.9; fill: none; stroke-linecap: round; }
+@keyframes hook-swing { 0%, 100% { transform: rotate(-6deg); } 50% { transform: rotate(6deg); } }
+@media (prefers-reduced-motion: reduce) {
+  #village .anim * { animation: none !important; }
+  #village .anim-smoke .puff { opacity: 0.35; }
+}
+
+#panel .roster { margin-top: 8px; }
+#panel .member { display: flex; gap: 9px; align-items: flex-start; padding: 6px 0; border-top: 1px solid var(--shadow); }
+#panel .member:first-child { border-top: none; }
+#panel .member.dead { opacity: 0.55; }
+#panel .member .who { flex: 1; min-width: 0; }
+#panel .portrait { flex: none; border: 1px solid var(--ink); border-radius: 2px; background: var(--parchment-dark); }
+
+#panel .card.lesser { border-left: 3px solid var(--parchment-dark); }
+#panel .card.lesser.rival { border-left-color: var(--river); }
+#panel .card.lesser.player { border-left-color: var(--terracotta); }
+
+#map { background: linear-gradient(170deg, #8e8f74 0%, #7d8168 55%, #6d7259 100%); }
+#map svg { width: 100%; height: 100%; display: block; }
+#map .hex { cursor: pointer; }
+#map .ground { stroke: rgba(42,33,24,0.3); stroke-width: 0.8; }
+#map .ground.t-plain { fill: #c3b68c; }
+#map .ground.t-forest { fill: #6e7d48; }
+#map .ground.t-hills { fill: #ab9c86; }
+#map .ground.t-marsh { fill: #8d9a6f; }
+#map .ground.t-water { fill: #7d94a0; }
+#map .ground.held { stroke: var(--gold); stroke-width: 2.2; }
+#map .ground.selected { stroke: #fff; stroke-width: 2.6; }
+#map .hex:hover .ground { stroke: #fff; stroke-width: 2; }
+#map .unknown { font: bold 15px Georgia, serif; fill: #2a2118; text-anchor: middle; pointer-events: none; }
+#map .home { pointer-events: none; }
+#map .home-wall { fill: #e7ded0; stroke: #2a2118; stroke-width: 1; }
+#map .home-roof { fill: #c4724c; stroke: #2a2118; stroke-width: 1; }
+#map .garrison { font: 8px Georgia, serif; fill: #2a2118; text-anchor: middle; pointer-events: none;
+  paint-order: stroke; stroke: rgba(239,230,210,0.9); stroke-width: 2.2; }
+#map .scouting { font: bold 13px Georgia, serif; fill: #efe6d2; text-anchor: middle; pointer-events: none; }
+#map .site { pointer-events: none; }
+#map .m-leaf { fill: #44582a; stroke: #2a2118; stroke-width: 0.7; }
+#map .m-wood, #map .m-claydark { fill: #5b3f25; }
+#map .m-clay { fill: #b8674a; stroke: #2a2118; stroke-width: 0.7; }
+#map .m-rock { fill: #cfc7b2; stroke: #2a2118; stroke-width: 0.7; }
+#map .m-iron { fill: #55504a; }
+#map .m-grain { stroke: #d9b969; stroke-width: 1.6; stroke-linecap: round; }
+#map .m-water { fill: none; stroke: #3f5e6b; stroke-width: 1.4; }
+#map .m-stone { fill: #e7ded0; stroke: #2a2118; stroke-width: 0.7; }
+#map .m-camp { fill: #8a2d2d; stroke: #2a2118; stroke-width: 0.8; }
+#map .m-spear { stroke: #2a2118; stroke-width: 1.2; }
+
+/* The challenge (DESIGN §9.5) and the intrigue menu (§9.6). */
+#panel .card.challenge { border-left: 4px solid var(--gold); background: rgba(181,86,58,0.10); }
+#panel .tally { margin: 6px 0; }
+#panel .tally .row { display: grid; grid-template-columns: 1fr 90px 22px; gap: 8px; align-items: center; padding: 2px 0; }
+#panel .tally .row .meter { margin: 0; }
+#panel .tally .row.rival .meter i { background: var(--river); }
+#panel .guards { font-size: 11px; margin-top: 3px; }
+#panel button.act.tiny { padding: 0 6px; line-height: 16px; font-size: 12px; }
+#panel details.intrigue { margin: 6px 0; border-top: 1px solid var(--shadow); padding-top: 4px; }
+#panel details.intrigue summary { cursor: pointer; font-variant: small-caps; letter-spacing: 0.04em; }
+#panel details.intrigue .row { margin: 5px 0; }
+#panel details.intrigue .row span.muted { display: block; font-size: 11px; margin: 1px 0 0 2px; }
+#panel details.intrigue select { max-width: 100%; }
+#panel button.act.danger { background: var(--ink); }
+
+/* The library (DESIGN §4.6). */
+#panel .known { margin: 4px 0 0 0; padding-left: 18px; }
+#panel .known li { margin: 2px 0; }

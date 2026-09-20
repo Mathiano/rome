@@ -1,10 +1,88 @@
 {
-  "_comment": "✅ DESIGN §9.3: v0 has five of the seven major posts — treasury, garrison, works, granary, market. Temple and tribal relations wait for their versions. Change this file, not code.",
+  "_comment": "\u2705 DESIGN \u00a79.3: v0 has five of the seven major posts \u2014 treasury, garrison, works, granary, market. Temple and tribal relations wait for their versions. Change this file, not code. minRank gates a post on the holder's gravitas rank (DESIGN \u00a79.2).",
   "posts": [
-    { "id": "treasury", "name": "Treasurer", "domain": "treasury", "stat": "discipline", "description": "Guards the denarii. Lowers corruption when held by a disciplined man of your own house." },
-    { "id": "garrison", "name": "Prefect of the garrison", "domain": "defence", "stat": "discipline", "description": "Commands the militia. His discipline adds to the walls." },
-    { "id": "works", "name": "Curator of works", "domain": "works", "stat": "craft", "description": "Oversees construction. His craft shortens build times." },
-    { "id": "granary", "name": "Prefect of the granary", "domain": "grain", "stat": "craft", "description": "Manages the fields and the granary. His craft raises grain yields." },
-    { "id": "market", "name": "Aedile of the market", "domain": "trade", "stat": "connections", "description": "Runs the market. His connections raise denarii income." }
+    {
+      "id": "treasury",
+      "name": "Treasurer",
+      "domain": "treasury",
+      "stat": "discipline",
+      "description": "Guards the denarii. Lowers corruption when held by a disciplined man of your own house.",
+      "minRank": 1
+    },
+    {
+      "id": "garrison",
+      "name": "Prefect of the garrison",
+      "domain": "defence",
+      "stat": "discipline",
+      "description": "Commands the militia. His discipline adds to the walls.",
+      "minRank": 1
+    },
+    {
+      "id": "works",
+      "name": "Curator of works",
+      "domain": "works",
+      "stat": "craft",
+      "description": "Oversees construction. His craft shortens build times.",
+      "minRank": 0
+    },
+    {
+      "id": "granary",
+      "name": "Prefect of the granary",
+      "domain": "grain",
+      "stat": "craft",
+      "description": "Manages the fields and the granary. His craft raises grain yields.",
+      "minRank": 0
+    },
+    {
+      "id": "market",
+      "name": "Aedile of the market",
+      "domain": "trade",
+      "stat": "connections",
+      "description": "Runs the market. His connections raise denarii income.",
+      "minRank": 0
+    }
+  ],
+  "_lesserComment": "DESIGN \u00a79.3: posts outside the council. Less gravitas, less threat \u2014 a lesser post keeps a house content without handing it leverage, and it cannot be used to obstruct, skim or leak. `effect` names what the holder's stat feeds, and `perStat` how much per point.",
+  "lesser": [
+    {
+      "id": "scriba",
+      "name": "Scribe of the tablets",
+      "stat": "discipline",
+      "effect": "corruptionFall",
+      "perStat": 0.22,
+      "description": "Keeps the records straight. Corruption falls a little faster."
+    },
+    {
+      "id": "agrimensor",
+      "name": "Surveyor",
+      "stat": "craft",
+      "effect": "buildSpeed",
+      "perStat": 0.012,
+      "description": "Sets out the lines. Construction goes a little quicker."
+    },
+    {
+      "id": "haruspex",
+      "name": "Diviner",
+      "stat": "piety",
+      "effect": "gravitasPerRound",
+      "perStat": 0.09,
+      "description": "Reads the entrails before the council sits. Your office gains standing."
+    },
+    {
+      "id": "praeco",
+      "name": "Herald",
+      "stat": "connections",
+      "effect": "attitudeDrift",
+      "perStat": 0.14,
+      "description": "Carries your word to the houses. Their regard cools more slowly."
+    },
+    {
+      "id": "custos",
+      "name": "Warden of the gate",
+      "stat": "discipline",
+      "effect": "defence",
+      "perStat": 0.7,
+      "description": "Keeps the watch. A little more strength on the walls."
+    }
   ]
 }

@@ -15,6 +15,7 @@ function loyalist(state: GameState) {
 /** Rome's turn (DESIGN §3.2 step 4): reward fulfilled requests, issue the next one. */
 export function romeTurn(state: GameState): void {
   const r = state.rome;
+  releaseWithheld(state);
   if (r.activeRequest) {
     const a = r.activeRequest;
     if (a.kind === 'build' && a.build && buildingTier(state, a.build.building) >= a.build.tier) a.fulfilled = true;
@@ -69,8 +70,32 @@ export function issueNext(state: GameState): void {
   log(state, 'rome', `Rome asks: ${req.title}. ${req.text}`);
 }
 
+/**
+ * How generous Rome is feeling. Favour is no longer an inert number: it scales
+ * every reward and decides whether the unique gifts are handed over at all.
+ */
+export function favourRewardMultiplier(state: GameState): number {
+  const r = config.rome;
+  return 1 + Math.max(r.rewardFavourFloor, Math.min(r.rewardFavourCeiling, state.rome.favour * r.rewardFavourScale));
+}
+
+/** Gifts Rome is holding back are released as soon as favour recovers. */
+export function releaseWithheld(state: GameState): void {
+  if (!state.rome.withheldUnlocks.length) return;
+  if (state.rome.favour < config.rome.unlockMinFavour) return;
+  for (const id of [...state.rome.withheldUnlocks]) {
+    const u = unlocks[id];
+    if (!u) continue;
+    state.rome.unlocks.push(id);
+    const leader = leaderOf(state, playerFamily(state).id);
+    if (u.gravitas && leader) gainGravitas(leader, u.gravitas);
+    log(state, 'rome', `Rome is satisfied again and sends what it withheld: ${u.name}.`);
+  }
+  state.rome.withheldUnlocks = [];
+}
+
 function grantReward(state: GameState, a: ActiveRequest): void {
-  const mult = 1 + sumEffect(state, 'romeRewardMultiplier');
+  const mult = (1 + sumEffect(state, 'romeRewardMultiplier')) * favourRewardMultiplier(state);
   const parts: string[] = [];
   if (a.reward.denarii) {
     const d = Math.round(a.reward.denarii * mult);
@@ -89,12 +114,18 @@ function grantReward(state: GameState, a: ActiveRequest): void {
   if (a.reward.unlock) {
     const u = unlocks[a.reward.unlock];
     if (u && !state.rome.unlocks.includes(a.reward.unlock)) {
-      state.rome.unlocks.push(a.reward.unlock);
-      if (u.gravitas && leader) gainGravitas(leader, u.gravitas);
-      parts.push(u.name);
+      if (state.rome.favour < config.rome.unlockMinFavour) {
+        if (!state.rome.withheldUnlocks.includes(a.reward.unlock)) state.rome.withheldUnlocks.push(a.reward.unlock);
+        log(state, 'rome', `Rome withholds ${u.name} until the colony stands better in its favour (${config.rome.unlockMinFavour} needed).`);
+      } else {
+        state.rome.unlocks.push(a.reward.unlock);
+        if (u.gravitas && leader) gainGravitas(leader, u.gravitas);
+        parts.push(u.name);
+      }
     }
   }
   state.rome.favour += 5;
+  state.stats.romeRequestsCompleted += 1;
   const loy = loyalist(state);
   if (loy) loy.attitude = clampAtt(loy.attitude + 3);
   log(state, 'rome', `Rome is pleased with "${a.title}" and sends ${parts.join(', ') || 'its thanks'}.`);
@@ -143,6 +174,7 @@ export function decline(state: GameState): void {
   const a = state.rome.activeRequest;
   if (!a) throw new Error('No request');
   state.rome.declinedIds.push(a.id);
+  state.stats.romeRequestsDeclined += 1;
   state.rome.activeRequest = null;
   state.rome.activeRequestId = null;
   state.rome.hostingUntilRound = 0;

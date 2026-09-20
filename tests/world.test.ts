@@ -7,6 +7,11 @@ import { dispatchEnvoy, resolveEnvoy, trade } from '../src/tribes/envoys';
 import { romeTurn, deliver, decline, checkCollapse } from '../src/rome/requests';
 import { config, requestProgression, activeTribe } from '../src/data';
 import { appoint } from '../src/politics/posts';
+import type { GameState } from '../src/state/types';
+/** v0.1 woke the other two tribes; these tests speak to the raider. */
+const TRIBE_ID = 'chatti';
+const TRIBE = (s: GameState) => s.tribes[TRIBE_ID];
+
 
 describe('raids', () => {
   it('loss fraction is 0 when defence holds and capped otherwise', () => {
@@ -17,13 +22,13 @@ describe('raids', () => {
   });
   it('cellars are exempt and denarii are never taken', () => {
     const s = createInitialState(0, 1);
-    s.tribe.strength = 10_000;
+    TRIBE(s).strength = 10_000;
     s.resources = { wood: 500, clay: 500, iron: 500, grain: 500, denarii: 500 };
     // give cellars tier 1 by placing one
     const cellar = s.slots.find((x) => x.id === 'i1')!;
     cellar.building = 'cellars';
     cellar.tier = 1;
-    const r = resolveRaid(s);
+    const r = resolveRaid(s, TRIBE(s));
     expect(r.fraction).toBe(config.raid.maxLossFraction);
     expect(s.resources.denarii).toBe(500);
     // 100 hidden, 400 exposed, half of exposed lost
@@ -32,10 +37,11 @@ describe('raids', () => {
   it('the garrison prefect adds discipline to defence; allies never raid', () => {
     const s = createInitialState(0, 1);
     const base = defenceStrength(s);
+    s.characters.c_nephew.gravitas = config.gravitas.rankThresholds[1];
     appoint(s, 'garrison', 'c_nephew');
     expect(defenceStrength(s)).toBe(base + s.characters.c_nephew.stats.discipline * config.raid.garrisonDisciplineWeight);
-    s.tribe.allied = true;
-    expect(raidChance(s)).toBe(0);
+    TRIBE(s).allied = true;
+    expect(raidChance(s, TRIBE(s))).toBe(0);
   });
   it('militia pool scales with population and castellum', () => {
     const s = createInitialState(0, 1);
@@ -48,41 +54,41 @@ describe('raids', () => {
 describe('tribe envoys', () => {
   it('an envoy is prepared now and resolves at the next round', () => {
     const g = new Game(createInitialState(0, 1));
-    g.dispatchEnvoy('warn_of_raid', 1);
-    const fear = g.state.tribe.fear;
-    expect(g.state.tribe.pendingEnvoy).toBe('warn_of_raid');
-    expect(() => g.dispatchEnvoy('offer_trade', 2)).toThrow();
+    g.dispatchEnvoy(TRIBE_ID, 'warn_of_raid', 1);
+    const fear = TRIBE(g.state).fear;
+    expect(TRIBE(g.state).pendingEnvoy).toBe('warn_of_raid');
+    expect(() => g.dispatchEnvoy(TRIBE_ID, 'offer_trade', 2)).toThrow();
     g.act({ type: 'convene' }, 3);
-    expect(g.state.tribe.pendingEnvoy).toBeNull();
+    expect(TRIBE(g.state).pendingEnvoy).toBeNull();
     // +warnFear then -decay in the same round
-    expect(g.state.tribe.fear).toBeCloseTo(fear + config.tribe.warnFear - config.tribe.fearDecayPerRound);
+    expect(TRIBE(g.state).fear).toBeCloseTo(fear + config.tribe.warnFear - config.tribe.fearDecayPerRound);
   });
   it('tribute needs fear; trade needs a market; alliance needs trust', () => {
     const s = createInitialState(0, 1);
-    s.tribe.fear = 0;
-    dispatchEnvoy(s, 'demand_tribute');
-    const trust = s.tribe.trust;
-    resolveEnvoy(s);
-    expect(s.tribe.trust).toBe(trust + config.tribe.tributeRefusalTrust);
-    dispatchEnvoy(s, 'offer_trade');
-    resolveEnvoy(s);
-    expect(s.tribe.tradeOpen).toBe(false);
+    TRIBE(s).fear = 0;
+    dispatchEnvoy(s, TRIBE_ID, 'demand_tribute');
+    const trust = TRIBE(s).trust;
+    resolveEnvoy(s, TRIBE(s));
+    expect(TRIBE(s).trust).toBe(trust + config.tribe.tributeRefusalTrust);
+    dispatchEnvoy(s, TRIBE_ID, 'offer_trade');
+    resolveEnvoy(s, TRIBE(s));
+    expect(TRIBE(s).tradeOpen).toBe(false);
     const m = s.slots.find((x) => x.id === 'i4')!;
     m.building = 'market';
     m.tier = 1;
-    dispatchEnvoy(s, 'offer_trade');
-    resolveEnvoy(s);
-    expect(s.tribe.tradeOpen).toBe(true);
+    dispatchEnvoy(s, TRIBE_ID, 'offer_trade');
+    resolveEnvoy(s, TRIBE(s));
+    expect(TRIBE(s).tradeOpen).toBe(true);
     const def = activeTribe();
     s.resources[def.trade.wants] = 1000;
     const gives = s.resources[def.trade.gives];
-    trade(s, 10);
+    trade(s, TRIBE_ID, 10);
     expect(s.resources[def.trade.gives]).toBe(gives + 10);
-    s.tribe.trust = 100;
-    s.tribe.fear = 0;
-    dispatchEnvoy(s, 'propose_alliance');
-    resolveEnvoy(s);
-    expect(s.tribe.allied).toBe(true);
+    TRIBE(s).trust = 100;
+    TRIBE(s).fear = 0;
+    dispatchEnvoy(s, TRIBE_ID, 'propose_alliance');
+    resolveEnvoy(s, TRIBE(s));
+    expect(TRIBE(s).allied).toBe(true);
   });
 });
 

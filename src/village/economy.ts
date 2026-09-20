@@ -1,6 +1,8 @@
 import { building, config, post as postDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
+import { lesserEffect } from '../politics/posts';
+import { claimedProduction } from '../map/sites';
 import type { GameState, Resources } from '../state/types';
-import { capacity, populationCap, sumEffect } from './storage';
+import { capacity, populationCap, researchEffect, sumEffect } from './storage';
 
 /** Bonus multiplier for a domain from the post-holder's relevant stat, e.g. 0.15 = +15%. Obstruction zeroes it and applies a penalty. */
 export function postBonus(state: GameState, postId: string): number {
@@ -26,8 +28,12 @@ export function productionPerHour(state: GameState): Resources {
     if (!def.produces) continue;
     out[def.produces] += def.tiers[s.tier - 1].effects.productionPerHour ?? 0;
   }
-  out.grain *= 1 + postBonus(state, 'granary');
-  const works = postBonus(state, 'works');
+  // Held sites add their yield before the post bonuses lift it.
+  for (const [res, v] of Object.entries(claimedProduction(state))) {
+    out[res as ResourceId] += v ?? 0;
+  }
+  out.grain *= 1 + postBonus(state, 'granary') + researchEffect(state, 'grainMultiplier');
+  const works = postBonus(state, 'works') + researchEffect(state, 'materialMultiplier');
   for (const id of ['wood', 'clay', 'iron'] as ResourceId[]) out[id] *= 1 + works;
   return out;
 }
@@ -52,7 +58,7 @@ export function netPerHour(state: GameState): Resources {
 }
 
 export function buildTimeMultiplier(state: GameState): number {
-  let m = 1 - postBonus(state, 'works');
+  let m = 1 - postBonus(state, 'works') - lesserEffect(state, 'buildSpeed') - researchEffect(state, 'buildSpeed');
   for (const u of state.rome.unlocks) m *= unlocks[u]?.buildTimeMultiplier ?? 1;
   return Math.max(0.2, m);
 }

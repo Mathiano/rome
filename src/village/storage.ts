@@ -1,13 +1,30 @@
-import { building, config, resources as resourceDefs, type ResourceId } from '../data';
+import { building, config, researchNodes, resources as resourceDefs, type ResourceId } from '../data';
 import type { GameState } from '../state/types';
 
+/**
+ * Everything the Library has finished, summed (DESIGN §4.6). It lives here
+ * rather than in `village/research.ts` so that `sumEffect` can fold it in
+ * without the two modules importing each other.
+ */
+export function researchEffect(state: GameState, key: string): number {
+  let total = 0;
+  for (const id of state.research?.completed ?? []) {
+    total += researchNodes.find((n) => n.id === id)?.effects[key] ?? 0;
+  }
+  return total;
+}
+
+/**
+ * Buildings and research speak the same vocabulary of effects, so anything that
+ * already reads a building effect picks research up for free.
+ */
 export function sumEffect(state: GameState, key: string): number {
   let total = 0;
   for (const s of state.slots) {
     if (!s.building || s.tier <= 0) continue;
     total += building(s.building).tiers[s.tier - 1].effects[key] ?? 0;
   }
-  return total;
+  return total + researchEffect(state, key);
 }
 
 export function buildingTier(state: GameState, id: string): number {
