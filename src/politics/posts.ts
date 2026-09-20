@@ -4,6 +4,7 @@ import type { GameState } from '../state/types';
 import { log } from '../state/store';
 import { gravitasRank, livingMembers, playerFamily, rivalFamilies } from './characters';
 import { requireOffice } from './challenge';
+import { researchEffect } from '../village/storage';
 
 export function holderOf(state: GameState, postId: string) {
   const id = state.posts[postId];
@@ -136,6 +137,7 @@ export function updateCorruption(state: GameState): void {
     delta -= c.fallWhenPlayerTreasury + treasurer.stats.discipline * c.fallPerTreasurerDiscipline;
   }
   delta -= lesserEffect(state, 'corruptionFall');
+  delta += researchEffect(state, 'corruptionDrift');
   state.corruption = Math.max(c.min, Math.min(c.max, state.corruption + delta));
 }
 

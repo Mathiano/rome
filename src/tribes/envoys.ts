@@ -4,6 +4,7 @@ import { log } from '../state/store';
 import { clampToCapacity, buildingTier } from '../village/storage';
 import { canAfford, pay } from '../village/economy';
 import { claimedEffect } from '../map/sites';
+import { researchEffect } from '../village/storage';
 
 const T = () => config.tribe;
 
@@ -114,7 +115,7 @@ export function tradeRate(state: GameState, tribeId: string): number {
   const market = buildingTier(state, 'market');
   const marketRate = market > 0 ? building('market').tiers[market - 1].effects.tradeRate : def.trade.ratio;
   // Holding the ford sharpens the rate beyond what the market alone can do.
-  return Math.max(1, Math.max(def.trade.ratio, marketRate) + claimedEffect(state, 'tradeRate'));
+  return Math.max(1, Math.max(def.trade.ratio, marketRate) + claimedEffect(state, 'tradeRate') + researchEffect(state, 'tradeRate'));
 }
 
 export function trade(state: GameState, tribeId: string, amountWanted: number): void {

@@ -32,6 +32,17 @@ export interface BuildingDef {
   role: string;
   tiers: BuildingTier[];
 }
+export interface ResearchDef {
+  id: string;
+  name: string;
+  /** Which Library tier opens it (DESIGN §4.6). */
+  rank: number;
+  requires: string[];
+  cost: Cost & { scrolls?: number };
+  seconds: number;
+  description: string;
+  effects: Record<string, number>;
+}
 export interface SlotDef {
   id: string;
   ring: Ring;
@@ -153,11 +164,17 @@ export const requestProgression = requestsJson.progression as RequestDef[];
 export const requestFiller = requestsJson.filler as FillerDef[];
 export const unlocks = requestsJson.unlocks as Record<string, UnlockDef>;
 export const events = eventsJson.events as unknown as EventDef[];
-export const research = researchJson;
+export const researchNodes = researchJson.nodes as unknown as ResearchDef[];
+export const researchConfig = researchJson.config as { concurrent: number; rushMinPrice: number };
 
 export const RESOURCE_IDS: ResourceId[] = resources.map((r) => r.id);
 export const STAT_IDS: StatId[] = ['authority', 'discipline', 'craft', 'connections', 'piety'];
 
+export function researchNode(id: string): ResearchDef {
+  const r = researchNodes.find((x) => x.id === id);
+  if (!r) throw new Error(`unknown research ${id}`);
+  return r;
+}
 export function building(id: string): BuildingDef {
   const b = buildings.find((x) => x.id === id);
   if (!b) throw new Error(`unknown building ${id}`);

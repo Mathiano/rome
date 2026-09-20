@@ -5,6 +5,7 @@ import type { GameState } from './state/types';
 import { createInitialState } from './state/store';
 import { tick } from './village/clock';
 import { startBuild, rush } from './village/construction';
+import { rushResearch, startResearch } from './village/research';
 import { appoint, appointLesser, dismiss, dismissLesser } from './politics/posts';
 import { assassinate, bribe, denounce, exile, expose, marry, marryTribe, seekRomeBacking, setBodyguards } from './politics/intrigue';
 import { playerCallChallenge } from './politics/challenge';
@@ -59,6 +60,15 @@ export class Game {
   rush(slotId: string, now = Date.now()): void {
     this.tick(now);
     rush(this.state, slotId, now);
+  }
+  /** Research is village business: real time, no round (DESIGN §3.1, §4.6). */
+  research(id: string, now = Date.now()): void {
+    this.tick(now);
+    startResearch(this.state, id, now);
+  }
+  rushResearch(id: string, now = Date.now()): void {
+    this.tick(now);
+    rushResearch(this.state, id, now);
   }
   trade(tribeId: string, amount: number, now = Date.now()): void {
     this.tick(now);

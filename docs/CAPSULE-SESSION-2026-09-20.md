@@ -1,8 +1,9 @@
 # Session capsule — 2026-09-20
 
 Branch `claude/colony-depth`, continuing from `CAPSULE-SESSION-2026-09-19b.md`.
-This session finished the political half of the vision: the top office can now
-be lost and won back, and the whole intrigue menu of DESIGN §9.6 is playable.
+This session finished the political half of the vision and then the last
+unblocked item on the v0.2 list: the top office can be lost and won back, the
+whole intrigue menu of DESIGN §9.6 is playable, and the Library researches.
 
 ## What changed
 
@@ -68,7 +69,7 @@ walls-only arm is held to the margin over idle rather than an absolute bar.
 
 ## Verified
 
-- 184 tests pass, `tsc --noEmit` clean, `npm run build` clean.
+- 202 tests pass, `tsc --noEmit` clean, `npm run build` clean.
 - Headless Chromium against the built app, with saves injected per context:
   challenge card renders with a two-row tally and the correct verdict; three
   intrigue menus with target, marriage and guard controls; guards move without
@@ -77,17 +78,57 @@ walls-only arm is held to the margin over idle rather than an absolute bar.
   leaves a challenge standing with the vote still ahead. **No page errors.**
 - Bodyguards measurably work: the same target reads 63% bare and 12% behind
   three guards.
+- The Library likewise, in the browser: the sprite stands on `i8`, the tab
+  lists all eleven nodes with four takeable at a Library II, taking one up runs
+  no round, the rush button finishes it, and it appears under *Known*. No page
+  errors. The nine tabs fit one row of the 380px panel at 12px with 2px to
+  spare, measured rather than eyeballed.
+- Research effects were checked against the systems they claim: build time,
+  grain, materials, defence and population cap all move when the tree is
+  completed, and a building effect and a research effect of the same name add
+  up rather than one shadowing the other.
+
+### Research and the Library (DESIGN §4.6) — `src/village/research.ts`, Library tab
+
+- **The Library** is a new inner-ring building in three tiers, drawn for
+  `tools/artgen/draw.py` in the house style: a plastered reading hall on a
+  stone podium at tier 1, a copyists' storey and a second rack of pigeonholes
+  at tier 2, and at tier 3 a two-storey travertine hall with an apse, a
+  colonnade on two sides, Minerva in the forecourt and a cart at the gate.
+  Three new drawing primitives came with it: `scroll_rack`, `lectern`, `apse`
+  and `sundial`. 42/42 building tiers now have art.
+- **An eighth inner plot** (`i8`) was added to `data/layout.json` to stand it
+  on. It sits in the inner ring's widest gap, due north, 58px from its nearest
+  neighbour — exactly the ring's existing tightest spacing, which a new test
+  now guards. Old saves gain the plot as empty ground rather than losing theirs.
+- **A study** costs denarii and scrolls, needs a Library of its own rank and
+  whatever it stands on, runs on the village clock (real time, no political
+  round) and can be finished early at the Pillar 3 price. One at a time.
+- **Effects** share one vocabulary with buildings: `sumEffect` folds research in,
+  so everything that already read a building effect picks research up unchanged.
+  The three that are not summed that way — build speed, the yield multipliers
+  and defence — are wired explicitly.
+- **Nothing is lost.** A test drives a colony through a save round-trip and then
+  a full collapse with Rome administering, and asserts the research is still
+  there (Pillar 7).
 
 ## What is next
 
-- **Task 16, the research system and the Library** is the last item on the
-  v0.2 kickoff list that is not blocked on playtesting. It needs a Library
-  sprite, an eighth inner layout slot, and a first-pass tree in
-  `data/research.json`.
-- Then: playtest. Everything else on the list wants Mathias's hands on it.
+Everything on the v0.2 list that does not need Mathias's hands is done. What
+remains is the playtest, and the four questions below.
 
 ## Open for Mathias
 
+- 🟡 **The research tree is mine, not yours.** §15.11 was ❓, so under CLAUDE.md's
+  unattended rule the eleven nodes in `data/research.json` are a data-file
+  default and nothing more. Three ranks, one per Library tier:
+  | rank | nodes |
+  |---|---|
+  | I | the surveyor's groma (build 6% faster) · two-field rotation (+12% grain) · charcoal burning (+10% materials) |
+  | II | opus caementicium (build 9% faster) · raised granaries (+180 grain kept, +6% grain) · the tapped bloomery (+13% materials) · the double ledger (+10% tax, corruption falls 0.4 a round) |
+  | III | torsion engines (+16 defence) · the colonial census (+14 population, +2 militia) · via munita (+0.15 trade rate, +10% from Rome) · the archives (+2 gravitas a round, +40 hidden per resource) |
+  The whole tree is about 18 hours of real time at a Library III, roughly 26
+  without one. Ratify, reprice or replace it — the code reads the file.
 - 🟡 **Bodyguard allocation runs no round.** It is household business, not a
   move against another actor, so §3.2 says no round. The cost is real (a guard
   is a man off the walls), but it means guards can be shuffled freely between

@@ -1,7 +1,7 @@
 import { config, unlocks, RESOURCE_IDS, tribeDef, type ResourceId } from '../data';
 import type { GameState, TribeState } from '../state/types';
 import { log } from '../state/store';
-import { buildingTier, hiddenPerResource } from '../village/storage';
+import { buildingTier, hiddenPerResource, researchEffect } from '../village/storage';
 import { homeMilitia } from './militia';
 import { holderOf, lesserEffect } from '../politics/posts';
 
@@ -16,7 +16,7 @@ export function defenceStrength(state: GameState): number {
     d += obstructed ? 0 : g.stats.discipline * r.garrisonDisciplineWeight;
   }
   for (const u of state.rome.unlocks) d += unlocks[u]?.defenceBonus ?? 0;
-  d += lesserEffect(state, 'defence');
+  d += lesserEffect(state, 'defence') + researchEffect(state, 'defence');
   return d;
 }
 

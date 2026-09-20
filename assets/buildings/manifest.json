@@ -654,6 +654,91 @@
         }
       ]
     },
+    "library-t1": {
+      "file": "library-t1.png",
+      "width": 455,
+      "height": 236,
+      "ax": 227.48,
+      "ay": 119.73,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpm1949qrl/library-t1.png",
+      "trimOffset": [
+        117,
+        493
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "library-t2": {
+      "file": "library-t2.png",
+      "width": 455,
+      "height": 248,
+      "ax": 227.48,
+      "ay": 132.35,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpm1949qrl/library-t2.png",
+      "trimOffset": [
+        117,
+        464
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "library-t3": {
+      "file": "library-t3.png",
+      "width": 455,
+      "height": 280,
+      "ax": 227.48,
+      "ay": 164.57,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpm1949qrl/library-t3.png",
+      "trimOffset": [
+        117,
+        390
+      ],
+      "sourceScale": 0.435374,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": -86.16,
+          "y": -103.84,
+          "scale": 0.85
+        },
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": 55.95,
+          "y": -32.78,
+          "scale": 0.85
+        }
+      ]
+    },
     "lumber-camp-t1": {
       "file": "lumber-camp-t1.png",
       "width": 455,

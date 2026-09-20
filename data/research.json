@@ -1,4 +1,119 @@
 {
-  "_comment": "Research system arrives in v0.2 (DESIGN §4.6, §13). Scrolls are already earned and persisted in v0 so nothing is lost. Tree contents are ❓ open.",
-  "nodes": []
+  "_comment": "DESIGN §4.6. The system is ✅; the contents were ❓ (§15.11). This is a 🟡 first pass written as a data-file default in an unattended session (CLAUDE.md, Ways of working) and listed in docs/CAPSULE-SESSION-2026-09-20.md for confirmation. Three ranks, each gated on a Library tier. Nothing here is ever lost: research survives collapse and Rome's intervention (Pillar 7).",
+  "config": {
+    "concurrent": 1,
+    "rushMinPrice": 5
+  },
+  "nodes": [
+    {
+      "id": "groma",
+      "name": "The surveyor's groma",
+      "rank": 1,
+      "requires": [],
+      "cost": { "denarii": 140, "scrolls": 1 },
+      "seconds": 2400,
+      "description": "Right angles struck from a plumbed cross. Foundations stop being argued over.",
+      "effects": { "buildSpeed": 0.06 }
+    },
+    {
+      "id": "crop_rotation",
+      "name": "Two-field rotation",
+      "rank": 1,
+      "requires": [],
+      "cost": { "denarii": 140, "scrolls": 1 },
+      "seconds": 2400,
+      "description": "Half the land rests while half is sown. The ground gives more for it.",
+      "effects": { "grainMultiplier": 0.12 }
+    },
+    {
+      "id": "charcoal_burning",
+      "name": "Charcoal burning",
+      "rank": 1,
+      "requires": [],
+      "cost": { "denarii": 160, "scrolls": 1 },
+      "seconds": 3000,
+      "description": "Wood smothered under turf burns hotter and travels lighter.",
+      "effects": { "materialMultiplier": 0.10 }
+    },
+    {
+      "id": "roman_concrete",
+      "name": "Opus caementicium",
+      "rank": 2,
+      "requires": ["groma"],
+      "cost": { "denarii": 320, "scrolls": 2 },
+      "seconds": 7200,
+      "description": "Lime, rubble and volcanic ash. It sets in the wet and it does not care about the frost.",
+      "effects": { "buildSpeed": 0.09 }
+    },
+    {
+      "id": "raised_granaries",
+      "name": "Raised granaries",
+      "rank": 2,
+      "requires": ["crop_rotation"],
+      "cost": { "denarii": 300, "scrolls": 2 },
+      "seconds": 6600,
+      "description": "Floors lifted on stone piers, air beneath, vermin locked out.",
+      "effects": { "granaryCapacity": 180, "grainMultiplier": 0.06 }
+    },
+    {
+      "id": "bloomery",
+      "name": "The tapped bloomery",
+      "rank": 2,
+      "requires": ["charcoal_burning"],
+      "cost": { "denarii": 340, "scrolls": 2 },
+      "seconds": 7200,
+      "description": "Slag drawn off while the furnace still runs, so the fire is never let go cold.",
+      "effects": { "materialMultiplier": 0.13 }
+    },
+    {
+      "id": "double_ledger",
+      "name": "The double ledger",
+      "rank": 2,
+      "requires": [],
+      "cost": { "denarii": 360, "scrolls": 3 },
+      "seconds": 7800,
+      "description": "Two books kept of every sum, and a clerk who compares them. Less sticks to the fingers.",
+      "effects": { "taxMultiplier": 0.10, "corruptionDrift": -0.4 }
+    },
+    {
+      "id": "torsion_engines",
+      "name": "Torsion engines",
+      "rank": 3,
+      "requires": ["roman_concrete"],
+      "cost": { "denarii": 620, "scrolls": 4 },
+      "seconds": 14400,
+      "description": "Sinew ropes wound until they scream, and a bolt that goes through a shield wall.",
+      "effects": { "defence": 16 }
+    },
+    {
+      "id": "census",
+      "name": "The colonial census",
+      "rank": 3,
+      "requires": ["double_ledger"],
+      "cost": { "denarii": 560, "scrolls": 4 },
+      "seconds": 13200,
+      "description": "Every head counted, every trade written down. A colony that knows itself can hold more of itself.",
+      "effects": { "populationCap": 14, "militiaBonus": 2 }
+    },
+    {
+      "id": "via_munita",
+      "name": "Via munita",
+      "rank": 3,
+      "requires": ["roman_concrete"],
+      "cost": { "denarii": 600, "scrolls": 4 },
+      "seconds": 14400,
+      "description": "A metalled road with a crown and ditches. Carts come through in the wet, and so do envoys.",
+      "effects": { "tradeRate": 0.15, "romeRewardMultiplier": 0.10 }
+    },
+    {
+      "id": "archives",
+      "name": "The archives",
+      "rank": 3,
+      "requires": ["census"],
+      "cost": { "denarii": 700, "scrolls": 5 },
+      "seconds": 16200,
+      "description": "Deeds, judgements and genealogies kept where the council must consult them — and your house keeps the keys.",
+      "effects": { "gravitasPerRound": 2, "hiddenPerResource": 40 }
+    }
+  ]
 }

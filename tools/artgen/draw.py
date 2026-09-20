@@ -718,6 +718,60 @@ def tholos(sc, gx, gy, z=0.0, r=0.62, h=0.95):
                               W_DETAIL), z + h + 0.5)
 
 
+
+def scroll_rack(sc, gx, gy, z=0.0, shelves=3, per=4, w=1.0):
+    """A pigeonhole case of scroll ends: the one thing that says library at a
+    glance. Each hole is a dark square with a pale roll seen end-on."""
+    d = box(sc, gx, gy - 0.16, gx + w, gy + 0.16, z, z + 0.24 + shelves * 0.34, "timber", w=W_DETAIL) + 0.01
+    for r in range(shelves):
+        zr = z + 0.2 + r * 0.34
+        a, b = iso(gx, gy - 0.16, zr), iso(gx + w, gy - 0.16, zr)
+        sc.add(d, line(a, b, PAL["timber_deep"], W_HAIR), zr)
+        for c in range(per):
+            q = lerp(a, b, (c + 0.5) / per)
+            sc.add(d, poly([(q[0] - 7, q[1] - 2), (q[0] + 7, q[1] - 2), (q[0] + 7, q[1] - 22), (q[0] - 7, q[1] - 22)],
+                           PAL["timber_deep"], W_HAIR), zr + 0.01)
+            sc.add(d, circle((q[0], q[1] - 12), 4.5, PAL["plaster_light"], W_HAIR), zr + 0.02)
+
+
+def lectern(sc, gx, gy, z=0.0, scroll=True):
+    """A reading stand with an open roll on the slope."""
+    d = gx + gy + 0.3
+    c0 = iso(gx, gy, z)
+    sc.add(d, line(c0, (c0[0], c0[1] - 40), PAL["timber_dark"], W_DETAIL), z)
+    top = (c0[0], c0[1] - 40)
+    sc.add(d, poly([(top[0] - 22, top[1] + 4), (top[0] + 22, top[1] - 6), (top[0] + 20, top[1] - 14),
+                    (top[0] - 24, top[1] - 4)], PAL["timber_mid"], W_DETAIL), z + 0.6)
+    if scroll:
+        sc.add(d, poly([(top[0] - 18, top[1] - 2), (top[0] + 16, top[1] - 10), (top[0] + 15, top[1] - 15),
+                        (top[0] - 19, top[1] - 7)], PAL["plaster_light"], W_HAIR), z + 0.7)
+
+
+def apse(sc, gx, gy, z0, z1, r=1.05, mat="stone", seg=9):
+    """A half-round niche pushed out of the back wall, with a semi-dome."""
+    ring = [(gx + r * math.cos(math.pi * (0.5 + i / seg)), gy + r * math.sin(math.pi * (0.5 + i / seg)))
+            for i in range(seg + 1)]
+    lightf, midf, darkf = faces(mat)
+    d = gx + gy - r
+    base = [iso(x, y, z0) for x, y in ring]
+    topr = [iso(x, y, z1) for x, y in ring]
+    for i in range(seg):
+        sc.add(d, poly([base[i], base[i + 1], topr[i + 1], topr[i]],
+                       midf if i % 2 else darkf, W_HAIR), z0)
+    sc.add(d, poly(topr + [iso(gx, gy, z1)], lightf, W_DETAIL), z1)
+    crown = iso(gx, gy, z1 + r * 0.72)
+    for i in range(seg):
+        sc.add(d, poly([topr[i], topr[i + 1], crown], PAL["roof_mid"] if i % 2 else PAL["roof_dark"], W_HAIR), z1 + 0.2)
+
+
+def sundial(sc, gx, gy, z=0.0):
+    box(sc, gx - 0.2, gy - 0.2, gx + 0.2, gy + 0.2, z, z + 0.5, "stone", w=W_DETAIL)
+    c = iso(gx, gy, z + 0.5)
+    d = gx + gy + 0.3
+    sc.add(d, ellipse(c, 0.26 * TILE_W, 0.26 * TILE_H, PAL["stone_light"], W_DETAIL), z + 0.6)
+    sc.add(d, line(c, (c[0] + 4, c[1] - 20), PAL["iron"], W_DETAIL), z + 0.7)
+
+
 # ------------------------------------------------------------- the buildings
 # Each structure is drawn inside sc.group(depth) so its parts paint in author
 # order: base, back walls, openings, columns, then roof last because it
@@ -1352,13 +1406,102 @@ def farm(sc, tier):
         well(sc, 1.4, 3.3)
 
 
+
+
+def library(sc, tier):
+    """Scrolls kept dry and copied. Roman libraries are a hall of pigeonholes
+    with a portico in front; the tiers grow a storey, a colonnade and finally
+    an apse with Minerva in it."""
+    if tier == 1:
+        with sc.group(5.8 + 4.5):
+            box(sc, 2.6, 2.2, 5.8, 4.5, 0, 0.3, "stone")
+            stone_blocks(sc, 2.6, 2.2, 5.8, 4.5, 0, 0.3, 1)
+            box(sc, 2.9, 2.4, 5.5, 3.7, 0.3, 1.35, "plaster")
+            wall_courses(sc, 2.9, 2.4, 5.5, 3.7, 0.3, 1.35, 3)
+            archway(sc, 4.2, 3.7, 0.3, 1.15, 0.58)
+            for i in range(3):
+                column(sc, 3.15 + i * 1.1, 4.25, 0.3, 1.35, 0.14)
+            gable(sc, 2.9, 2.4, 5.5, 4.4, 1.35, 0.5, "x")
+        steps(sc, 3.5, 5.1, 4.9, 4.55, 2, 0.0, 0.16)
+        scroll_rack(sc, 6.1, 3.0, 0.0, 2, 3, 0.9)
+        lectern(sc, 2.1, 5.2)
+        amphora(sc, 6.3, 5.0)
+        tuft(sc, 1.6, 2.6)
+        bush(sc, 6.6, 6.0, 0.9)
+    elif tier == 2:
+        with sc.group(6.1 + 4.9):
+            box(sc, 2.2, 1.8, 6.1, 4.9, 0, 0.55, "stone")
+            stone_blocks(sc, 2.2, 1.8, 6.1, 4.9, 0, 0.55, 2)
+            # reading hall, with the copyists' storey above the cornice
+            box(sc, 2.6, 2.0, 5.7, 3.6, 0.55, 1.75, "plaster")
+            wall_courses(sc, 2.6, 2.0, 5.7, 3.6, 0.55, 1.75, 4)
+            box(sc, 2.9, 2.2, 5.4, 3.4, 1.75, 2.35, "plaster", tint=1.04)
+            for i in range(4):
+                p = iso(3.1 + i * 0.7, 3.4, 2.0)
+                sc.add(6.1 + 4.9, poly([(p[0] - 9, p[1]), (p[0] + 9, p[1]), (p[0] + 9, p[1] - 26),
+                                        (p[0] - 9, p[1] - 26)], PAL["timber_deep"], W_HAIR), 2.0)
+            archway(sc, 4.15, 3.6, 0.55, 1.5, 0.62)
+            for i in range(5):
+                column(sc, 2.75 + i * 0.72, 4.55, 0.55, 1.75, 0.15)
+            for i in range(2):
+                column(sc, 2.75 + i * 2.88, 3.95, 0.55, 1.75, 0.15)
+            gable(sc, 2.6, 2.0, 5.7, 4.65, 1.75, 0.22, "x", ov=0.2, gable_mat="roof")
+            gable(sc, 2.9, 2.2, 5.4, 4.65, 2.35, 0.6, "x")
+        steps(sc, 3.2, 5.6, 5.1, 4.95, 3, 0.0, 0.18)
+        scroll_rack(sc, 6.4, 2.6, 0.0, 3, 4, 1.0)
+        scroll_rack(sc, 6.4, 4.1, 0.0, 2, 4, 0.9)
+        lectern(sc, 1.9, 5.3)
+        well(sc, 1.7, 3.3)
+        amphora(sc, 6.6, 5.4)
+        amphora(sc, 6.85, 5.65)
+        crate(sc, 2.2, 6.2)
+        bush(sc, 6.9, 6.2, 1.0)
+        tuft(sc, 1.3, 2.3)
+    else:
+        with sc.group(6.4 + 5.2):
+            box(sc, 1.8, 1.5, 6.4, 5.2, 0, 0.8, "stone")
+            stone_blocks(sc, 1.8, 1.5, 6.4, 5.2, 0, 0.8, 3)
+            # the hall proper, two storeys, with an apse behind it for Minerva
+            apse(sc, 2.3, 2.6, 0.8, 2.0, 0.92)
+            box(sc, 2.3, 1.7, 6.0, 3.5, 0.8, 2.3, "plaster")
+            wall_courses(sc, 2.3, 1.7, 6.0, 3.5, 0.8, 2.3, 5)
+            box(sc, 2.6, 1.9, 5.7, 3.3, 2.3, 3.1, "plaster", tint=1.05)
+            for i in range(5):
+                p = iso(2.85 + i * 0.66, 3.3, 2.62)
+                sc.add(6.4 + 5.2, poly([(p[0] - 10, p[1]), (p[0] + 10, p[1]), (p[0] + 10, p[1] - 30),
+                                        (p[0] - 10, p[1] - 30)], PAL["timber_deep"], W_HAIR), 2.62)
+            archway(sc, 4.15, 3.5, 0.8, 2.0, 0.7)
+            for i in range(6):
+                column(sc, 2.45 + i * 0.7, 4.9, 0.8, 2.3, 0.16)
+            for i in range(3):
+                column(sc, 2.45, 3.75 + i * 0.58, 0.8, 2.3, 0.16)
+                column(sc, 5.95, 3.75 + i * 0.58, 0.8, 2.3, 0.16)
+            gable(sc, 2.3, 1.7, 6.0, 5.0, 2.3, 0.26, "x", ov=0.22, gable_mat="roof")
+            gable(sc, 2.6, 1.9, 5.7, 5.0, 3.1, 0.78, "x")
+        steps(sc, 2.9, 6.2, 5.4, 5.25, 4, 0.0, 0.2)
+        statue(sc, 1.9, 6.5)
+        scroll_rack(sc, 6.7, 2.3, 0.0, 3, 4, 1.05)
+        scroll_rack(sc, 6.7, 3.8, 0.0, 3, 4, 1.05)
+        lectern(sc, 1.5, 5.4)
+        lectern(sc, 1.9, 6.0, scroll=False)
+        sundial(sc, 6.5, 5.9)
+        cart(sc, 2.6, 6.8)
+        well(sc, 1.4, 3.1)
+        sc.anim("flag", 1.45, 4.55, 2.25, 0.85)
+        banner(sc, 1.45, 4.55, 1.4, 0.85)
+        sc.anim("flag", 6.55, 4.55, 2.25, 0.85)
+        banner(sc, 6.55, 4.55, 1.4, 0.85)
+        bush(sc, 7.0, 6.5, 1.0)
+        tuft(sc, 1.1, 2.1)
+
+
 BUILDINGS = {
     "forum": forum, "castellum": castellum, "warehouse": warehouse, "granary": granary,
     "cellars": cellars, "insulae": insulae, "market": market, "temple": temple,
-    "waystation": waystation, "lumber-camp": lumber_camp, "clay-works": clay_works,
-    "iron-mine": iron_mine, "farm": farm,
+    "library": library, "waystation": waystation, "lumber-camp": lumber_camp,
+    "clay-works": clay_works, "iron-mine": iron_mine, "farm": farm,
 }
-PAVED = {"forum", "market", "temple", "waystation", "insulae", "warehouse"}
+PAVED = {"forum", "market", "temple", "library", "waystation", "insulae", "warehouse"}
 
 
 def compose(name, tier):

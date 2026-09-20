@@ -51,8 +51,10 @@ header .res .neg b { color: #e0885a; }
 #village .label { font-size: 9.5px; fill: var(--ink); text-anchor: middle; pointer-events: none;
   paint-order: stroke; stroke: rgba(239,230,210,0.85); stroke-width: 2.5; stroke-linejoin: round; }
 #panel { border-left: 2px solid var(--ink); background: var(--parchment); display: flex; flex-direction: column; overflow: hidden; }
-#panel nav { display: flex; border-bottom: 1px solid var(--ink); }
-#panel nav button { flex: 1; border: 0; background: var(--parchment-dark); padding: 8px 4px; font: inherit; cursor: pointer; border-right: 1px solid var(--shadow); }
+/* Nine tabs. At 12px they fit the 380px panel on one row with 2px to spare;
+   they wrap rather than overflow if the panel is ever narrower. */
+#panel nav { display: flex; flex-wrap: wrap; border-bottom: 1px solid var(--ink); }
+#panel nav button { flex: 1 0 auto; border: 0; background: var(--parchment-dark); padding: 8px 4px; font: inherit; font-size: 12px; cursor: pointer; border-right: 1px solid var(--shadow); }
 #panel nav button.active { background: var(--parchment); font-weight: bold; }
 #panel nav button .badge { display: inline-block; background: var(--terracotta); color: #fff; border-radius: 8px; font-size: 10px; padding: 0 5px; margin-left: 3px; }
 #panel section { padding: 12px; overflow-y: auto; flex: 1; }
@@ -195,3 +197,7 @@ header .res .neg b { color: #e0885a; }
 #panel details.intrigue .row span.muted { display: block; font-size: 11px; margin: 1px 0 0 2px; }
 #panel details.intrigue select { max-width: 100%; }
 #panel button.act.danger { background: var(--ink); }
+
+/* The library (DESIGN §4.6). */
+#panel .known { margin: 4px 0 0 0; padding-left: 18px; }
+#panel .known li { margin: 2px 0; }

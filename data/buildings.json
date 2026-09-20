@@ -2,120 +2,651 @@
   "_comment": "Three tiers per building. buildSeconds is real time. requiresForumTier gates each tier. Effects are read by src/village and src/combat; nothing here is duplicated in code.",
   "buildings": [
     {
-      "id": "forum", "name": "Forum", "ring": "centre", "kind": "building",
+      "id": "forum",
+      "name": "Forum",
+      "ring": "centre",
+      "kind": "building",
       "role": "Seat of the council. Its tier is the colony's tier.",
       "tiers": [
-        { "cost": { "wood": 60, "clay": 60, "iron": 20, "grain": 20 }, "buildSeconds": 300, "requiresForumTier": 0, "effects": { "gravitasPerRound": 1 } },
-        { "cost": { "wood": 260, "clay": 300, "iron": 120, "grain": 120 }, "buildSeconds": 3600, "requiresForumTier": 1, "effects": { "gravitasPerRound": 2 } },
-        { "cost": { "wood": 900, "clay": 1100, "iron": 500, "grain": 400 }, "buildSeconds": 14400, "requiresForumTier": 2, "effects": { "gravitasPerRound": 4 } }
+        {
+          "cost": {
+            "wood": 60,
+            "clay": 60,
+            "iron": 20,
+            "grain": 20
+          },
+          "buildSeconds": 300,
+          "requiresForumTier": 0,
+          "effects": {
+            "gravitasPerRound": 1
+          }
+        },
+        {
+          "cost": {
+            "wood": 260,
+            "clay": 300,
+            "iron": 120,
+            "grain": 120
+          },
+          "buildSeconds": 3600,
+          "requiresForumTier": 1,
+          "effects": {
+            "gravitasPerRound": 2
+          }
+        },
+        {
+          "cost": {
+            "wood": 900,
+            "clay": 1100,
+            "iron": 500,
+            "grain": 400
+          },
+          "buildSeconds": 14400,
+          "requiresForumTier": 2,
+          "effects": {
+            "gravitasPerRound": 4
+          }
+        }
       ]
     },
     {
-      "id": "castellum", "name": "Castellum", "ring": "centre", "kind": "building",
+      "id": "castellum",
+      "name": "Castellum",
+      "ring": "centre",
+      "kind": "building",
       "role": "Garrison and walls. Sets defence strength and the militia pool bonus.",
       "tiers": [
-        { "cost": { "wood": 80, "clay": 40, "iron": 40 }, "buildSeconds": 240, "requiresForumTier": 1, "effects": { "militiaBonus": 5 } },
-        { "cost": { "wood": 300, "clay": 200, "iron": 220 }, "buildSeconds": 3000, "requiresForumTier": 1, "effects": { "militiaBonus": 15 } },
-        { "cost": { "wood": 800, "clay": 700, "iron": 800 }, "buildSeconds": 12000, "requiresForumTier": 2, "effects": { "militiaBonus": 35 } }
+        {
+          "cost": {
+            "wood": 80,
+            "clay": 40,
+            "iron": 40
+          },
+          "buildSeconds": 240,
+          "requiresForumTier": 1,
+          "effects": {
+            "militiaBonus": 5
+          }
+        },
+        {
+          "cost": {
+            "wood": 300,
+            "clay": 200,
+            "iron": 220
+          },
+          "buildSeconds": 3000,
+          "requiresForumTier": 1,
+          "effects": {
+            "militiaBonus": 15
+          }
+        },
+        {
+          "cost": {
+            "wood": 800,
+            "clay": 700,
+            "iron": 800
+          },
+          "buildSeconds": 12000,
+          "requiresForumTier": 2,
+          "effects": {
+            "militiaBonus": 35
+          }
+        }
       ]
     },
     {
-      "id": "warehouse", "name": "Warehouse", "ring": "inner", "kind": "building",
+      "id": "warehouse",
+      "name": "Warehouse",
+      "ring": "inner",
+      "kind": "building",
       "role": "Stores wood, clay and iron. Overflow is lost.",
       "tiers": [
-        { "cost": { "wood": 50, "clay": 30 }, "buildSeconds": 180, "requiresForumTier": 1, "effects": { "warehouseCapacity": 600 } },
-        { "cost": { "wood": 220, "clay": 160, "iron": 40 }, "buildSeconds": 1800, "requiresForumTier": 1, "effects": { "warehouseCapacity": 2000 } },
-        { "cost": { "wood": 700, "clay": 600, "iron": 200 }, "buildSeconds": 7200, "requiresForumTier": 2, "effects": { "warehouseCapacity": 6000 } }
+        {
+          "cost": {
+            "wood": 50,
+            "clay": 30
+          },
+          "buildSeconds": 180,
+          "requiresForumTier": 1,
+          "effects": {
+            "warehouseCapacity": 600
+          }
+        },
+        {
+          "cost": {
+            "wood": 220,
+            "clay": 160,
+            "iron": 40
+          },
+          "buildSeconds": 1800,
+          "requiresForumTier": 1,
+          "effects": {
+            "warehouseCapacity": 2000
+          }
+        },
+        {
+          "cost": {
+            "wood": 700,
+            "clay": 600,
+            "iron": 200
+          },
+          "buildSeconds": 7200,
+          "requiresForumTier": 2,
+          "effects": {
+            "warehouseCapacity": 6000
+          }
+        }
       ]
     },
     {
-      "id": "granary", "name": "Granary", "ring": "inner", "kind": "building",
+      "id": "granary",
+      "name": "Granary",
+      "ring": "inner",
+      "kind": "building",
       "role": "Stores grain. Overflow is lost.",
       "tiers": [
-        { "cost": { "wood": 40, "clay": 40 }, "buildSeconds": 180, "requiresForumTier": 1, "effects": { "granaryCapacity": 600 } },
-        { "cost": { "wood": 180, "clay": 200, "iron": 30 }, "buildSeconds": 1800, "requiresForumTier": 1, "effects": { "granaryCapacity": 2000 } },
-        { "cost": { "wood": 600, "clay": 700, "iron": 150 }, "buildSeconds": 7200, "requiresForumTier": 2, "effects": { "granaryCapacity": 6000 } }
+        {
+          "cost": {
+            "wood": 40,
+            "clay": 40
+          },
+          "buildSeconds": 180,
+          "requiresForumTier": 1,
+          "effects": {
+            "granaryCapacity": 600
+          }
+        },
+        {
+          "cost": {
+            "wood": 180,
+            "clay": 200,
+            "iron": 30
+          },
+          "buildSeconds": 1800,
+          "requiresForumTier": 1,
+          "effects": {
+            "granaryCapacity": 2000
+          }
+        },
+        {
+          "cost": {
+            "wood": 600,
+            "clay": 700,
+            "iron": 150
+          },
+          "buildSeconds": 7200,
+          "requiresForumTier": 2,
+          "effects": {
+            "granaryCapacity": 6000
+          }
+        }
       ]
     },
     {
-      "id": "cellars", "name": "Cellars", "ring": "inner", "kind": "building",
+      "id": "cellars",
+      "name": "Cellars",
+      "ring": "inner",
+      "kind": "building",
       "role": "Hidden stores. Raiders never find what is kept here.",
       "tiers": [
-        { "cost": { "wood": 30, "clay": 50 }, "buildSeconds": 150, "requiresForumTier": 1, "effects": { "hiddenPerResource": 100 } },
-        { "cost": { "wood": 120, "clay": 220, "iron": 30 }, "buildSeconds": 1500, "requiresForumTier": 1, "effects": { "hiddenPerResource": 350 } },
-        { "cost": { "wood": 400, "clay": 700, "iron": 120 }, "buildSeconds": 6000, "requiresForumTier": 2, "effects": { "hiddenPerResource": 1000 } }
+        {
+          "cost": {
+            "wood": 30,
+            "clay": 50
+          },
+          "buildSeconds": 150,
+          "requiresForumTier": 1,
+          "effects": {
+            "hiddenPerResource": 100
+          }
+        },
+        {
+          "cost": {
+            "wood": 120,
+            "clay": 220,
+            "iron": 30
+          },
+          "buildSeconds": 1500,
+          "requiresForumTier": 1,
+          "effects": {
+            "hiddenPerResource": 350
+          }
+        },
+        {
+          "cost": {
+            "wood": 400,
+            "clay": 700,
+            "iron": 120
+          },
+          "buildSeconds": 6000,
+          "requiresForumTier": 2,
+          "effects": {
+            "hiddenPerResource": 1000
+          }
+        }
       ]
     },
     {
-      "id": "insulae", "name": "Insulae", "ring": "inner", "kind": "building",
+      "id": "insulae",
+      "name": "Insulae",
+      "ring": "inner",
+      "kind": "building",
       "role": "Housing. Raises the population cap.",
       "tiers": [
-        { "cost": { "wood": 70, "clay": 50 }, "buildSeconds": 240, "requiresForumTier": 1, "effects": { "populationCap": 40 } },
-        { "cost": { "wood": 280, "clay": 240, "iron": 40 }, "buildSeconds": 2400, "requiresForumTier": 1, "effects": { "populationCap": 120 } },
-        { "cost": { "wood": 900, "clay": 800, "iron": 200 }, "buildSeconds": 9000, "requiresForumTier": 2, "effects": { "populationCap": 300 } }
+        {
+          "cost": {
+            "wood": 70,
+            "clay": 50
+          },
+          "buildSeconds": 240,
+          "requiresForumTier": 1,
+          "effects": {
+            "populationCap": 40
+          }
+        },
+        {
+          "cost": {
+            "wood": 280,
+            "clay": 240,
+            "iron": 40
+          },
+          "buildSeconds": 2400,
+          "requiresForumTier": 1,
+          "effects": {
+            "populationCap": 120
+          }
+        },
+        {
+          "cost": {
+            "wood": 900,
+            "clay": 800,
+            "iron": 200
+          },
+          "buildSeconds": 9000,
+          "requiresForumTier": 2,
+          "effects": {
+            "populationCap": 300
+          }
+        }
       ]
     },
     {
-      "id": "market", "name": "Market", "ring": "inner", "kind": "building",
+      "id": "market",
+      "name": "Market",
+      "ring": "inner",
+      "kind": "building",
       "role": "Trade with the tribes and Rome. Raises denarii income.",
       "tiers": [
-        { "cost": { "wood": 80, "clay": 60, "iron": 20 }, "buildSeconds": 300, "requiresForumTier": 1, "effects": { "taxMultiplier": 0.15, "tradeRate": 3 } },
-        { "cost": { "wood": 300, "clay": 260, "iron": 80 }, "buildSeconds": 2700, "requiresForumTier": 1, "effects": { "taxMultiplier": 0.35, "tradeRate": 2.5 } },
-        { "cost": { "wood": 900, "clay": 800, "iron": 300 }, "buildSeconds": 9600, "requiresForumTier": 2, "effects": { "taxMultiplier": 0.7, "tradeRate": 2 } }
+        {
+          "cost": {
+            "wood": 80,
+            "clay": 60,
+            "iron": 20
+          },
+          "buildSeconds": 300,
+          "requiresForumTier": 1,
+          "effects": {
+            "taxMultiplier": 0.15,
+            "tradeRate": 3
+          }
+        },
+        {
+          "cost": {
+            "wood": 300,
+            "clay": 260,
+            "iron": 80
+          },
+          "buildSeconds": 2700,
+          "requiresForumTier": 1,
+          "effects": {
+            "taxMultiplier": 0.35,
+            "tradeRate": 2.5
+          }
+        },
+        {
+          "cost": {
+            "wood": 900,
+            "clay": 800,
+            "iron": 300
+          },
+          "buildSeconds": 9600,
+          "requiresForumTier": 2,
+          "effects": {
+            "taxMultiplier": 0.7,
+            "tradeRate": 2
+          }
+        }
       ]
     },
     {
-      "id": "temple", "name": "Temple", "ring": "inner", "kind": "building",
+      "id": "temple",
+      "name": "Temple",
+      "ring": "inner",
+      "kind": "building",
       "role": "The gods of Rome. Piety and gravitas.",
       "tiers": [
-        { "cost": { "wood": 60, "clay": 80, "iron": 20 }, "buildSeconds": 300, "requiresForumTier": 1, "effects": { "gravitasPerRound": 1, "pietyBonus": 1 } },
-        { "cost": { "wood": 260, "clay": 320, "iron": 100 }, "buildSeconds": 3000, "requiresForumTier": 1, "effects": { "gravitasPerRound": 2, "pietyBonus": 2 } },
-        { "cost": { "wood": 800, "clay": 1000, "iron": 400 }, "buildSeconds": 10800, "requiresForumTier": 2, "effects": { "gravitasPerRound": 4, "pietyBonus": 3 } }
+        {
+          "cost": {
+            "wood": 60,
+            "clay": 80,
+            "iron": 20
+          },
+          "buildSeconds": 300,
+          "requiresForumTier": 1,
+          "effects": {
+            "gravitasPerRound": 1,
+            "pietyBonus": 1
+          }
+        },
+        {
+          "cost": {
+            "wood": 260,
+            "clay": 320,
+            "iron": 100
+          },
+          "buildSeconds": 3000,
+          "requiresForumTier": 1,
+          "effects": {
+            "gravitasPerRound": 2,
+            "pietyBonus": 2
+          }
+        },
+        {
+          "cost": {
+            "wood": 800,
+            "clay": 1000,
+            "iron": 400
+          },
+          "buildSeconds": 10800,
+          "requiresForumTier": 2,
+          "effects": {
+            "gravitasPerRound": 4,
+            "pietyBonus": 3
+          }
+        }
       ]
     },
     {
-      "id": "waystation", "name": "Waystation", "ring": "inner", "kind": "building",
+      "id": "library",
+      "name": "Library",
+      "ring": "inner",
+      "kind": "building",
+      "role": "Scrolls, copyists and quiet. Nothing is researched without it.",
+      "tiers": [
+        {
+          "cost": {
+            "wood": 80,
+            "clay": 70,
+            "iron": 20
+          },
+          "buildSeconds": 300,
+          "requiresForumTier": 1,
+          "effects": {
+            "researchSpeed": 0.05,
+            "researchRank": 1
+          }
+        },
+        {
+          "cost": {
+            "wood": 300,
+            "clay": 280,
+            "iron": 110
+          },
+          "buildSeconds": 3000,
+          "requiresForumTier": 2,
+          "effects": {
+            "researchSpeed": 0.18,
+            "researchRank": 2,
+            "gravitasPerRound": 1
+          }
+        },
+        {
+          "cost": {
+            "wood": 900,
+            "clay": 850,
+            "iron": 420
+          },
+          "buildSeconds": 10800,
+          "requiresForumTier": 3,
+          "effects": {
+            "researchSpeed": 0.32,
+            "researchRank": 3,
+            "gravitasPerRound": 2
+          }
+        }
+      ]
+    },
+    {
+      "id": "waystation",
+      "name": "Waystation",
+      "ring": "inner",
+      "kind": "building",
       "role": "The road to the Rhine. Rome's requests and rewards pass through here.",
       "tiers": [
-        { "cost": { "wood": 90, "clay": 40, "iron": 30 }, "buildSeconds": 240, "requiresForumTier": 1, "effects": { "romeRewardMultiplier": 0.1 } },
-        { "cost": { "wood": 320, "clay": 200, "iron": 120 }, "buildSeconds": 2400, "requiresForumTier": 1, "effects": { "romeRewardMultiplier": 0.25 } },
-        { "cost": { "wood": 900, "clay": 700, "iron": 400 }, "buildSeconds": 9000, "requiresForumTier": 2, "effects": { "romeRewardMultiplier": 0.5 } }
+        {
+          "cost": {
+            "wood": 90,
+            "clay": 40,
+            "iron": 30
+          },
+          "buildSeconds": 240,
+          "requiresForumTier": 1,
+          "effects": {
+            "romeRewardMultiplier": 0.1
+          }
+        },
+        {
+          "cost": {
+            "wood": 320,
+            "clay": 200,
+            "iron": 120
+          },
+          "buildSeconds": 2400,
+          "requiresForumTier": 1,
+          "effects": {
+            "romeRewardMultiplier": 0.25
+          }
+        },
+        {
+          "cost": {
+            "wood": 900,
+            "clay": 700,
+            "iron": 400
+          },
+          "buildSeconds": 9000,
+          "requiresForumTier": 2,
+          "effects": {
+            "romeRewardMultiplier": 0.5
+          }
+        }
       ]
     },
     {
-      "id": "lumber_camp", "name": "Lumber camp", "ring": "outer", "kind": "field", "site": "forest", "produces": "wood",
+      "id": "lumber_camp",
+      "name": "Lumber camp",
+      "ring": "outer",
+      "kind": "field",
+      "site": "forest",
+      "produces": "wood",
       "role": "Wood from the forest.",
       "tiers": [
-        { "cost": { "wood": 20, "clay": 30, "iron": 10 }, "buildSeconds": 120, "requiresForumTier": 0, "effects": { "productionPerHour": 30 } },
-        { "cost": { "wood": 90, "clay": 120, "iron": 40 }, "buildSeconds": 900, "requiresForumTier": 1, "effects": { "productionPerHour": 80 } },
-        { "cost": { "wood": 300, "clay": 400, "iron": 160 }, "buildSeconds": 4800, "requiresForumTier": 2, "effects": { "productionPerHour": 200 } }
+        {
+          "cost": {
+            "wood": 20,
+            "clay": 30,
+            "iron": 10
+          },
+          "buildSeconds": 120,
+          "requiresForumTier": 0,
+          "effects": {
+            "productionPerHour": 30
+          }
+        },
+        {
+          "cost": {
+            "wood": 90,
+            "clay": 120,
+            "iron": 40
+          },
+          "buildSeconds": 900,
+          "requiresForumTier": 1,
+          "effects": {
+            "productionPerHour": 80
+          }
+        },
+        {
+          "cost": {
+            "wood": 300,
+            "clay": 400,
+            "iron": 160
+          },
+          "buildSeconds": 4800,
+          "requiresForumTier": 2,
+          "effects": {
+            "productionPerHour": 200
+          }
+        }
       ]
     },
     {
-      "id": "clay_works", "name": "Clay works", "ring": "outer", "kind": "field", "site": "clay_bank", "produces": "clay",
+      "id": "clay_works",
+      "name": "Clay works",
+      "ring": "outer",
+      "kind": "field",
+      "site": "clay_bank",
+      "produces": "clay",
       "role": "Clay from the river bank.",
       "tiers": [
-        { "cost": { "wood": 30, "clay": 20, "iron": 10 }, "buildSeconds": 120, "requiresForumTier": 0, "effects": { "productionPerHour": 30 } },
-        { "cost": { "wood": 120, "clay": 90, "iron": 40 }, "buildSeconds": 900, "requiresForumTier": 1, "effects": { "productionPerHour": 80 } },
-        { "cost": { "wood": 400, "clay": 300, "iron": 160 }, "buildSeconds": 4800, "requiresForumTier": 2, "effects": { "productionPerHour": 200 } }
+        {
+          "cost": {
+            "wood": 30,
+            "clay": 20,
+            "iron": 10
+          },
+          "buildSeconds": 120,
+          "requiresForumTier": 0,
+          "effects": {
+            "productionPerHour": 30
+          }
+        },
+        {
+          "cost": {
+            "wood": 120,
+            "clay": 90,
+            "iron": 40
+          },
+          "buildSeconds": 900,
+          "requiresForumTier": 1,
+          "effects": {
+            "productionPerHour": 80
+          }
+        },
+        {
+          "cost": {
+            "wood": 400,
+            "clay": 300,
+            "iron": 160
+          },
+          "buildSeconds": 4800,
+          "requiresForumTier": 2,
+          "effects": {
+            "productionPerHour": 200
+          }
+        }
       ]
     },
     {
-      "id": "iron_mine", "name": "Iron mine", "ring": "outer", "kind": "field", "site": "iron_seam", "produces": "iron",
+      "id": "iron_mine",
+      "name": "Iron mine",
+      "ring": "outer",
+      "kind": "field",
+      "site": "iron_seam",
+      "produces": "iron",
       "role": "Iron from the seam.",
       "tiers": [
-        { "cost": { "wood": 40, "clay": 30, "iron": 5 }, "buildSeconds": 150, "requiresForumTier": 0, "effects": { "productionPerHour": 18 } },
-        { "cost": { "wood": 160, "clay": 120, "iron": 30 }, "buildSeconds": 1100, "requiresForumTier": 1, "effects": { "productionPerHour": 50 } },
-        { "cost": { "wood": 500, "clay": 400, "iron": 120 }, "buildSeconds": 5400, "requiresForumTier": 2, "effects": { "productionPerHour": 130 } }
+        {
+          "cost": {
+            "wood": 40,
+            "clay": 30,
+            "iron": 5
+          },
+          "buildSeconds": 150,
+          "requiresForumTier": 0,
+          "effects": {
+            "productionPerHour": 18
+          }
+        },
+        {
+          "cost": {
+            "wood": 160,
+            "clay": 120,
+            "iron": 30
+          },
+          "buildSeconds": 1100,
+          "requiresForumTier": 1,
+          "effects": {
+            "productionPerHour": 50
+          }
+        },
+        {
+          "cost": {
+            "wood": 500,
+            "clay": 400,
+            "iron": 120
+          },
+          "buildSeconds": 5400,
+          "requiresForumTier": 2,
+          "effects": {
+            "productionPerHour": 130
+          }
+        }
       ]
     },
     {
-      "id": "farm", "name": "Farm", "ring": "outer", "kind": "field", "site": "farmland", "produces": "grain",
+      "id": "farm",
+      "name": "Farm",
+      "ring": "outer",
+      "kind": "field",
+      "site": "farmland",
+      "produces": "grain",
       "role": "Grain. Feeds the colony.",
       "tiers": [
-        { "cost": { "wood": 25, "clay": 20, "iron": 5 }, "buildSeconds": 100, "requiresForumTier": 0, "effects": { "productionPerHour": 35 } },
-        { "cost": { "wood": 100, "clay": 90, "iron": 30 }, "buildSeconds": 800, "requiresForumTier": 1, "effects": { "productionPerHour": 90 } },
-        { "cost": { "wood": 350, "clay": 300, "iron": 120 }, "buildSeconds": 4200, "requiresForumTier": 2, "effects": { "productionPerHour": 230 } }
+        {
+          "cost": {
+            "wood": 25,
+            "clay": 20,
+            "iron": 5
+          },
+          "buildSeconds": 100,
+          "requiresForumTier": 0,
+          "effects": {
+            "productionPerHour": 35
+          }
+        },
+        {
+          "cost": {
+            "wood": 100,
+            "clay": 90,
+            "iron": 30
+          },
+          "buildSeconds": 800,
+          "requiresForumTier": 1,
+          "effects": {
+            "productionPerHour": 90
+          }
+        },
+        {
+          "cost": {
+            "wood": 350,
+            "clay": 300,
+            "iron": 120
+          },
+          "buildSeconds": 4200,
+          "requiresForumTier": 2,
+          "effects": {
+            "productionPerHour": 230
+          }
+        }
       ]
     }
   ]

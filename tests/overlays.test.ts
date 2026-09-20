@@ -32,7 +32,7 @@ describe('tier-3 animation overlays', () => {
         expect(anims.length, `${key} should not animate`).toBe(0);
       }
     }
-    expect(t3).toBe(13);
+    expect(t3).toBe(14);
   });
 
   it('renders each animation kind as a driven group in scene units', () => {

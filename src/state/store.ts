@@ -70,6 +70,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     posts: Object.fromEntries(posts.map((p) => [p.id, null])),
     lesserPosts: Object.fromEntries(lesserPosts.map((p) => [p.id, null])),
     office: playerLeader.id,
+    research: { active: [], completed: [] },
     challenge: null,
     lastChallengeRound: -999,
     lastAssassinationRound: -999,
@@ -127,7 +128,7 @@ export function emptyStats() {
     romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
     challengesFaced: 0, challengesWon: 0, roundsOutOfOffice: 0, assassinationsOrdered: 0,
     assassinationsSucceeded: 0, marriages: 0, exiles: 0,
-    sitesClaimed: 0, sitesLost: 0, siteRaidsRepelled: 0, scoutsLost: 0,
+    sitesClaimed: 0, sitesLost: 0, siteRaidsRepelled: 0, scoutsLost: 0, researchCompleted: 0,
   };
 }
 
@@ -187,6 +188,12 @@ export function migrate(state: GameState): GameState {
     };
   }
   for (const c of Object.values(state.characters)) if (c.bodyguards === undefined) c.bodyguards = 0;
+  if (!state.research) state.research = { active: [], completed: [] };
+  // Slots added to the layout after a save was made appear as empty ground.
+  for (const def of layout.slots) {
+    if (state.slots.some((s) => s.id === def.id)) continue;
+    state.slots.push({ id: def.id, ring: def.ring, site: def.site, building: null, tier: 0 });
+  }
   if (state.challenge === undefined) state.challenge = null;
   if (state.lastChallengeRound === undefined) state.lastChallengeRound = -999;
   if (state.lastAssassinationRound === undefined) state.lastAssassinationRound = -999;

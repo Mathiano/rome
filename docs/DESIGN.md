@@ -117,7 +117,7 @@ One number. Needs housing and grain upkeep. Grows with buildings. More populatio
 | Iron mine | outer | iron site |
 | Farm | outer | grain site |
 
-Library (research, §4.6) is v0.2.
+Library (research, §4.6). ✅ Built 2026-09-20: inner ring, three tiers, and an eighth inner plot added to §4.5's layout to stand on. Its tier is the gate on how far the tree opens, and it reads faster at each tier.
 
 ### 4.5 Layout ✅
 
@@ -132,6 +132,10 @@ This is Travian's fixed-slot model with player-chosen placement, and it preserve
 ### 4.6 Research ✅ (system) / ❓ (contents)
 
 A research system driven by three inputs: denarii (pay for experiments), research scrolls (earned from Rome rewards, ruins on the map, and trade), and the Library building. The tree is data-driven (`data/research.json`). Research is never lost, even through collapse and Rome's intervention. ❓ Tree contents — first pass in v0.2.
+
+Built 2026-09-20 (`src/village/research.ts`). A study runs on the village clock like a construction — real time, no political round — and can be finished early for denarii at the same Pillar 3 price. One study at a time. A node costs denarii and scrolls, needs a Library of its own rank, and needs whatever it stands on. Research and buildings share one vocabulary of effects, so anything already reading a building effect picks research up unchanged.
+
+🟡 **Tree contents, first pass, 2026-09-20.** Eleven nodes in three ranks, written as a data-file default in an unattended session (CLAUDE.md, *Ways of working*) and listed in `docs/CAPSULE-SESSION-2026-09-20.md` for confirmation. §15.11 stays open until Mathias ratifies or replaces them.
 
 ---
 
@@ -306,7 +310,7 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 |---|---|
 | **v0 — vertical slice** | Village, five resources, ~12 buildings, storage, timed construction with hired help, Rome requests, one tribe with envoys and raids, two families (yours + one rival), five council posts, gravitas, basic intrigue (bribe, promote, demote), abstract raids, localStorage save with export/import. No world map. |
 | **v0.1** | World map with scouting and "?" sites, site claiming and garrisons, all three tribes with the like/hate web. |
-| **v0.2** | Research system and Library. Families three and four. Marriage, heirs by birth and adoption, bodyguards, assassination. Top-office challenge. |
+| **v0.2** | Research system and Library ✅. Families three and four ✅. Marriage ✅, heirs by birth and adoption (§15.7 open), bodyguards ✅, assassination ✅. Top-office challenge ✅. |
 | **v0.3** | First content drop: stone, marble, salt and their buildings; first processed goods. Temples per god. Supabase sync. |
 | **later** | Offence and Rome-ordered attacks. Citizen tiers. Mobile. Latin UI names. Traits. The Teutoburg event. |
 
@@ -330,7 +334,7 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 8. One temple or a temple per god.
 9. ~~Tribe names and personalities.~~ ✅ Resolved 2026-09-15 for v0: the Chatti, raider. The other two are 🟡 pending v0.1 (§7).
 10. Map size.
-11. Research tree contents.
+11. Research tree contents. 🟡 First pass in `data/research.json` 2026-09-20 — eleven nodes, three ranks. Awaiting confirmation.
 12. Whether Rome's request to attack a tribe can exist before offence does (recommend no).
 
 ---
@@ -340,3 +344,4 @@ v0.1.1 — 2026-09-15 — first implementation session. Open questions 2, 5, 6 a
 v0.1.2 — 2026-09-16 — town named Arctown (§15.1). CI on every pull request. Dev-only time control documented in the session capsule, not here: it is tooling, not design.
 v0.1.3 — 2026-09-16 — §10 art pipeline pivot: buildings are raster PNG sprites from a style anchor via `tools/artgen/`; SVG kept for map, UI and animated overlays; isobuild retired.
 v0.1.4 — 2026-09-20 — §9.5 and §9.6 built: the top-office challenge with a live vote count, losing and winning back power, and the full intrigue menu with bodyguards. All four houses (§9.1) and all three tribes (§7) are awake.
+v0.2.0 — 2026-09-20 — §4.6 built: the Library, an eighth inner plot to stand it on, and a first-pass research tree (🟡, §15.11).

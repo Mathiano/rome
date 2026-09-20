@@ -1,9 +1,9 @@
-import { activeTribes, building, config, envoys, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
+import { activeTribes, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, eligibleBuildings, rushPrice, slotById } from '../village/construction';
 import { canAfford, netPerHour } from '../village/economy';
-import { capacity, hiddenPerResource, populationCap, forumTier } from '../village/storage';
+import { capacity, hiddenPerResource, populationCap, forumTier, buildingTier } from '../village/storage';
 import { gravitasRank, leaderOf, livingMembers, playerFamily, rivalFamilies, standing } from '../politics/characters';
 import { holderOf, lesserEffect, lesserHolderOf, meetsRank, postsHeldBy } from '../politics/posts';
 import { militiaPool, homeMilitia } from '../combat/militia';
@@ -18,12 +18,17 @@ import { officeHolder, playerHoldsOffice, tally } from '../politics/challenge';
 import { favourRewardMultiplier } from '../rome/requests';
 import { appeasePrice } from '../tribes/turn';
 import { pendingChoices } from '../politics/events';
+import {
+  availableResearch, checkResearch, isResearched, researchProgress, researchRank,
+  researchRushPrice, researchSpeed, resourcesOf,
+} from '../village/research';
 import { roundsUntilIdle } from '../politics/rounds';
 
-export type Tab = 'village' | 'map' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save';
+export type Tab = 'village' | 'map' | 'library' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save';
 const TABS: { id: Tab; name: string }[] = [
   { id: 'village', name: 'Village' },
   { id: 'map', name: 'Map' },
+  { id: 'library', name: 'Library' },
   { id: 'council', name: 'Council' },
   { id: 'family', name: 'Houses' },
   { id: 'tribe', name: 'Tribe' },
@@ -41,6 +46,8 @@ export interface PanelHandlers {
   onPolitical(a: Political): void;
   onEnvoy(tribeId: string, envoyId: string): void;
   onTrade(tribeId: string, amount: number): void;
+  onResearch(id: string): void;
+  onRushResearch(id: string): void;
   onGuards(characterId: string, men: number): void;
   onExport(): void;
   onImport(json: string): void;
@@ -50,6 +57,7 @@ export interface PanelHandlers {
 const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
 const n = (v: number) => (Math.abs(v) >= 100 ? Math.round(v).toString() : (Math.round(v * 10) / 10).toString());
 const ROMAN = ['', 'I', 'II', 'III'];
+const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 export interface News { title: string; subtitle: string; lines: LogEntry[] }
 
@@ -118,6 +126,7 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
   switch (tab) {
     case 'village': body = renderVillage(s, selected, now); break;
     case 'map': body = renderMap(s, selectedHex); break;
+    case 'library': body = renderLibrary(s, now); break;
     case 'council': body = renderCouncil(s, now); break;
     case 'family': body = renderFamilies(s); break;
     case 'tribe': body = renderTribe(s); break;
@@ -225,6 +234,87 @@ function renderMap(s: GameState, hex: string | null): string {
   return out + `</div>`;
 }
 
+const EFFECT_WORDS: Record<string, (v: number) => string> = {
+  buildSpeed: (v) => `building ${pct(v)} faster`,
+  grainMultiplier: (v) => `${pct(v)} more grain`,
+  materialMultiplier: (v) => `${pct(v)} more wood, clay and iron`,
+  taxMultiplier: (v) => `${pct(v)} more tax`,
+  tradeRate: (v) => `a better rate with the tribes (+${v.toFixed(2)})`,
+  granaryCapacity: (v) => `${v} more grain kept`,
+  warehouseCapacity: (v) => `${v} more of each material kept`,
+  hiddenPerResource: (v) => `${v} more of each resource hidden from raiders`,
+  populationCap: (v) => `room for ${v} more citizens`,
+  militiaBonus: (v) => `${v} more men under arms`,
+  defence: (v) => `${v} to the colony's defence`,
+  gravitasPerRound: (v) => `${v} gravitas a round`,
+  corruptionDrift: (v) => `corruption falls ${Math.abs(v)} a round`,
+  romeRewardMultiplier: (v) => `${pct(v)} more from Rome's rewards`,
+};
+
+function effectWords(effects: Record<string, number>): string {
+  return Object.entries(effects)
+    .map(([k, v]) => (EFFECT_WORDS[k] ? EFFECT_WORDS[k](v) : `${k} ${v}`))
+    .join(', ');
+}
+
+const hours = (sec: number) => (sec >= 3600 ? `${(sec / 3600).toFixed(1)}h` : `${Math.round(sec / 60)} min`);
+
+/**
+ * The Library (DESIGN §4.6). Research runs on the village clock like a
+ * construction, costs denarii and scrolls, and can be finished early at the
+ * same honest price. Nothing here is ever lost again (Pillar 7).
+ */
+function renderLibrary(s: GameState, now: number): string {
+  const tier = buildingTier(s, 'library');
+  const rank = researchRank(s);
+  let out = `<h2>The library</h2>`;
+  out += `<p>Scrolls <b>${s.rome.scrolls}</b> · Library ${tier ? ROMAN[tier] : '<em>none</em>'} · ${
+    tier ? `studies run ${pct(1 - researchSpeed(s))} faster` : 'no study is possible'} · known <b>${s.research.completed.length}</b>/${availableResearch(s).length + s.research.completed.length}</p>`;
+  out += `<p class="muted">Scrolls come from Rome's rewards, from ruins on the map and from trade. What is learned here is never lost: it survives a raid, a coup and Rome's intervention alike.</p>`;
+  if (!tier) {
+    out += `<div class="card"><b>There is no library.</b><p class="muted">Raise one on an inner plot. Until then the scrolls sit in a chest and nothing is read.</p></div>`;
+  }
+
+  for (const p of s.research.active) {
+    const node = researchNode(p.id);
+    const price = researchRushPrice(s, p, now);
+    const pr = Math.round(researchProgress(p, now) * 100);
+    out += `<div class="card player"><b>${esc(node.name)}</b> <span class="muted">under study</span>
+      <div class="meter"><i style="width:${pr}%"></i></div>
+      <p class="muted">${esc(node.description)}</p>
+      <p>Hire copyists to finish now: <b>${price} denarii</b></p>
+      <button class="act" data-rush-research="${p.id}" ${s.resources.denarii < price ? 'disabled' : ''}>Finish now</button></div>`;
+  }
+
+  let lastRank = 0;
+  for (const node of availableResearch(s)) {
+    if (node.rank !== lastRank) {
+      lastRank = node.rank;
+      out += `<h3>Opened by a Library of tier ${ROMAN[node.rank]}</h3>`;
+    }
+    const check = checkResearch(s, node.id);
+    const locked = rank < node.rank;
+    out += `<div class="card ${locked ? 'lesser' : ''}"><b>${esc(node.name)}</b>
+      <p class="muted">${esc(node.description)}</p>
+      <p>${esc(effectWords(node.effects))}</p>
+      <p>Cost: ${costTxt(resourcesOf(node.cost), s)}${check.cost.scrolls ? `, <span class="${s.rome.scrolls < check.cost.scrolls ? 'neg' : ''}">${check.cost.scrolls} scroll${check.cost.scrolls === 1 ? '' : 's'}</span>` : ''} · ${hours(check.seconds)}</p>
+      <button class="act" data-research="${node.id}" ${check.ok ? '' : 'disabled'}>Take it up</button>`;
+    if (!check.ok && check.reason) out += ` <span class="muted">${esc(check.reason)}</span>`;
+    out += `</div>`;
+  }
+
+  if (s.research.completed.length) {
+    out += `<h3>Known</h3><ul class="known">`;
+    for (const id of s.research.completed) {
+      const node = researchNode(id);
+      out += `<li><b>${esc(node.name)}</b> <span class="muted">${esc(effectWords(node.effects))}</span></li>`;
+    }
+    out += `</ul>`;
+  }
+  void isResearched;
+  return out;
+}
+
 /**
  * The vote on the top office (DESIGN §9.5). The player sees the count as it
  * stands, which is the point: the one round before the vote is spent buying the
@@ -320,8 +410,6 @@ function renderCouncil(s: GameState, now: number): string {
   out += `<p class="muted">Every action here runs a political round: the rival house, the tribe and Rome all act, and everyone ages. If you stay away ${config.calendarFloorHours} hours the council meets without you (${Math.ceil(roundsUntilIdle(s, now) / 3_600_000)}h left).</p>`;
   return out;
 }
-
-const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 function spouseTxt(s: GameState, c: { spouseId?: string }): string {
   if (!c.spouseId) return '';
@@ -576,6 +664,8 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.tab) return h.onTab(d.tab as Tab);
     if (d.build && d.building) return h.onBuild(d.build, d.building);
     if (d.rush) return h.onRush(d.rush);
+    if (d.research) return h.onResearch(d.research);
+    if (d.rushResearch) return h.onRushResearch(d.rushResearch);
     if (d.appoint) {
       const sel = panel.querySelector<HTMLSelectElement>(`select[data-select-post="${d.appoint}"]`);
       if (sel) return h.onPolitical({ type: 'appoint', postId: d.appoint, characterId: sel.value });

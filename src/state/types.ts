@@ -154,6 +154,20 @@ export interface PlaytestStats {
   sitesLost: number;
   siteRaidsRepelled: number;
   scoutsLost: number;
+  researchCompleted: number;
+}
+
+/** One thing the Library is working on (DESIGN §4.6). */
+export interface ResearchProgress {
+  id: string;
+  startedAt: number;
+  finishAt: number;
+}
+
+/** Research is only ever added to: it survives every setback (Pillar 7). */
+export interface ResearchState {
+  active: ResearchProgress[];
+  completed: string[];
 }
 
 /** A site the colony holds (DESIGN §5.3). */
@@ -201,6 +215,7 @@ export interface GameState {
   /** Offices outside the council: standing without leverage (DESIGN §9.3). */
   lesserPosts: Record<string, string | null>;
   office: string | null;
+  research: ResearchState;
   challenge: Challenge | null;
   lastChallengeRound: number;
   lastAssassinationRound: number;

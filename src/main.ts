@@ -94,7 +94,11 @@ function renderNewsOverlay(): void {
 function panelKey(now: number): string {
   const st = game.state;
   const res = RESOURCE_IDS.map((id) => Math.round(st.resources[id])).join(',');
-  const work = st.constructions.map((c) => `${c.slotId}:${Math.round(progressOf(c, now) * 40)}`).join(',');
+  const work = [
+    ...st.constructions.map((c) => `${c.slotId}:${Math.round(progressOf(c, now) * 40)}`),
+    ...st.research.active.map((r) => `${r.id}:${Math.round(((now - r.startedAt) / (r.finishAt - r.startedAt)) * 40)}`),
+    `r${st.research.completed.length}`, `s${st.rome.scrolls}`,
+  ].join(',');
   return [tab, selected, selectedHex, st.round, st.logSeq, res, work, Math.floor(st.population),
     Math.round(st.corruption), st.map.claimed.length, st.map.scouted.length, st.map.pendingScout,
     Object.values(st.tribes).map((t) => `${t.pendingEnvoy}${t.massingForRound}${Math.round(t.trust)}${Math.round(t.fear)}`).join(''),
@@ -139,6 +143,8 @@ bindPanel(panelEl, {
   onEnvoy: (tribeId, envoyId) => guard(() => game.dispatchEnvoy(tribeId, envoyId, dev.now())),
   onTrade: (tribeId, amt) => guard(() => game.trade(tribeId, amt, dev.now())),
   onGuards: (id, men) => guard(() => game.guards(id, men, dev.now())),
+  onResearch: (id) => guard(() => game.research(id, dev.now())),
+  onRushResearch: (id) => guard(() => game.rushResearch(id, dev.now())),
   onExport: () => {
     const json = serialise(game.state);
     const blob = new Blob([json], { type: 'application/json' });
