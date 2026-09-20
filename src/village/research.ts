@@ -10,7 +10,7 @@
 import { researchConfig, researchNode, researchNodes, type Cost, type ResearchDef } from '../data';
 import type { GameState, ResearchProgress } from '../state/types';
 import { log } from '../state/store';
-import { canAfford, denariiIncomePerHour, pay } from './economy';
+import { canAfford, outputValuePerHour, pay } from './economy';
 import { researchEffect, sumEffect } from './storage';
 
 /** The highest rank of node the Library opens. 0 means there is no Library. */
@@ -81,7 +81,7 @@ export function startResearch(state: GameState, id: string, now: number): Resear
 /** Pillar 3 again: never more than the colony earns in the time saved. */
 export function researchRushPrice(state: GameState, p: ResearchProgress, now: number): number {
   const hours = Math.max(0, p.finishAt - now) / 3_600_000;
-  return Math.max(researchConfig.rushMinPrice, Math.ceil(denariiIncomePerHour(state) * hours));
+  return Math.max(researchConfig.rushMinPrice, Math.ceil(outputValuePerHour(state) * hours));
 }
 
 export function rushResearch(state: GameState, id: string, now: number): void {

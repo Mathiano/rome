@@ -1,6 +1,6 @@
 import { building, buildings, config, layout } from '../data';
 import type { GameState, Construction, Slot } from '../state/types';
-import { canAfford, pay, buildTimeMultiplier, corruptionCostMultiplier, denariiIncomePerHour } from './economy';
+import { canAfford, pay, buildTimeMultiplier, corruptionCostMultiplier, outputValuePerHour } from './economy';
 import { forumTier } from './storage';
 import { log } from '../state/store';
 import type { Cost } from '../data';
@@ -79,7 +79,7 @@ export function startBuild(state: GameState, slotId: string, buildingId: string,
 /** Pillar 3: the price never exceeds what the colony earns in the remaining time. */
 export function rushPrice(state: GameState, c: Construction, now: number): number {
   const remainingHours = Math.max(0, c.finishAt - now) / 3_600_000;
-  const earns = denariiIncomePerHour(state) * remainingHours;
+  const earns = outputValuePerHour(state) * remainingHours;
   return Math.max(config.rush.minPrice, Math.ceil(earns));
 }
 

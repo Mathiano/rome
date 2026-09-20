@@ -1,4 +1,4 @@
-import { building, config, post as postDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
+import { building, config, post as postDef, resources as resourceDefs, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
 import { lesserEffect } from '../politics/posts';
 import { claimedProduction } from '../map/sites';
 import type { GameState, Resources } from '../state/types';
@@ -55,6 +55,25 @@ export function netPerHour(state: GameState): Resources {
   p.grain -= grainUpkeepPerHour(state);
   p.denarii = denariiIncomePerHour(state);
   return p;
+}
+
+/**
+ * What an hour of this colony is worth in denarii (DESIGN pillar 3).
+ *
+ * Haste used to be priced against the tax take alone, which is a fraction of
+ * what a colony actually produces: early on that is 8 denarii an hour, so every
+ * job under about eight minutes rounded down to the floor and cost nothing.
+ * What haste buys back is wood, clay, iron and grain as much as coin, so that
+ * is what it is priced against. Values live in `data/resources.json`.
+ */
+export function outputValuePerHour(state: GameState): number {
+  const p = productionPerHour(state);
+  let total = denariiIncomePerHour(state);
+  for (const r of resourceDefs) {
+    if (r.id === 'denarii') continue;
+    total += Math.max(0, p[r.id]) * r.denariiValue;
+  }
+  return total;
 }
 
 export function buildTimeMultiplier(state: GameState): number {

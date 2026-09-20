@@ -1,8 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState } from '../src/state/store';
 import { Game } from '../src/game';
-import { checkBuild } from '../src/village/construction';
 import { defenceStrength, raidStrength } from '../src/combat/raids';
+import { grainUpkeepPerHour, netPerHour, outputValuePerHour, productionPerHour } from '../src/village/economy';
+import { checkBuild, rushPrice } from '../src/village/construction';
 import { config } from '../src/data';
 import type { GameState } from '../src/state/types';
 /** v0.1 woke the other two tribes; these tests speak to the raider. */
@@ -166,5 +167,59 @@ describe('balance: raids answer to the castellum', () => {
     }
     expect(ignoredLost, 'ignoring every house should cost the office').toBeGreaterThan(SEEDS / 2);
     expect(engagedLost, 'keeping the houses in office should hold it').toBeLessThan(SEEDS / 3);
+  });
+});
+
+/**
+ * The first playtest found both of these by feel; the numbers agreed.
+ */
+describe('balance: haste and hunger', () => {
+  it('haste is priced against everything the colony makes, not just its tax', () => {
+    const g = new Game(createInitialState(0, 3));
+    const s = g.state;
+    // the tax take alone is a small fraction of what an hour is actually worth
+    expect(outputValuePerHour(s)).toBeGreaterThan(netPerHour(s).denarii * 4);
+
+    const quotes: number[] = [];
+    for (const [slot, b] of [['c2', 'castellum'], ['i1', 'warehouse'], ['c1', 'forum']] as const) {
+      const c = checkBuild(s, slot, b);
+      const work = { slotId: slot, buildingId: b, toTier: c.toTier, kind: 'building' as const, startedAt: 0, finishAt: c.seconds * 1000 };
+      const price = rushPrice(s, work, 0);
+      quotes.push(price);
+      // Pillar 3, the ceiling: never more than the colony produces in that time
+      expect(price, b).toBeLessThanOrEqual(Math.ceil(outputValuePerHour(s) * (c.seconds / 3600)) + config.rush.minPrice);
+    }
+    // and the floor: a short job may be cheap, but never free
+    for (const q of quotes) expect(q).toBeGreaterThanOrEqual(config.rush.minPrice);
+    // an hour-long job is a real decision against a starting purse of 80
+    expect(quotes[2]).toBeGreaterThan(30);
+  });
+
+  it('a colony that grows must feed itself', () => {
+    const g = new Game(createInitialState(0, 3));
+    const s = g.state;
+    // at the founding, one farm comfortably feeds twenty
+    expect(netPerHour(s).grain).toBeGreaterThan(0);
+    // but the granary has to guard something: upkeep is a real share of yield
+    expect(grainUpkeepPerHour(s)).toBeGreaterThan(productionPerHour(s).grain * 0.1);
+    // and growing past what insulae allow outruns a single farm
+    s.population = config.population.baseCap * 4;
+    expect(netPerHour(s).grain, 'a large colony on one farm should starve').toBeLessThan(0);
+  });
+
+  it('hunger stalls growth and never kills (Pillar 6)', () => {
+    const g = new Game(createInitialState(0, 3));
+    // An empty granary is not hunger while a farm still stands: the store
+    // refills within the hour. Hunger is having nothing that grows grain.
+    for (const slot of g.state.slots) {
+      if (slot.building === 'farm') { slot.building = null; slot.tier = 0; }
+    }
+    g.state.resources.grain = 0;
+    expect(netPerHour(g.state).grain).toBeLessThan(0);
+    const before = g.state.population;
+    g.tick(1 + 6 * H);
+    expect(g.state.population, 'nobody starves to death').toBeGreaterThanOrEqual(before);
+    expect(g.state.population, 'but nobody arrives either').toBeLessThanOrEqual(before + 0.001);
+    expect(Object.values(g.state.characters).some((c) => c.alive)).toBe(true);
   });
 });

@@ -150,7 +150,7 @@ export interface EventDef {
 }
 
 export const config = configJson;
-export const resources = resourcesJson.resources as { id: ResourceId; name: string; store: string; site?: string }[];
+export const resources = resourcesJson.resources as { id: ResourceId; name: string; store: string; site?: string; denariiValue: number }[];
 export const startResources = resourcesJson.start as Record<ResourceId, number>;
 export const buildings = buildingsJson.buildings as BuildingDef[];
 export const layout = layoutJson as { tile: { w: number; h: number }; slots: SlotDef[]; startBuilt: { slot: string; building: string; tier: number }[] };

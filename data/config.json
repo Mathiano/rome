@@ -24,12 +24,13 @@
     "start": 20,
     "baseCap": 30,
     "growthPerHour": 3,
-    "grainUpkeepPerHeadPerHour": 0.05,
+    "grainUpkeepPerHeadPerHour": 0.35,
     "taxPerHeadPerHour": 0.4,
     "militiaRatio": 0.25
   },
   "rush": {
-    "minPrice": 1
+    "_comment": "Pillar 3: haste never costs more than the colony produces in the time it buys back. The floor stops a four-minute job rounding down to nothing.",
+    "minPrice": 5
   },
   "concurrency": {
     "building": 1,
