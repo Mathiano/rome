@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, serialise, deserialise } from '../src/state/store';
 import { Game } from '../src/game';
-import { pendingNews } from '../src/render/panel';
+import { pendingNews, renderNews } from '../src/render/panel';
 import { appoint, meetsRank } from '../src/politics/posts';
 import { gravitasRank } from '../src/politics/characters';
 import { bribe, seekRomeBacking } from '../src/politics/intrigue';
@@ -25,6 +25,17 @@ describe('news', () => {
     // an unanswered event keeps the card up on purpose; otherwise it clears
     if (g.state.pendingChoice) expect(pendingNews(g.state)).not.toBeNull();
     else expect(pendingNews(g.state)).toBeNull();
+  });
+
+  it('gives the founding its own entrance, and a round report the short one', () => {
+    const g = new Game(createInitialState(0, 5));
+    const opening = renderNews(pendingNews(g.state)!, g.state);
+    // the opening beat is the first thing a colony shows and arrives slowly
+    expect(opening).toContain('news-card opening');
+    g.state.seenLogId = g.state.logSeq;
+    g.act({ type: 'convene' }, 1000);
+    const news = pendingNews(g.state);
+    if (news) expect(renderNews(news, g.state)).not.toContain('opening');
   });
 
   it('digests the rounds that ran while the game was closed', () => {

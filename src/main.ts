@@ -23,6 +23,10 @@ let selected: string | null = null;
 let selectedHex: string | null = null;
 let lastPanelHtml = '';
 let lastPanelKey = '';
+let lastTab: Tab | null = null;
+/** Matches the #stage transition in render/style.css. */
+const STAGE_FADE_MS = 280;
+let fadingUntil = 0;
 
 const view = createVillageView((id) => {
   selected = id;
@@ -114,10 +118,17 @@ function render(force = false): void {
   if (dev.enabled) renderDevBar(now);
 
   const onMap = tab === 'map';
-  villageEl.style.display = onMap ? 'none' : '';
-  mapEl.style.display = onMap ? '' : 'none';
-  if (onMap) mapView.update(game.state, selectedHex);
-  else view.update(game.state, now, selected);
+  if (villageEl.dataset.hidden !== String(onMap)) {
+    villageEl.dataset.hidden = String(onMap);
+    mapEl.dataset.hidden = String(!onMap);
+    // Keep the outgoing stage live for the length of the cross-fade, or it
+    // freezes half-faded. Outside that window only the visible one is drawn:
+    // the map is 469 hexes and has no business updating behind the village.
+    fadingUntil = Date.now() + STAGE_FADE_MS;
+  }
+  const crossFading = Date.now() < fadingUntil;
+  if (onMap || crossFading) mapView.update(game.state, selectedHex);
+  if (!onMap || crossFading) view.update(game.state, now, selected);
 
   const pk = panelKey(now);
   if (!force && pk === lastPanelKey) return;
@@ -130,6 +141,10 @@ function render(force = false): void {
     if (!force && active && panelEl.contains(active) && (active.tagName === 'SELECT' || active.tagName === 'TEXTAREA')) return;
     panelEl.innerHTML = html;
     lastPanelHtml = html;
+    if (tab !== lastTab) {
+      lastTab = tab;
+      panelEl.querySelector('section')?.classList.add('swap');
+    }
   }
 }
 

@@ -14,6 +14,16 @@ html, body { margin: 0; height: 100%; background: var(--parchment); color: var(-
 #app { display: grid; grid-template-rows: auto 1fr; grid-template-columns: 1fr 380px; height: 100vh; min-width: 960px; }
 #stage { position: relative; overflow: hidden; }
 #stage > div { position: absolute; inset: 0; }
+/* The village and the map cross-fade rather than cutting: the map is the same
+   country the colony stands in, and a hard swap read as two separate screens.
+   `visibility` carries the hiding so a faded-out stage takes no clicks. */
+#stage > div {
+  transition: opacity 260ms ease, transform 260ms ease, visibility 0s linear 260ms;
+}
+#stage > div[data-hidden="true"] { opacity: 0; visibility: hidden; pointer-events: none; }
+#village[data-hidden="true"] { transform: scale(1.04); }
+#map[data-hidden="true"] { transform: scale(0.96); }
+#stage > div[data-hidden="false"] { opacity: 1; visibility: visible; transition-delay: 0s; }
 header { grid-column: 1 / 3; display: flex; align-items: center; gap: 18px; padding: 8px 14px; background: var(--ink); color: var(--parchment); }
 header h1 { font-size: 18px; margin: 0; font-weight: normal; letter-spacing: 0.08em; }
 header .res { display: flex; gap: 14px; margin-left: auto; font-variant-numeric: tabular-nums; }
@@ -57,6 +67,23 @@ header .res .neg b { color: #e0885a; }
 #panel nav button.active { background: var(--parchment); font-weight: bold; }
 #panel nav button .badge { display: inline-block; background: var(--terracotta); color: #fff; border-radius: 8px; font-size: 10px; padding: 0 5px; margin-left: 3px; }
 #panel section { padding: 12px; overflow-y: auto; flex: 1; }
+/* A tab change swaps the whole panel body at once, which read as a flicker.
+   One short fade-and-rise makes it a change of subject instead. */
+@keyframes panel-in { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+#panel section.swap { animation: panel-in 190ms ease-out; }
+#panel nav button { transition: background 140ms ease, color 140ms ease; }
+#panel .card { transition: border-color 160ms ease; }
+@keyframes news-in { from { opacity: 0; } to { opacity: 1; } }
+@keyframes news-card-in { from { opacity: 0; transform: translateY(14px) scale(0.985); } to { opacity: 1; transform: none; } }
+.news { animation: news-in 220ms ease-out; }
+.news-card { animation: news-card-in 320ms cubic-bezier(0.22, 0.85, 0.3, 1); }
+/* The opening beat gets a longer entrance than a round report: it is the first
+   thing a new colony shows, and it should arrive rather than appear. */
+.news-card.opening { animation-duration: 620ms; }
+.news-card.opening h2 { animation: news-card-in 700ms cubic-bezier(0.22, 0.85, 0.3, 1); }
+@media (prefers-reduced-motion: reduce) {
+  #stage > div, #panel section.swap, .news, .news-card, .news-card h2 { animation: none; transition: none; }
+}
 #panel h2 { font-size: 16px; margin: 0 0 8px; border-bottom: 1px solid var(--shadow); padding-bottom: 4px; }
 #panel h3 { font-size: 14px; margin: 12px 0 4px; }
 #panel p { margin: 4px 0; }

@@ -99,7 +99,7 @@ export function renderNews(news: News, state: GameState): string {
   } else {
     foot = `<button class="act" data-news-ok>Continue</button>`;
   }
-  return `<div class="news-card"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
+  return `<div class="news-card${state.round === 0 ? ' opening' : ''}"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
     <ul>${items}</ul>${foot}</div>`;
 }
 
