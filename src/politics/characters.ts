@@ -56,6 +56,7 @@ export function kill(state: GameState, c: Character, cause: string): void {
     state.lesserPosts[c.lesserPost] = null;
     c.lesserPost = null;
   }
+  c.bodyguards = 0;
   state.stats.deaths += 1;
   log(state, 'family', `${c.name} of the ${state.families[c.familyId].name} dies: ${cause}.`);
   if (c.isLeader) succeed(state, c.familyId);
@@ -101,6 +102,7 @@ export function raiseNewMan(state: GameState, familyId: string): Character {
     gravitasStock: 0,
     post: null,
     lesserPost: null,
+    bodyguards: 0,
   };
   state.characters[c.id] = c;
   fam.memberIds.push(c.id);

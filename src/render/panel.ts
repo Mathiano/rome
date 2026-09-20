@@ -13,7 +13,8 @@ import { portraitSvg } from './portrait';
 import { claimCost, claimOf, isScouted, ringOf, scoutCost, siteAt, siteDefence, siteRaidChance, upkeepPerRound } from '../map/sites';
 import { site as siteDef } from '../map/world';
 import { spareMilitia } from '../combat/militia';
-import { backingCost } from '../politics/intrigue';
+import { assassinationChance, backingCost, marriageCandidates, totalBodyguards } from '../politics/intrigue';
+import { officeHolder, playerHoldsOffice, tally } from '../politics/challenge';
 import { favourRewardMultiplier } from '../rome/requests';
 import { appeasePrice } from '../tribes/turn';
 import { pendingChoices } from '../politics/events';
@@ -40,6 +41,7 @@ export interface PanelHandlers {
   onPolitical(a: Political): void;
   onEnvoy(tribeId: string, envoyId: string): void;
   onTrade(tribeId: string, amount: number): void;
+  onGuards(characterId: string, men: number): void;
   onExport(): void;
   onImport(json: string): void;
   onReset(): void;
@@ -214,17 +216,74 @@ function renderMap(s: GameState, hex: string | null): string {
   else if (held) out += `<p>Held since round ${held.claimedRound}.</p>`;
   else {
     const cost = claimCost(hex);
-    const can = (s.resources.denarii ?? 0) >= (cost.denarii ?? 0);
+    const inPower = playerHoldsOffice(s);
+    const can = (s.resources.denarii ?? 0) >= (cost.denarii ?? 0) && inPower;
     out += `<p>Claim for ${costTxt(cost, s)} · upkeep grows with distance</p>
       <button class="act" data-claim="${hex}" ${can ? '' : 'disabled'}>Claim it</button>`;
+    if (!inPower) out += ` <span class="muted">A claim is the ${config.topOffice.title}'s to make.</span>`;
   }
   return out + `</div>`;
 }
 
+/**
+ * The vote on the top office (DESIGN §9.5). The player sees the count as it
+ * stands, which is the point: the one round before the vote is spent buying the
+ * regard of the men who will cast it.
+ */
+function renderChallenge(s: GameState): string {
+  const ch = s.challenge;
+  if (!ch) return '';
+  const caller = s.families[ch.callerFamilyId];
+  const votes = tally(s, ch);
+  const mine = ch.candidates[playerFamily(s).id];
+  const ranked = Object.entries(votes).sort((a, b) => b[1] - a[1]);
+  const leadTie = ranked.filter(([, v]) => v === ranked[0][1]).length > 1;
+  const rounds = ch.voteRound - s.round;
+  let out = `<div class="card challenge"><b>A challenge stands before the council.</b>
+    <p>The ${esc(caller.name)} have called a vote for the office of ${config.topOffice.title}. The houses vote ${rounds <= 0 ? '<b>at the next round</b>' : `at round ${ch.voteRound} — ${rounds} round${rounds === 1 ? '' : 's'} to move`}.</p>
+    <div class="tally">`;
+  for (const [cid, v] of ranked) {
+    const c = s.characters[cid];
+    const fam = s.families[c.familyId];
+    const width = Math.round((v / Math.max(1, ranked[0][1])) * 100);
+    out += `<div class="row ${fam.isPlayer ? 'player' : 'rival'}"><span>${esc(c.name)} <small class="muted">${esc(fam.name)}</small></span>
+      <div class="meter"><i style="width:${width}%"></i></div><b>${v}</b></div>`;
+  }
+  out += `</div>`;
+  const winner = ranked[0][0];
+  if (leadTie) {
+    out += `<p>As it stands the council is split, and a split vote leaves the office where it is.</p>`;
+  } else if (winner === mine) {
+    out += `<p style="color:var(--moss)">As it stands you carry it by ${ranked[0][1] - (ranked[1]?.[1] ?? 0)} vote${ranked[0][1] - (ranked[1]?.[1] ?? 0) === 1 ? '' : 's'}.</p>`;
+  } else {
+    out += `<p style="color:var(--terracotta)">As it stands ${esc(s.characters[winner].name)} of the ${esc(s.families[s.characters[winner].familyId].name)} carries it.</p>`;
+  }
+  out += `<p class="muted">Every living member of every house casts one vote, and a house votes for its own man first. A house with nobody standing would rather you kept the office than watch another rival take it — unless it has come to loathe you. Grant what a house asks, give it a post, or pay for its regard: each of those is a vote.</p></div>`;
+  return out;
+}
+
 function renderCouncil(s: GameState, now: number): string {
-  const office = s.office ? s.characters[s.office] : null;
+  const office = officeHolder(s);
+  const inPower = playerHoldsOffice(s);
   let out = `<h2>The council</h2>`;
-  out += `<p><b>${config.topOffice.title}:</b> ${office ? esc(office.name) : 'vacant'}</p>`;
+  out += renderChallenge(s);
+  out += `<p><b>${config.topOffice.title}:</b> ${office ? `${esc(office.name)} of the ${esc(s.families[office.familyId].name)}` : 'vacant'}</p>`;
+  if (!inPower) {
+    const ch = config.challenge;
+    const pLeader = leaderOf(s, playerFamily(s).id);
+    const wait = s.lastChallengeRound + ch.minRoundsBetween - s.round;
+    const price = ch.playerCallCost.denarii ?? 0;
+    const rankOk = !!pLeader && gravitasRank(pLeader) >= ch.playerCallMinRank;
+    const canCall = !s.challenge && wait <= 0 && rankOk && s.resources.denarii >= price;
+    out += `<div class="card rival"><b>Your house is out of office.</b>
+      <p>Appointments, dismissals and claims on the country are the ${config.topOffice.title}'s to make, and that is not you. ${s.stats.roundsOutOfOffice} round${s.stats.roundsOutOfOffice === 1 ? '' : 's'} out. What is left to you is the houses, the tribes, Rome — and a challenge of your own.</p>
+      <button class="act" data-political="call_challenge" ${canCall ? '' : 'disabled'}>Call a challenge (${price} denarii, rank ${ch.playerCallMinRank})</button>`;
+    if (s.challenge) out += ` <span class="muted">A vote is already before the council.</span>`;
+    else if (wait > 0) out += ` <span class="muted">The council will hear no other challenge for ${wait} round${wait === 1 ? '' : 's'}.</span>`;
+    else if (!rankOk) out += ` <span class="muted">${pLeader ? `${esc(pLeader.name)} is rank ${gravitasRank(pLeader)}` : 'Your house has nobody to put up'}.</span>`;
+    else if (s.resources.denarii < price) out += ` <span class="muted">Not enough denarii.</span>`;
+    out += `</div>`;
+  }
   out += `<p>Corruption <b>${n(s.corruption)}</b></p><div class="meter"><i style="width:${s.corruption}%"></i></div>`;
   out += `<p class="muted">Corruption raises building costs (+${Math.round(s.corruption * config.corruption.costMultiplierPerPoint * 100)}%) and drains denarii. Your own treasurer lowers it.</p>`;
   const living = Object.values(s.characters).filter((c) => c.alive);
@@ -236,8 +295,8 @@ function renderCouncil(s: GameState, now: number): string {
     const eligible = living.filter((c) => meetsRank(s, p.id, c.id));
     const options = (eligible.length ? eligible : living).map((c) => charOption(s, c.id, p.stat, p.id)).join('');
     out += `<select data-select-post="${p.id}">${options}</select> `;
-    out += `<button class="act" data-appoint="${p.id}">Appoint</button>`;
-    if (h) out += `<button class="act secondary" data-dismiss="${p.id}">Dismiss</button>`;
+    out += `<button class="act" data-appoint="${p.id}" ${inPower ? '' : 'disabled'}>Appoint</button>`;
+    if (h) out += `<button class="act secondary" data-dismiss="${p.id}" ${inPower ? '' : 'disabled'}>Dismiss</button>`;
     out += `</div>`;
   }
   out += `<h3>Lesser offices</h3><p class="muted">Outside the council: a little standing, no leverage. Somewhere to keep a house content without handing it anything to obstruct with.</p>`;
@@ -247,7 +306,7 @@ function renderCouncil(s: GameState, now: number): string {
       <p class="muted">${esc(p.description)}</p>
       <p>${h ? `${esc(h.name)} of the ${s.families[h.familyId].name}` : '<em>vacant</em>'}</p>
       <select data-select-lesser="${p.id}">${living.filter((c) => !c.post).map((c) => `<option value="${c.id}">${esc(c.name)} — ${s.families[c.familyId].name}, ${p.stat} ${c.stats[p.stat]}</option>`).join('')}</select>
-      <button class="act" data-appoint-lesser="${p.id}">Appoint</button>${h ? `<button class="act secondary" data-dismiss-lesser="${p.id}">Dismiss</button>` : ''}</div>`;
+      <button class="act" data-appoint-lesser="${p.id}" ${inPower ? '' : 'disabled'}>Appoint</button>${h ? `<button class="act secondary" data-dismiss-lesser="${p.id}" ${inPower ? '' : 'disabled'}>Dismiss</button>` : ''}</div>`;
   }
   out += `<h3>Actions</h3>`;
   const leader = leaderOf(s, playerFamily(s).id);
@@ -259,6 +318,90 @@ function renderCouncil(s: GameState, now: number): string {
   out += `<button class="act" data-political="rome_backing" ${backingOk2 ? '' : 'disabled'}>Seek Rome's backing (${cost} gravitas, rank ${g.romeBackingMinRank}, favour ${config.rome.backingMinFavour})</button> `;
   out += `<button class="act secondary" data-political="convene">Convene the council (pass)</button>`;
   out += `<p class="muted">Every action here runs a political round: the rival house, the tribe and Rome all act, and everyone ages. If you stay away ${config.calendarFloorHours} hours the council meets without you (${Math.ceil(roundsUntilIdle(s, now) / 3_600_000)}h left).</p>`;
+  return out;
+}
+
+const pct = (v: number) => `${Math.round(v * 100)}%`;
+
+function spouseTxt(s: GameState, c: { spouseId?: string }): string {
+  if (!c.spouseId) return '';
+  if (c.spouseId.startsWith('tribe:')) return ` · married into ${esc(tribeDef(c.spouseId.slice(6)).name)}`;
+  const sp = s.characters[c.spouseId];
+  return sp ? ` · married to ${esc(sp.name)} of the ${esc(s.families[sp.familyId].name)}` : '';
+}
+
+/** Men standing over one of your own. Arranging the household runs no round. */
+function renderGuards(s: GameState, id: string, isPlayer: boolean): string {
+  const c = s.characters[id];
+  if (!isPlayer) {
+    return c.bodyguards
+      ? `<div class="guards muted">${c.bodyguards} guard${c.bodyguards === 1 ? '' : 's'}</div>`
+      : '';
+  }
+  const spare = spareMilitia(s);
+  const max = config.bodyguard.maxPerCharacter;
+  return `<div class="guards">guards <b>${c.bodyguards}</b>/${max}
+    <button class="act tiny" data-guards="${id}" data-men="${c.bodyguards + 1}" ${c.bodyguards >= max || spare < 1 ? 'disabled' : ''}>+</button>
+    <button class="act tiny secondary" data-guards="${id}" data-men="${c.bodyguards - 1}" ${c.bodyguards < 1 ? 'disabled' : ''}>−</button></div>`;
+}
+
+/**
+ * Which houses' menus the player has opened. The panel is rebuilt as a string
+ * whenever anything moves, so without this every round would slam the menu shut
+ * under the player's hand.
+ */
+const openMenus = new Set<string>();
+
+/**
+ * The full intrigue menu (DESIGN §9.6). Each of these is a move against another
+ * house, so each runs a round, and every one of them is remembered: a grievance
+ * outlives the attitude it cost.
+ */
+function renderIntrigue(s: GameState, familyId: string): string {
+  const f = s.families[familyId];
+  const c = config.intrigue;
+  const pl = leaderOf(s, playerFamily(s).id);
+  const rank = pl ? gravitasRank(pl) : 0;
+  const coin = s.resources.denarii;
+  const gate = (minRank: number, cost: number) => rank >= minRank && coin >= cost;
+  const why = (minRank: number, cost: number) => rank < minRank ? `rank ${minRank} needed` : coin < cost ? 'not enough denarii' : '';
+
+  let out = `<details class="intrigue" data-intrigue="${familyId}" ${openMenus.has(familyId) ? 'open' : ''}><summary>Move against the ${esc(f.name)}</summary>`;
+
+  const b = c.bribe;
+  out += `<div class="row"><button class="act" data-political="bribe" data-family="${familyId}" ${gate(b.minRank, b.cost) ? '' : 'disabled'}>Bribe</button>
+    <span class="muted">${b.cost} denarii, rank ${b.minRank} · their regard for you rises ${b.attitude}, your own standing slips ${b.gravitasLoss}. ${why(b.minRank, b.cost)}</span></div>`;
+
+  const e = c.expose;
+  out += `<div class="row"><button class="act" data-political="expose" data-family="${familyId}" ${gate(e.minRank, e.cost) ? '' : 'disabled'}>Expose their skimming</button>
+    <span class="muted">${e.cost} denarii, rank ${e.minRank} · corruption ${-e.corruptionDrop}, their regard ${e.attitude}, and they remember it. ${why(e.minRank, e.cost)}</span></div>`;
+
+  const d = c.denounce;
+  const denounceOk = rank >= d.minRank && (pl?.gravitasStock ?? 0) >= d.gravitasCost;
+  out += `<div class="row"><button class="act" data-political="denounce" data-family="${familyId}" ${denounceOk ? '' : 'disabled'}>Write to Rome about them</button>
+    <span class="muted">${d.gravitasCost} gravitas, rank ${d.minRank} · Rome's favour +${d.romeFavour}, their regard ${d.attitude}. ${rank < d.minRank ? `rank ${d.minRank} needed` : denounceOk ? '' : 'not enough gravitas'}</span></div>`;
+
+  const m = c.marry;
+  const pairs = marriageCandidates(s, familyId);
+  out += `<div class="row"><button class="act" data-marry="${familyId}" ${pairs.length && gate(m.minRank, m.cost) ? '' : 'disabled'}>Marry into the house</button>
+    <select data-select-marry="${familyId}" ${pairs.length ? '' : 'disabled'}>${pairs.length
+      ? pairs.map((pr) => `<option value="${pr.a}|${pr.b}">${esc(pr.label)}</option>`).join('')
+      : '<option>nobody unwed on both sides</option>'}</select>
+    <span class="muted">${m.cost} denarii, rank ${m.minRank} · their regard +${m.attitude} and one grievance forgotten. ${why(m.minRank, m.cost)}</span></div>`;
+
+  const living = livingMembers(s, familyId).filter((x) => !x.exiled);
+  const x = c.exile;
+  const a = c.assassinate;
+  const cool = s.lastAssassinationRound + a.cooldownRounds - s.round;
+  if (living.length) {
+    const opts = living.map((t) => `<option value="${t.id}">${esc(t.name)}${t.isLeader ? ' ★' : ''} — ${t.bodyguards} guard${t.bodyguards === 1 ? '' : 's'}, ${pct(assassinationChance(s, t.id))} if it is tried</option>`).join('');
+    out += `<div class="row"><select data-select-target="${familyId}">${opts}</select></div>
+      <div class="row"><button class="act" data-exile="${familyId}" ${gate(x.minRank, x.cost) ? '' : 'disabled'}>Put him out of the colony</button>
+        <span class="muted">${x.cost} denarii, rank ${x.minRank} · their regard ${x.attitude}, every other house ${x.allAttitude}. ${why(x.minRank, x.cost)}</span></div>
+      <div class="row"><button class="act danger" data-assassinate="${familyId}" ${gate(a.minRank, a.cost) && cool <= 0 ? '' : 'disabled'}>A knife in the dark</button>
+        <span class="muted">${a.cost} denarii, rank ${a.minRank} · guards block it, half of these are traced back, and every house in the colony turns colder. ${cool > 0 ? `the last one is still talked about — ${cool} round${cool === 1 ? '' : 's'}` : why(a.minRank, a.cost)}</span></div>`;
+  }
+  out += `</details>`;
   return out;
 }
 
@@ -283,10 +426,7 @@ function renderFamilies(s: GameState): string {
           <button class="act" data-accept="${f.id}" ${can ? '' : 'disabled'}>Grant it</button>
           <button class="act secondary" data-refuse="${f.id}">Refuse</button></div>`;
       }
-      const b = config.intrigue.bribe;
-      const pl = leaderOf(s, playerFamily(s).id);
-      const canBribe = s.resources.denarii >= b.cost && !!pl && gravitasRank(pl) >= b.minRank;
-      out += `<button class="act" data-political="bribe" data-family="${f.id}" ${canBribe ? '' : 'disabled'}>Bribe (${b.cost} denarii, +${b.attitude}${b.minRank ? `, rank ${b.minRank}` : ''})</button>`;
+      out += renderIntrigue(s, f.id);
     }
     out += `<div class="roster">`;
     for (const c of members) {
@@ -294,13 +434,14 @@ function renderFamilies(s: GameState): string {
       const postName = c.post ? esc(postDefs.find((p) => p.id === c.post)?.name ?? c.post) : '';
       out += `<div class="member${c.alive ? '' : ' dead'}">${portraitSvg(c, f, { dead: !c.alive })}
         <div class="who"><b>${esc(c.name)}</b>${c.isLeader ? ' <span title="head of the house">★</span>' : ''}
-          <div class="muted">${c.alive ? `age ${c.age}` : `† ${esc(c.causeOfDeath ?? '')}`} · gravitas ${n(c.gravitas)}, rank ${gravitasRank(c)}${postName ? ` · ${postName}` : ''}</div>
+          <div class="muted">${c.alive ? `age ${c.age}` : `† ${esc(c.causeOfDeath ?? '')}`} · gravitas ${n(c.gravitas)}, rank ${gravitasRank(c)}${postName ? ` · ${postName}` : ''}${spouseTxt(s, c)}</div>
           <div class="stats"><span>auth ${st.authority}</span><span>disc ${st.discipline}</span><span>craft ${st.craft}</span><span>conn ${st.connections}</span><span>piety ${st.piety}</span></div>
+          ${c.alive ? renderGuards(s, c.id, f.isPlayer) : ''}
         </div></div>`;
     }
     out += `</div></div>`;
   }
-  out += `<p class="muted">A post teaches its trade: its holder's stat grows while he serves. Gravitas rank gates the greater posts. Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Marriage, heirs and adoption arrive in v0.2.</p>`;
+  out += `<p class="muted">A post teaches its trade: its holder's stat grows while he serves. Gravitas rank gates the greater posts. Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Guards are drawn from the same militia pool as the walls and the far holdings: ${spareMilitia(s)} men are uncommitted, and standing ${totalBodyguards(s)} of them over your kin leaves that many fewer behind the ditch. Heirs by birth and adoption wait on DESIGN §15.7.</p>`;
   return out;
 }
 
@@ -420,6 +561,14 @@ function renderSave(s: GameState): string {
 
 /** Wire delegated events once on the panel element. */
 export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
+  // `toggle` does not bubble, so it is caught on the way down instead.
+  panel.addEventListener('toggle', (ev) => {
+    const d = (ev.target as HTMLElement).closest('details') as HTMLDetailsElement | null;
+    const id = d?.dataset.intrigue;
+    if (!id) return;
+    if (d!.open) openMenus.add(id);
+    else openMenus.delete(id);
+  }, true);
   panel.addEventListener('click', (ev) => {
     const t = (ev.target as HTMLElement).closest('button') as HTMLButtonElement | null;
     if (!t || t.disabled) return;
@@ -446,15 +595,38 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.garrison) return h.onPolitical({ type: 'garrison', hex: d.garrison, men: Number(d.men) });
     if (d.accept) return h.onPolitical({ type: 'accept_demand', familyId: d.accept });
     if (d.refuse) return h.onPolitical({ type: 'refuse_demand', familyId: d.refuse });
-    if (d.political === 'bribe' && d.family) return h.onPolitical({ type: 'bribe', familyId: d.family });
-    if (d.political) return h.onPolitical({ type: d.political as Exclude<Political['type'], 'appoint' | 'dismiss' | 'bribe'> } as Political);
+    if (d.guards) return h.onGuards(d.guards, Number(d.men));
+    if (d.marry) {
+      const sel = panel.querySelector<HTMLSelectElement>(`select[data-select-marry="${d.marry}"]`);
+      const [aId, bId] = (sel?.value ?? '').split('|');
+      if (aId && bId) return h.onPolitical({ type: 'marry', aId, bId });
+      return;
+    }
+    // Both of these read the one target select their house's menu carries.
+    const target = (familyId: string) =>
+      panel.querySelector<HTMLSelectElement>(`select[data-select-target="${familyId}"]`)?.value ?? '';
+    if (d.exile) {
+      const id = target(d.exile);
+      return id ? h.onPolitical({ type: 'exile', characterId: id }) : undefined;
+    }
+    if (d.assassinate) {
+      const id = target(d.assassinate);
+      return id ? h.onPolitical({ type: 'assassinate', targetId: id }) : undefined;
+    }
     if (d.envoy) {
       const sel = panel.querySelector<HTMLSelectElement>(`select[data-select-envoy="${d.envoy}"]`);
       if (sel) return h.onEnvoy(d.envoy, sel.value);
       return;
     }
     if (d.trade && d.tribe) return h.onTrade(d.tribe, Number(d.trade));
+    // Every action that carries an id must be matched before the bare catch-all
+    // below, or it reaches the store with its id stripped off.
     if (d.political === 'appease' && d.tribe) return h.onPolitical({ type: 'appease', tribeId: d.tribe });
+    if (d.political && d.family) {
+      const kind = d.political as 'bribe' | 'expose' | 'denounce';
+      return h.onPolitical({ type: kind, familyId: d.family });
+    }
+    if (d.political) return h.onPolitical({ type: d.political as Exclude<Political['type'], 'appoint' | 'dismiss' | 'bribe'> } as Political);
     if ('export' in d) return h.onExport();
     if ('import' in d) {
       const ta = panel.querySelector<HTMLTextAreaElement>('textarea[data-import-text]');

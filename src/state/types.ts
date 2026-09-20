@@ -32,6 +32,10 @@ export interface Character {
   gravitasStock: number; // spendable
   post: string | null;
   lesserPost: string | null;
+  /** Men from the militia pool standing over this one (DESIGN §8.1, §9.2). */
+  bodyguards: number;
+  spouseId?: string;
+  exiled?: boolean;
   causeOfDeath?: string;
 }
 
@@ -139,6 +143,13 @@ export interface PlaytestStats {
   romeRequestsDeclined: number;
   peakPopulation: number;
   denariiSpentOnHaste: number;
+  challengesFaced: number;
+  challengesWon: number;
+  roundsOutOfOffice: number;
+  assassinationsOrdered: number;
+  assassinationsSucceeded: number;
+  marriages: number;
+  exiles: number;
   sitesClaimed: number;
   sitesLost: number;
   siteRaidsRepelled: number;
@@ -162,6 +173,15 @@ export interface MapState {
   pendingScout: string | null;
 }
 
+/** A forced vote on the top office (DESIGN §9.5). */
+export interface Challenge {
+  callerFamilyId: string;
+  calledRound: number;
+  voteRound: number;
+  candidates: Record<string, string>;
+  result?: { winnerId: string; tally: Record<string, number>; held: boolean };
+}
+
 export interface GameState {
   version: number;
   seed: number;
@@ -181,6 +201,9 @@ export interface GameState {
   /** Offices outside the council: standing without leverage (DESIGN §9.3). */
   lesserPosts: Record<string, string | null>;
   office: string | null;
+  challenge: Challenge | null;
+  lastChallengeRound: number;
+  lastAssassinationRound: number;
   corruption: number;
   obstructed: Record<string, number>; // domain -> until round
   tribes: Record<string, TribeState>;

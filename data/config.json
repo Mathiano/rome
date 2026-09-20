@@ -82,6 +82,48 @@
       "attitude": 10,
       "gravitasLoss": 1,
       "minRank": 1
+    },
+    "expose": {
+      "cost": 40,
+      "minRank": 1,
+      "corruptionDrop": 12,
+      "attitude": -12,
+      "grievance": 1
+    },
+    "exile": {
+      "cost": 220,
+      "minRank": 3,
+      "attitude": -26,
+      "grievance": 2,
+      "allAttitude": -6
+    },
+    "denounce": {
+      "cost": 0,
+      "minRank": 2,
+      "gravitasCost": 8,
+      "romeFavour": 6,
+      "attitude": -18,
+      "grievance": 1
+    },
+    "marry": {
+      "cost": 120,
+      "minRank": 1,
+      "attitude": 22,
+      "grievanceRelief": 1,
+      "tribeTrust": 10
+    },
+    "assassinate": {
+      "_comment": "Rare, blocked by bodyguards, and every house takes it badly \u2014 DESIGN \u00a79.6 says nobody takes it lightly.",
+      "cost": 300,
+      "minRank": 3,
+      "baseChance": 0.55,
+      "connectionsWeight": 0.04,
+      "disciplineWeight": 0.03,
+      "cooldownRounds": 15,
+      "allAttitude": -18,
+      "allGrievance": 1,
+      "discoveryChance": 0.5,
+      "discoveredExtra": -14
     }
   },
   "leverage": {
@@ -184,5 +226,25 @@
     "grievanceDenounceThreshold": 3,
     "denounceFavour": -12,
     "denounceCorruption": 8
+  },
+  "challenge": {
+    "_comment": "The top office (DESIGN \u00a79.5). No calendar election: a house calls a challenge when it counts the votes and believes it would win, and forces a vote of every living member of every house. The player gets one round to shore up support. The defence is a bigger family and houses that like you more than they like each other.",
+    "roundsToVote": 1,
+    "callChancePerRound": 0.22,
+    "callerAttitudeCeiling": -15,
+    "minRoundsBetween": 12,
+    "candidateStandingRatio": 0.55,
+    "loyalToPlayerAttitude": -25,
+    "winnerGravitas": 12,
+    "loserAttitude": -8,
+    "playerCallCost": {
+      "denarii": 150
+    },
+    "playerCallMinRank": 2
+  },
+  "bodyguard": {
+    "_comment": "The militia pool's third sink (DESIGN \u00a78.1, \u00a79.2). Guarding one man leaves another exposed.",
+    "maxPerCharacter": 4,
+    "blockPerGuard": 0.17
   }
 }

@@ -37,9 +37,18 @@ describe('data integrity', () => {
     expect(tribes.some((t) => t.likes.length > 0)).toBe(true);
     expect(new Set(tribes.map((t) => t.archetype)).size).toBe(3);
   });
-  it('has two active families in v0', () => {
-    expect(families.filter((f) => f.active)).toHaveLength(2);
-    expect(families.filter((f) => f.active && f.isPlayer)).toHaveLength(1);
+  it('has four houses awake, exactly one of them the player\'s (DESIGN §9.1)', () => {
+    const active = families.filter((f) => f.active);
+    expect(active).toHaveLength(4);
+    expect(active.filter((f) => f.isPlayer)).toHaveLength(1);
+    for (const f of active) {
+      expect(f.members.length, f.id).toBeGreaterThanOrEqual(3);
+      expect(f.members.filter((m) => m.isLeader), f.id).toHaveLength(1);
+      expect(new Set(f.members.map((m) => m.id)).size).toBe(f.members.length);
+    }
+    // every id unique across houses, or posts and portraits collide
+    const ids = active.flatMap((f) => f.members.map((m) => m.id));
+    expect(new Set(ids).size).toBe(ids.length);
   });
   it('requests reference real buildings and unlocks', () => {
     expect(requestProgression.length).toBeGreaterThanOrEqual(15);

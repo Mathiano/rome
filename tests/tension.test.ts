@@ -22,6 +22,26 @@ describe('rival ambitions', () => {
     for (let i = 0; i < 60 && !s.families.cornelii.demand; i++) rivalTurn(s, s.families.cornelii);
     return s;
   }
+  it('all three rival houses play, not only the first (DESIGN §9.1)', () => {
+    const g = new Game(createInitialState(0, 13));
+    const asked = new Set<string>();
+    const seated = new Set<string>();
+    for (let i = 0; i < 60; i++) {
+      for (const f of Object.values(g.state.families)) {
+        if (f.isPlayer) continue;
+        if (f.demand) asked.add(f.id);
+      }
+      for (const c of Object.values(g.state.characters)) {
+        if (c.post && !g.state.families[c.familyId].isPlayer) seated.add(c.familyId);
+      }
+      g.act({ type: 'convene' }, i * 1000 + 1);
+      if (g.state.pendingChoice) g.state.pendingChoice = null;
+    }
+    expect([...asked].sort()).toEqual(['claudii', 'cornelii', 'valerii']);
+    // and each of them can take a post, which is what makes them dangerous
+    expect(seated.size).toBeGreaterThan(0);
+  });
+
   it('a rival asks for something and sets a deadline', () => {
     const s = withDemand();
     const d = s.families.cornelii.demand!;

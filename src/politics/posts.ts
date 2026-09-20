@@ -3,6 +3,7 @@ import { chance } from '../state/rng';
 import type { GameState } from '../state/types';
 import { log } from '../state/store';
 import { gravitasRank, livingMembers, playerFamily, rivalFamilies } from './characters';
+import { requireOffice } from './challenge';
 
 export function holderOf(state: GameState, postId: string) {
   const id = state.posts[postId];
@@ -24,6 +25,7 @@ export function lesserPostsHeldBy(state: GameState, familyId: string): string[] 
 
 /** A lesser office: no rank gate, no leverage, a little standing (DESIGN §9.3). */
 export function appointLesser(state: GameState, id: string, characterId: string): void {
+  requireOffice(state, 'An appointment');
   const c = state.characters[characterId];
   if (!c || !c.alive) throw new Error('No such living character');
   const def = lesserDef(id);
@@ -63,6 +65,7 @@ export function meetsRank(state: GameState, postId: string, characterId: string)
 }
 
 export function appoint(state: GameState, postId: string, characterId: string): void {
+  requireOffice(state, 'An appointment');
   const c = state.characters[characterId];
   if (!c || !c.alive) throw new Error('No such living character');
   const def = postDef(postId);
@@ -88,6 +91,7 @@ export function appoint(state: GameState, postId: string, characterId: string): 
 }
 
 export function dismiss(state: GameState, postId: string): void {
+  requireOffice(state, 'A dismissal');
   const prev = holderOf(state, postId);
   if (!prev) throw new Error('Post is vacant');
   prev.post = null;

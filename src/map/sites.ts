@@ -11,6 +11,7 @@ import { log } from '../state/store';
 import { chance, nextRandom } from '../state/rng';
 import { key as hexKey, parseKey, ring } from './grid';
 import { generate, mapConfig, site } from './world';
+import { requireOffice } from '../politics/challenge';
 
 export function world(state: GameState) {
   return generate(state.map.seed);
@@ -93,6 +94,7 @@ export function claimCost(k: string): Cost {
 }
 
 export function claimSite(state: GameState, k: string): void {
+  requireOffice(state, 'A claim');
   if (!isScouted(state, k)) throw new Error('Nobody has been there');
   if (claimOf(state, k)) throw new Error('Already held');
   const id = siteAt(state, k);

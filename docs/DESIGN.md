@@ -239,12 +239,16 @@ An unhappy family holding a post can: **obstruct** (its domain underperforms), *
 - **So:** a bigger family and members who like you more than their peers is the defence.
 - **Losing** the office is not game over. The player continues as the family out of power and must win the office back. Losing it is very much not ideal.
 
+Built 2026-09-20 (`src/politics/challenge.ts`). A rival calls only when it has soured on the player (attitude ≤ `challenge.callerAttitudeCeiling`) **and** a simulated count says it would carry the council — not on a gravitas comparison, which whoever holds the office always wins. Houses with no standing put nobody up and become the swing vote, which is where "members who like you more than their peers" bites. A tie leaves the office where it is. Out of power the council's business (appointments, dismissals, claims) is closed to the player; the houses, the tribes, Rome and intrigue are not (Pillar 7). The player wins it back by calling a vote themselves at `challenge.playerCallCost` and rank `challenge.playerCallMinRank`; either way the vote falls `challenge.roundsToVote` rounds later, and that round is the campaign.
+
 ### 9.6 Intrigue ✅
 
 Menu: bribe, expose, marry, exile, promote, demote, denounce to Rome, assassinate.
 
 - **Assassination** is in, and the player can order one. It is rare, blocked by bodyguards, and generates large grievances from **all** families — nobody takes it lightly.
 - **Marriage** between families strengthens relations and produces heirs under the patrilineal rule (§9.2). Marriage with tribal nobles is also in, and shifts that tribe's disposition.
+
+Built 2026-09-20 (`src/politics/intrigue.ts`). In: bribe, expose, denounce to Rome, marry (house or tribe), exile, assassinate, and bodyguards. Promote and demote are the appointment and dismissal of §9.3 rather than separate moves. Every one of them runs a political round and is remembered as a grievance; an exile also empties the man's post and takes his vote out of §9.5. Heirs by birth still wait on §15.7, so a marriage binds the houses without yet producing children. Bodyguards are the militia pool's third sink (§8.1): `bodyguard.maxPerCharacter` each, `bodyguard.blockPerGuard` off an attempt, and every guard is a man off the walls. Standing men over your own kin runs no round — it is household business, not a move against another actor (§3.2).
 
 ### 9.7 Failure states ✅
 
@@ -335,3 +339,4 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 v0.1.1 — 2026-09-15 — first implementation session. Open questions 2, 5, 6 and 9 resolved; seven implementation defaults from `docs/CAPSULE-SESSION-2026-09-15.md` confirmed by the Owner and recorded as ✅ in §3.1, §3.3, §3.4, §4.3, §6, §9.4. Inactive family Iulii renamed Valerii (the Iulii are the imperial gens in year 0).
 v0.1.2 — 2026-09-16 — town named Arctown (§15.1). CI on every pull request. Dev-only time control documented in the session capsule, not here: it is tooling, not design.
 v0.1.3 — 2026-09-16 — §10 art pipeline pivot: buildings are raster PNG sprites from a style anchor via `tools/artgen/`; SVG kept for map, UI and animated overlays; isobuild retired.
+v0.1.4 — 2026-09-20 — §9.5 and §9.6 built: the top-office challenge with a live vote count, losing and winning back power, and the full intrigue menu with bodyguards. All four houses (§9.1) and all three tribes (§7) are awake.

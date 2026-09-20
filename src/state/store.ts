@@ -46,6 +46,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
         gravitasStock: 0,
         post: null,
         lesserPost: null,
+        bodyguards: 0,
       };
     }
   }
@@ -69,6 +70,9 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     posts: Object.fromEntries(posts.map((p) => [p.id, null])),
     lesserPosts: Object.fromEntries(lesserPosts.map((p) => [p.id, null])),
     office: playerLeader.id,
+    challenge: null,
+    lastChallengeRound: -999,
+    lastAssassinationRound: -999,
     corruption: 0,
     obstructed: {},
     tribes: Object.fromEntries(activeTribes().map((t) => [t.id, {
@@ -121,6 +125,8 @@ export function emptyStats() {
     rounds: 0, idleRounds: 0, raidsSuffered: 0, raidsRepelled: 0, goodsLostToRaids: 0, deaths: 0,
     demandsGranted: 0, demandsRefused: 0, choicesAnswered: 0, romeRequestsCompleted: 0,
     romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
+    challengesFaced: 0, challengesWon: 0, roundsOutOfOffice: 0, assassinationsOrdered: 0,
+    assassinationsSucceeded: 0, marriages: 0, exiles: 0,
     sitesClaimed: 0, sitesLost: 0, siteRaidsRepelled: 0, scoutsLost: 0,
   };
 }
@@ -180,6 +186,10 @@ export function migrate(state: GameState): GameState {
       massingForRound: -999, lastRaidRound: -999, pendingEnvoy: null,
     };
   }
+  for (const c of Object.values(state.characters)) if (c.bodyguards === undefined) c.bodyguards = 0;
+  if (state.challenge === undefined) state.challenge = null;
+  if (state.lastChallengeRound === undefined) state.lastChallengeRound = -999;
+  if (state.lastAssassinationRound === undefined) state.lastAssassinationRound = -999;
   if (!state.map) {
     state.map = { seed: (state.seed ^ 0x5bf03635) | 0, scouted: [], claimed: [], pendingScout: null };
   }

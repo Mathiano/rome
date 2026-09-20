@@ -4,6 +4,7 @@ import { chance, pick } from '../state/rng';
 import { log } from '../state/store';
 import { clampAtt, isDangerous, postsHeldBy } from './posts';
 import { gravitasRank, livingMembers } from './characters';
+import { officeFamilyId } from './challenge';
 
 /**
  * A rival house's step (DESIGN §3.2 step 2, §9.4). It pursues its own ends: it
@@ -11,6 +12,7 @@ import { gravitasRank, livingMembers } from './characters';
  * post it holds gets worse the longer the grievance list runs.
  */
 export function rivalTurn(state: GameState, fam: Family): void {
+  fillPostsIfInPower(state, fam);
   // A house that has just been ignored does not ask again in the same breath.
   if (!expireDemand(state, fam)) maybeDemand(state, fam);
   useLeverage(state, fam);
@@ -127,6 +129,23 @@ export function refuseDemand(state: GameState, familyId: string): void {
   state.stats.demandsRefused += 1;
   fam.attitude = clampAtt(fam.attitude + config.rival.refuseAttitude);
   log(state, 'council', `You refuse the ${fam.name}. It is noted.`);
+}
+
+/** A rival holding the office runs the council: it fills vacancies with its own. */
+function fillPostsIfInPower(state: GameState, fam: Family): void {
+  if (officeFamilyId(state) !== fam.id) return;
+  const vacant = vacantPosts(state);
+  if (!vacant.length) return;
+  const postId = vacant[0];
+  const p = postDef(postId);
+  const who = livingMembers(state, fam.id)
+    .filter((c) => !c.post && gravitasRank(c) >= p.minRank)
+    .sort((a, b) => b.stats[p.stat] - a.stats[p.stat])[0];
+  if (!who) return;
+  state.posts[postId] = who.id;
+  who.post = postId;
+  if (who.lesserPost) { state.lesserPosts[who.lesserPost] = null; who.lesserPost = null; }
+  log(state, 'council', `${who.name} of the ${fam.name} takes the post of ${p.name}. It is not your council to fill.`);
 }
 
 export function vacantPosts(state: GameState): string[] {

@@ -98,7 +98,9 @@ function panelKey(now: number): string {
   return [tab, selected, selectedHex, st.round, st.logSeq, res, work, Math.floor(st.population),
     Math.round(st.corruption), st.map.claimed.length, st.map.scouted.length, st.map.pendingScout,
     Object.values(st.tribes).map((t) => `${t.pendingEnvoy}${t.massingForRound}${Math.round(t.trust)}${Math.round(t.fear)}`).join(''),
-    st.rome.activeRequestId].join('|');
+    st.rome.activeRequestId, st.office, st.challenge?.voteRound ?? '',
+    Object.values(st.characters).map((c) => c.bodyguards).join(''),
+  ].join('|');
 }
 
 function render(force = false): void {
@@ -136,6 +138,7 @@ bindPanel(panelEl, {
   onPolitical: (a) => guard(() => game.act(a, dev.now())),
   onEnvoy: (tribeId, envoyId) => guard(() => game.dispatchEnvoy(tribeId, envoyId, dev.now())),
   onTrade: (tribeId, amt) => guard(() => game.trade(tribeId, amt, dev.now())),
+  onGuards: (id, men) => guard(() => game.guards(id, men, dev.now())),
   onExport: () => {
     const json = serialise(game.state);
     const blob = new Blob([json], { type: 'application/json' });

@@ -180,3 +180,18 @@ header .res .neg b { color: #e0885a; }
 #map .m-stone { fill: #e7ded0; stroke: #2a2118; stroke-width: 0.7; }
 #map .m-camp { fill: #8a2d2d; stroke: #2a2118; stroke-width: 0.8; }
 #map .m-spear { stroke: #2a2118; stroke-width: 1.2; }
+
+/* The challenge (DESIGN §9.5) and the intrigue menu (§9.6). */
+#panel .card.challenge { border-left: 4px solid var(--gold); background: rgba(181,86,58,0.10); }
+#panel .tally { margin: 6px 0; }
+#panel .tally .row { display: grid; grid-template-columns: 1fr 90px 22px; gap: 8px; align-items: center; padding: 2px 0; }
+#panel .tally .row .meter { margin: 0; }
+#panel .tally .row.rival .meter i { background: var(--river); }
+#panel .guards { font-size: 11px; margin-top: 3px; }
+#panel button.act.tiny { padding: 0 6px; line-height: 16px; font-size: 12px; }
+#panel details.intrigue { margin: 6px 0; border-top: 1px solid var(--shadow); padding-top: 4px; }
+#panel details.intrigue summary { cursor: pointer; font-variant: small-caps; letter-spacing: 0.04em; }
+#panel details.intrigue .row { margin: 5px 0; }
+#panel details.intrigue .row span.muted { display: block; font-size: 11px; margin: 1px 0 0 2px; }
+#panel details.intrigue select { max-width: 100%; }
+#panel button.act.danger { background: var(--ink); }

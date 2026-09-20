@@ -3,6 +3,7 @@ import type { GameState } from '../state/types';
 import { log } from '../state/store';
 import { rivalFamilies } from './characters';
 import { rivalTurn } from './families';
+import { considerChallenge, playerHoldsOffice, resolveChallenge } from './challenge';
 import { tribeTurn } from '../tribes/turn';
 import { claimedEffect, mapTurn } from '../map/sites';
 import { romeTurn, checkCollapse } from '../rome/requests';
@@ -26,6 +27,9 @@ export function runRound(state: GameState, now: number, idle = false): void {
   if (idle) log(state, 'system', `Round ${state.round}: the council meets without you.`);
   else log(state, 'system', `Round ${state.round}.`);
   for (const f of rivalFamilies(state)) rivalTurn(state, f);
+  for (const f of rivalFamilies(state)) considerChallenge(state, f.id);
+  resolveChallenge(state);
+  if (!playerHoldsOffice(state)) state.stats.roundsOutOfOffice += 1;
   tribeTurn(state);
   mapTurn(state);
   romeTurn(state);
