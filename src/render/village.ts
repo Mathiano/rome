@@ -2,6 +2,7 @@ import { layout, building } from '../data';
 import type { GameState, Slot } from '../state/types';
 import { progress } from '../village/construction';
 import { sprite, type AnimPlacement, type LoopPlacement } from './sprites';
+import { createEnvironment } from './environment';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -20,9 +21,13 @@ function el<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, 
 }
 
 export function createVillageView(onSelect: (slotId: string) => void): VillageView {
-  const root = el('svg', { viewBox: '-330 -190 660 360', preserveAspectRatio: 'xMidYMid meet' });
+  const VIEW = { x: -330, y: -190, w: 660, h: 360 };
+  const root = el('svg', { viewBox: `${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`, preserveAspectRatio: 'xMidYMid meet' });
   const world = el('g');
   root.appendChild(world);
+  // The colony itself: wall, ground, roads and country. Drawn once, behind
+  // every plot, and never touched again (DESIGN §10).
+  world.appendChild(createEnvironment(VIEW));
   // Labels live above every plot: a plot drawn later would otherwise cover its
   // neighbour's name now that the plates touch.
   const labelLayer = el('g', { class: 'labels' });

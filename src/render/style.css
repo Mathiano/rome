@@ -21,14 +21,13 @@ header .res span { display: inline-flex; flex-direction: column; align-items: fl
 header .res b { font-weight: normal; font-size: 15px; }
 header .res small { opacity: 0.7; font-size: 11px; }
 header .res .neg b { color: #e0885a; }
-#village { position: relative; overflow: hidden;
-  background:
-    radial-gradient(ellipse 70% 55% at 50% 58%, rgba(214,201,168,0.95) 0%, rgba(186,174,142,0.6) 55%, rgba(150,140,112,0) 100%),
-    linear-gradient(170deg, #a9a081 0%, #9d9678 45%, #8e8869 100%);
-}
+/* The village ground is drawn in SVG now (render/environment.ts); this only
+   has to match the grass at the edges of the frame. */
+#village { position: relative; overflow: hidden; background: #8d9a5f; }
+#village .env { pointer-events: none; }
 #village svg { width: 100%; height: 100%; display: block; }
 #village .slot { cursor: pointer; }
-#village .slot .tile { fill: rgba(207,162,120,0.16); stroke: rgba(42,33,24,0.3); stroke-width: 1; stroke-dasharray: 5 4; }
+#village .slot .tile { fill: rgba(132,104,89,0.22); stroke: rgba(30,7,2,0.38); stroke-width: 1; stroke-dasharray: 5 4; }
 #village .slot.built .tile { fill: none; stroke: none; }
 #village .slot.selected .tile, #village .slot.built.selected .tile { fill: rgba(201,162,74,0.28); stroke: var(--gold); stroke-width: 2; stroke-dasharray: none; }
 #village .slot.built .empty-marks { display: none; }
