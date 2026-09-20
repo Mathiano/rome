@@ -82,6 +82,7 @@ function renderNewsOverlay(): void {
       if (!btn.hasAttribute('data-news-ok')) return;
       game.state.seenLogId = game.state.logSeq;
       game.state.awayRounds = 0;
+      game.state.seenOpening = true;
       persist();
       render(true);
     });
@@ -98,9 +99,13 @@ function renderNewsOverlay(): void {
 function panelKey(now: number): string {
   const st = game.state;
   const res = RESOURCE_IDS.map((id) => Math.round(st.resources[id])).join(',');
+  // The minute bucket is in the key as well as the progress step: the panel now
+  // prints the time left, and a long build's bar moves more slowly than its
+  // wording does.
+  const mins = (finishAt: number) => Math.ceil(Math.max(0, finishAt - now) / 60_000);
   const work = [
-    ...st.constructions.map((c) => `${c.slotId}:${Math.round(progressOf(c, now) * 40)}`),
-    ...st.research.active.map((r) => `${r.id}:${Math.round(((now - r.startedAt) / (r.finishAt - r.startedAt)) * 40)}`),
+    ...st.constructions.map((c) => `${c.slotId}:${Math.round(progressOf(c, now) * 40)}:${mins(c.finishAt)}`),
+    ...st.research.active.map((r) => `${r.id}:${mins(r.finishAt)}`),
     `r${st.research.completed.length}`, `s${st.rome.scrolls}`,
   ].join(',');
   return [tab, selected, selectedHex, st.round, st.logSeq, res, work, Math.floor(st.population),

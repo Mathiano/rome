@@ -1,6 +1,7 @@
 import { layout, building } from '../data';
 import type { GameState, Slot } from '../state/types';
 import { progress } from '../village/construction';
+import { remainingText } from './panel';
 import { sprite, type AnimPlacement, type LoopPlacement } from './sprites';
 import { createEnvironment } from './environment';
 
@@ -93,7 +94,10 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
       const slot = state.slots.find((s) => s.id === named)!;
       const { sx, sy } = project(def.x, def.y);
       hoverLabel.setAttribute('transform', `translate(${sx},${sy + h * 1.1})`);
-      hoverLabel.textContent = labelFor(slot);
+      const work = state.constructions.find((x) => x.slotId === named);
+      hoverLabel.textContent = work
+        ? `${labelFor(slot)} — ${remainingText(work.finishAt - now)}`
+        : labelFor(slot);
     } else {
       hoverLabel.textContent = '';
     }

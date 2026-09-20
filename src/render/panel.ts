@@ -1,7 +1,7 @@
 import { activeTribes, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
-import { checkBuild, eligibleBuildings, rushPrice, slotById } from '../village/construction';
+import { checkBuild, eligibleBuildings, progress, rushPrice, slotById } from '../village/construction';
 import { canAfford, netPerHour } from '../village/economy';
 import { capacity, hiddenPerResource, populationCap, forumTier, buildingTier } from '../village/storage';
 import { gravitasRank, leaderOf, livingMembers, playerFamily, rivalFamilies, standing } from '../politics/characters';
@@ -68,7 +68,9 @@ export interface News { title: string; subtitle: string; lines: LogEntry[] }
  */
 export function pendingNews(state: GameState): News | null {
   const lines = state.log.filter((e) => e.id > state.seenLogId && !/^Round \d+\.$/.test(e.text));
-  if (!lines.length && !state.pendingChoice) return null;
+  if (state.pendingChoice) return report(state, lines);
+  // Nothing unread is nothing to say, whatever else is true of the colony.
+  if (!lines.length) return null;
   if (state.awayRounds > 0) {
     return {
       title: 'While you were away',
@@ -76,9 +78,18 @@ export function pendingNews(state: GameState): News | null {
       lines,
     };
   }
-  if (state.round === 0) {
+  if (state.round === 0 && !state.seenOpening) {
     return { title: esc(config.townName), subtitle: 'A colonia in Germania, beyond the Rhine. Rome expects it to stand.', lines };
   }
+  // Village work is not news. Laying a foundation writes a log line, and while
+  // any unseen line raised the overlay, starting a build at the founding put
+  // the opening card back over the village.
+  if (!lines.some((e) => e.kind !== 'village')) return null;
+  return report(state, lines);
+}
+
+function report(state: GameState, lines: LogEntry[]): News | null {
+  if (!lines.length && !state.pendingChoice) return null;
   const r = state.lastReport;
   return {
     title: `Round ${state.round}`,
@@ -155,7 +166,10 @@ function renderVillage(s: GameState, selected: string | null, now: number): stri
   if (slot.building) out += `<p class="muted">${esc(building(slot.building).role)}</p>`;
   if (c) {
     const price = rushPrice(s, c, now);
-    out += `<div class="card"><p>Work in progress on tier ${c.toTier}.</p><p>Hire extra hands to finish now: <b>${price} denarii</b></p><button class="act" data-rush="${slot.id}" ${s.resources.denarii < price ? 'disabled' : ''}>Finish now</button></div>`;
+    const pct = Math.round(progress(c, now) * 100);
+    out += `<div class="card"><p>Work in progress on tier ${c.toTier} — <b>${esc(remainingText(c.finishAt - now))}</b></p>
+      <div class="meter"><i style="width:${pct}%"></i></div>
+      <p>Hire extra hands to finish now: <b>${price} denarii</b></p><button class="act" data-rush="${slot.id}" ${s.resources.denarii < price ? 'disabled' : ''}>Finish now</button></div>`;
     return out;
   }
   for (const bid of eligibleBuildings(s, slot)) {
@@ -260,6 +274,23 @@ function effectWords(effects: Record<string, number>): string {
 const hours = (sec: number) => (sec >= 3600 ? `${(sec / 3600).toFixed(1)}h` : `${Math.round(sec / 60)} min`);
 
 /**
+ * Time left on a job, in the plainest words that are true (DESIGN §3.1, as
+ * amended 2026-09-20). Rounded, never ticking down to the second: the village
+ * clock is still not a countdown, it just no longer hides how long the wait is.
+ */
+export function remainingText(ms: number): string {
+  const sec = Math.max(0, Math.ceil(ms / 1000));
+  if (sec < 60) return 'less than a minute left';
+  const min = Math.round(sec / 60);
+  if (min < 90) return `about ${min} minute${min === 1 ? '' : 's'} left`;
+  const h = sec / 3600;
+  const whole = Math.floor(h);
+  const half = h - whole >= 0.75 ? 1 : h - whole >= 0.25 ? 0.5 : 0;
+  const shown = whole + half;
+  return `about ${shown % 1 ? shown.toFixed(1) : shown} hours left`;
+}
+
+/**
  * The Library (DESIGN §4.6). Research runs on the village clock like a
  * construction, costs denarii and scrolls, and can be finished early at the
  * same honest price. Nothing here is ever lost again (Pillar 7).
@@ -279,7 +310,7 @@ function renderLibrary(s: GameState, now: number): string {
     const node = researchNode(p.id);
     const price = researchRushPrice(s, p, now);
     const pr = Math.round(researchProgress(p, now) * 100);
-    out += `<div class="card player"><b>${esc(node.name)}</b> <span class="muted">under study</span>
+    out += `<div class="card player"><b>${esc(node.name)}</b> <span class="muted">under study — ${esc(remainingText(p.finishAt - now))}</span>
       <div class="meter"><i style="width:${pr}%"></i></div>
       <p class="muted">${esc(node.description)}</p>
       <p>Hire copyists to finish now: <b>${price} denarii</b></p>

@@ -16,6 +16,7 @@ describe('news', () => {
     expect(opening.title).toBe(config.townName);
     expect(opening.lines.length).toBeGreaterThan(0);
     g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
     expect(pendingNews(g.state)).toBeNull();
     g.act({ type: 'convene' }, 1000);
     const report = pendingNews(g.state);
@@ -27,12 +28,30 @@ describe('news', () => {
     else expect(pendingNews(g.state)).toBeNull();
   });
 
+  it('laying a foundation is not news, and never re-raises the founding card', () => {
+    const g = new Game(createInitialState(0, 5));
+    // the founding shows once
+    expect(pendingNews(g.state)).not.toBeNull();
+    g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
+    expect(pendingNews(g.state)).toBeNull();
+    // starting work writes a log line; it must not put the card back
+    g.build('c2', 'castellum', 1);
+    expect(g.state.log.some((e) => e.kind === 'village' && e.id > g.state.seenLogId)).toBe(true);
+    expect(pendingNews(g.state), 'a build should not raise the news overlay').toBeNull();
+    // but a round still reports, and carries the village lines it collected
+    g.act({ type: 'convene' }, 2000);
+    const news = pendingNews(g.state);
+    if (news) expect(news.title).toBe(`Round ${g.state.round}`);
+  });
+
   it('gives the founding its own entrance, and a round report the short one', () => {
     const g = new Game(createInitialState(0, 5));
     const opening = renderNews(pendingNews(g.state)!, g.state);
     // the opening beat is the first thing a colony shows and arrives slowly
     expect(opening).toContain('news-card opening');
     g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
     g.act({ type: 'convene' }, 1000);
     const news = pendingNews(g.state);
     if (news) expect(renderNews(news, g.state)).not.toContain('opening');

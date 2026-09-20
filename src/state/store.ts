@@ -70,6 +70,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     posts: Object.fromEntries(posts.map((p) => [p.id, null])),
     lesserPosts: Object.fromEntries(lesserPosts.map((p) => [p.id, null])),
     office: playerLeader.id,
+    seenOpening: false,
     research: { active: [], completed: [] },
     challenge: null,
     lastChallengeRound: -999,
@@ -189,6 +190,8 @@ export function migrate(state: GameState): GameState {
   }
   for (const c of Object.values(state.characters)) if (c.bodyguards === undefined) c.bodyguards = 0;
   if (!state.research) state.research = { active: [], completed: [] };
+  // A save made before the founding card was shown once keeps its place.
+  if (state.seenOpening === undefined) state.seenOpening = state.round > 0 || state.seenLogId > 0;
   // Slots added to the layout after a save was made appear as empty ground.
   for (const def of layout.slots) {
     if (state.slots.some((s) => s.id === def.id)) continue;

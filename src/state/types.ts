@@ -228,6 +228,8 @@ export interface GameState {
   logSeq: number;
   /** Highest log id the player has acknowledged. Anything above it is news. */
   seenLogId: number;
+  /** The founding card is shown once, not again after every village action. */
+  seenOpening: boolean;
   lastReport: RoundReport | null;
   /** An event waiting on the player's answer. Nothing else is blocked by it. */
   pendingChoice: { eventId: string; title: string; text: string } | null;

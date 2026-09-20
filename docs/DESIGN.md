@@ -42,7 +42,9 @@ Two clocks. The player sees only one.
 
 ### 3.1 The village clock — real time, invisible ✅
 
-Resource accrual, construction timers, site yields and research progress run on wall-clock time, including while the game is closed. Offline accrual is capped by storage capacity (§4.2), not by a time cap. No countdowns. Construction shows progress and the rush price; the council tab shows hours until the idle round. No other time is displayed. ✅
+Resource accrual, construction timers, site yields and research progress run on wall-clock time, including while the game is closed. Offline accrual is capped by storage capacity (§4.2), not by a time cap. A job under way shows its progress, the time left in rounded words, and the rush price; the council tab shows hours until the idle round. There is still no ticking clock and no second-by-second countdown, and the village clock itself is never displayed. ✅
+
+*Amended 2026-09-20*, after the first playtest. This read "No countdowns. Construction shows progress and the rush price… No other time is displayed" and was ✅ from 2026-09-15. The playtest overturned it — *"you should be able to see the minutes remaining here"* — on the grounds that hiding the wait did not make the colony feel calm, it left the player unable to plan around it. What survives is the intent: time is stated once, in words, rounded to what a player can act on ("about 40 minutes left", "about 2.5 hours left"), and never counted down.
 
 ### 3.2 The political clock — rounds ✅
 
@@ -345,3 +347,5 @@ v0.1.2 — 2026-09-16 — town named Arctown (§15.1). CI on every pull request.
 v0.1.3 — 2026-09-16 — §10 art pipeline pivot: buildings are raster PNG sprites from a style anchor via `tools/artgen/`; SVG kept for map, UI and animated overlays; isobuild retired.
 v0.1.4 — 2026-09-20 — §9.5 and §9.6 built: the top-office challenge with a live vote count, losing and winning back power, and the full intrigue menu with bodyguards. All four houses (§9.1) and all three tribes (§7) are awake.
 v0.2.0 — 2026-09-20 — §4.6 built: the Library, an eighth inner plot to stand it on, and a first-pass research tree (🟡, §15.11).
+v0.2.1 — 2026-09-20 — first playtest. §10: the village draws a walled colony with country around it rather than plots on a gradient, and the resource yards carry their trade's clutter and the people working it. Pillar 3: haste is priced against everything the colony produces in the hour, not its tax take alone, which had let any job under eight minutes cost one denarius. §4.1: grain upkeep raised to 0.35 a head an hour, so feeding a growing colony is the constraint it was meant to be.
+v0.2.2 — 2026-09-20 — §3.1 amended: a job under way states the time left in rounded words. The no-countdown rule stood from 2026-09-15 until the first playtest overturned it.

@@ -87,10 +87,12 @@ own longer entrance. All off under `prefers-reduced-motion`.
 
 ## Open for Mathias
 
-- ❓ **Minutes remaining on construction.** Your note asks for it; DESIGN §3.1,
-  which you ratified on 2026-09-15, forbids it — *"No countdowns… No other time
-  is displayed."* Nothing was changed. Say the word and I will show minutes and
-  amend §3.1 to match; I am not overturning a ✅ on my own.
+- ✅ **Minutes remaining on construction — resolved in session.** Mathias
+  overturned the rule: a job under way now states the time left in rounded
+  words, on the plot card, on the plot's own label and on a study in the
+  library. §3.1 is amended rather than contradicted, and records that it stood
+  from 2026-09-15 until the first playtest. The intent that survives: time is
+  stated once, in words, never counted down by the second.
 - 🟡 **Painted sprites.** `draw.py` emits flat vector polygons. The composition
   is now right, and the yards are dense, but those references are hand-painted
   and polygons will not reach that bar. The route to it is generated sprites

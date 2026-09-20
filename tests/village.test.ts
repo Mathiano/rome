@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { createInitialState } from '../src/state/store';
 import { accrue, denariiIncomePerHour, netPerHour } from '../src/village/economy';
@@ -5,6 +6,9 @@ import { capacity, populationCap } from '../src/village/storage';
 import { checkBuild, startBuild, rushPrice, rush, completeFinished } from '../src/village/construction';
 import { tick } from '../src/village/clock';
 import { building, config } from '../src/data';
+import { Game } from '../src/game';
+import { remainingText, renderPanel } from '../src/render/panel';
+import { createVillageView } from '../src/render/village';
 
 const H = 3_600_000;
 
@@ -118,5 +122,34 @@ describe('clock', () => {
     expect(s.round).toBe(1);
     tick(s, floor * 100);
     expect(s.round).toBe(1 + config.idleRoundsMaxCatchUp);
+  });
+});
+
+describe('time left on a job (DESIGN §3.1, amended 2026-09-20)', () => {
+  it('rounds to words a player can act on, and never ticks by the second', () => {
+    expect(remainingText(0)).toBe('less than a minute left');
+    expect(remainingText(30_000)).toBe('less than a minute left');
+    expect(remainingText(60_000)).toBe('about 1 minute left');
+    expect(remainingText(4 * 60_000)).toBe('about 4 minutes left');
+    expect(remainingText(60 * 60_000)).toBe('about 60 minutes left');
+    // past an hour and a half it reads in hours, to the nearest half
+    expect(remainingText(2 * 3_600_000)).toBe('about 2 hours left');
+    expect(remainingText(2.5 * 3_600_000)).toBe('about 2.5 hours left');
+    expect(remainingText(3.8 * 3_600_000)).toBe('about 4 hours left');
+    // a finished or overdue job never reads as negative
+    expect(remainingText(-5000)).toBe('less than a minute left');
+  });
+
+  it('shows the wait on the plot card and on the plot itself', () => {
+    const g = new Game(createInitialState(0, 4));
+    g.build('c2', 'castellum', 1);
+    const html = renderPanel(g, 'village', 'c2', 1);
+    expect(html).toContain('Work in progress');
+    expect(html).toMatch(/about \d+ minutes? left|less than a minute left/);
+    const view = createVillageView(() => {});
+    view.update(g.state, 1, 'c2');
+    const label = view.root.querySelector('.labels .label')!.textContent ?? '';
+    expect(label).toContain('Castellum');
+    expect(label).toMatch(/left$/);
   });
 });
