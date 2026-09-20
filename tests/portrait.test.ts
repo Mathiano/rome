@@ -1,6 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { portraitSvg } from '../src/render/portrait';
 import { createInitialState } from '../src/state/store';
 import type { Character } from '../src/state/types';
@@ -52,9 +54,17 @@ describe('portraits', () => {
         }
       }
     }
-    writeFileSync('/tmp/claude-0/-home-user-rome/86df4dec-8142-5527-ae2e-f4149e6faf81/scratchpad/portraits.html',
-      `<body style="background:#efe6d2;margin:0;padding:12px"><div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">${cells.join('')}</div></body>`);
     expect(cells.length).toBe(64);
+    for (const cell of cells) expect(cell).toContain('<svg');
+    // The sheet is a review aid, not an assertion. It is written only when it
+    // is asked for, and into the machine's own temp dir: a test that writes to
+    // a fixed absolute path passes on the machine that has it and nowhere else.
+    if (process.env.PORTRAIT_SHEET) {
+      const out = join(tmpdir(), 'rome-portraits.html');
+      writeFileSync(out,
+        `<body style="background:#efe6d2;margin:0;padding:12px"><div style="display:grid;grid-template-columns:repeat(8,1fr);gap:8px">${cells.join('')}</div></body>`);
+      console.log(`portrait contact sheet: ${out}`);
+    }
   });
 });
 
