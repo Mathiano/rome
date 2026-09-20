@@ -5,17 +5,17 @@
     "castellum-t1": {
       "file": "castellum-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/castellum-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/castellum-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -28,17 +28,17 @@
     "castellum-t2": {
       "file": "castellum-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/castellum-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/castellum-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -52,16 +52,16 @@
       "file": "castellum-t3.png",
       "width": 455,
       "height": 269,
-      "ax": 227.48,
-      "ay": 153.25,
+      "ax": 227.5,
+      "ay": 153.41,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/castellum-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/castellum-t3.png",
       "trimOffset": [
-        117,
+        119,
         416
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -74,15 +74,15 @@
         {
           "type": "anim",
           "kind": "flag",
-          "x": -164.18,
-          "y": -103.57,
+          "x": -164.82,
+          "y": -103.54,
           "scale": 1.0
         },
         {
           "type": "anim",
           "kind": "flag",
-          "x": -2.57,
-          "y": -22.77,
+          "x": -2.58,
+          "y": -22.42,
           "scale": 1.0
         }
       ]
@@ -90,17 +90,17 @@
     "cellars-t1": {
       "file": "cellars-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/cellars-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/cellars-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -113,17 +113,17 @@
     "cellars-t2": {
       "file": "cellars-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/cellars-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/cellars-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -136,17 +136,17 @@
     "cellars-t3": {
       "file": "cellars-t3.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/cellars-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/cellars-t3.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -159,15 +159,15 @@
         {
           "type": "anim",
           "kind": "glow",
-          "x": -70.83,
-          "y": -3.57,
+          "x": -71.12,
+          "y": -3.14,
           "scale": 0.8
         },
         {
           "type": "anim",
           "kind": "glow",
-          "x": -23.46,
-          "y": 20.11,
+          "x": -23.56,
+          "y": 20.63,
           "scale": 0.8
         }
       ]
@@ -175,17 +175,17 @@
     "clay-works-t1": {
       "file": "clay-works-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/clay-works-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/clay-works-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -198,17 +198,17 @@
     "clay-works-t2": {
       "file": "clay-works-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/clay-works-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/clay-works-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -221,17 +221,17 @@
     "clay-works-t3": {
       "file": "clay-works-t3.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/clay-works-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/clay-works-t3.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -244,15 +244,15 @@
         {
           "type": "anim",
           "kind": "smoke",
-          "x": 89.39,
-          "y": -57.38,
+          "x": 89.73,
+          "y": -57.17,
           "scale": 1.0
         },
         {
           "type": "anim",
           "kind": "glow",
-          "x": 85.21,
-          "y": -11.8,
+          "x": 85.53,
+          "y": -11.4,
           "scale": 0.9
         }
       ]
@@ -260,17 +260,17 @@
     "farm-t1": {
       "file": "farm-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/farm-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/farm-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -283,17 +283,17 @@
     "farm-t2": {
       "file": "farm-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/farm-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/farm-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -307,16 +307,16 @@
       "file": "farm-t3.png",
       "width": 455,
       "height": 246,
-      "ax": 227.48,
-      "ay": 129.74,
+      "ax": 227.5,
+      "ay": 129.81,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/farm-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/farm-t3.png",
       "trimOffset": [
-        117,
+        119,
         470
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -329,8 +329,8 @@
         {
           "type": "anim",
           "kind": "smoke",
-          "x": 16.94,
-          "y": -129.65,
+          "x": 17.0,
+          "y": -129.72,
           "scale": 0.8
         }
       ]
@@ -338,17 +338,17 @@
     "forum-t1": {
       "file": "forum-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/forum-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/forum-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -362,16 +362,16 @@
       "file": "forum-t2.png",
       "width": 455,
       "height": 250,
-      "ax": 227.48,
-      "ay": 134.53,
+      "ax": 227.5,
+      "ay": 134.62,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/forum-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/forum-t2.png",
       "trimOffset": [
-        117,
+        119,
         459
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -385,16 +385,16 @@
       "file": "forum-t3.png",
       "width": 455,
       "height": 278,
-      "ax": 227.48,
-      "ay": 162.39,
+      "ax": 227.5,
+      "ay": 162.59,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/forum-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/forum-t3.png",
       "trimOffset": [
-        117,
+        119,
         395
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -407,8 +407,8 @@
         {
           "type": "anim",
           "kind": "flag",
-          "x": 147.9,
-          "y": -96.39,
+          "x": 148.47,
+          "y": -96.33,
           "scale": 1.0
         }
       ]
@@ -416,17 +416,17 @@
     "granary-t1": {
       "file": "granary-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/granary-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/granary-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -440,16 +440,16 @@
       "file": "granary-t2.png",
       "width": 455,
       "height": 240,
-      "ax": 227.48,
-      "ay": 124.08,
+      "ax": 227.5,
+      "ay": 124.13,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/granary-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/granary-t2.png",
       "trimOffset": [
-        117,
+        119,
         483
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -463,16 +463,16 @@
       "file": "granary-t3.png",
       "width": 455,
       "height": 272,
-      "ax": 227.48,
-      "ay": 155.86,
+      "ax": 227.5,
+      "ay": 156.04,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/granary-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/granary-t3.png",
       "trimOffset": [
-        117,
+        119,
         410
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -485,8 +485,8 @@
         {
           "type": "anim",
           "kind": "flag",
-          "x": -100.09,
-          "y": -49.63,
+          "x": -100.49,
+          "y": -49.39,
           "scale": 0.8
         }
       ]
@@ -494,17 +494,17 @@
     "insulae-t1": {
       "file": "insulae-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/insulae-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/insulae-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -517,17 +517,17 @@
     "insulae-t2": {
       "file": "insulae-t2.png",
       "width": 455,
-      "height": 256,
-      "ax": 227.48,
-      "ay": 140.63,
+      "height": 257,
+      "ax": 227.5,
+      "ay": 140.74,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/insulae-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/insulae-t2.png",
       "trimOffset": [
-        117,
+        119,
         445
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -541,16 +541,16 @@
       "file": "insulae-t3.png",
       "width": 455,
       "height": 293,
-      "ax": 227.48,
-      "ay": 176.76,
+      "ax": 227.5,
+      "ay": 177.01,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/insulae-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/insulae-t3.png",
       "trimOffset": [
-        117,
+        119,
         362
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -563,8 +563,8 @@
         {
           "type": "anim",
           "kind": "smoke",
-          "x": 14.15,
-          "y": -180.68,
+          "x": 14.2,
+          "y": -180.94,
           "scale": 0.8
         }
       ]
@@ -572,17 +572,17 @@
     "iron-mine-t1": {
       "file": "iron-mine-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/iron-mine-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/iron-mine-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -595,17 +595,17 @@
     "iron-mine-t2": {
       "file": "iron-mine-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/iron-mine-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/iron-mine-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -618,17 +618,17 @@
     "iron-mine-t3": {
       "file": "iron-mine-t3.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/iron-mine-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/iron-mine-t3.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -641,15 +641,15 @@
         {
           "type": "anim",
           "kind": "smoke",
-          "x": 89.39,
-          "y": -36.27,
+          "x": 89.73,
+          "y": -35.97,
           "scale": 1.0
         },
         {
           "type": "anim",
           "kind": "swing",
-          "x": -22.07,
-          "y": -69.84,
+          "x": -22.16,
+          "y": -69.67,
           "scale": 0.9
         }
       ]
@@ -657,17 +657,17 @@
     "library-t1": {
       "file": "library-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpm1949qrl/library-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/library-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -681,16 +681,16 @@
       "file": "library-t2.png",
       "width": 455,
       "height": 248,
-      "ax": 227.48,
-      "ay": 132.35,
+      "ax": 227.5,
+      "ay": 132.43,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpm1949qrl/library-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/library-t2.png",
       "trimOffset": [
-        117,
+        119,
         464
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -703,17 +703,17 @@
     "library-t3": {
       "file": "library-t3.png",
       "width": 455,
-      "height": 280,
-      "ax": 227.48,
-      "ay": 164.57,
+      "height": 281,
+      "ax": 227.5,
+      "ay": 164.78,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpm1949qrl/library-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/library-t3.png",
       "trimOffset": [
-        117,
+        119,
         390
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -726,15 +726,15 @@
         {
           "type": "anim",
           "kind": "flag",
-          "x": -86.16,
-          "y": -103.84,
+          "x": -86.5,
+          "y": -103.81,
           "scale": 0.85
         },
         {
           "type": "anim",
           "kind": "flag",
-          "x": 55.95,
-          "y": -32.78,
+          "x": 56.16,
+          "y": -32.48,
           "scale": 0.85
         }
       ]
@@ -742,17 +742,17 @@
     "lumber-camp-t1": {
       "file": "lumber-camp-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/lumber-camp-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/lumber-camp-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -765,17 +765,17 @@
     "lumber-camp-t2": {
       "file": "lumber-camp-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/lumber-camp-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/lumber-camp-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -788,17 +788,17 @@
     "lumber-camp-t3": {
       "file": "lumber-camp-t3.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/lumber-camp-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/lumber-camp-t3.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -811,15 +811,15 @@
         {
           "type": "anim",
           "kind": "smoke",
-          "x": 101.92,
-          "y": -99.44,
+          "x": 102.32,
+          "y": -99.39,
           "scale": 1.0
         },
         {
           "type": "anim",
           "kind": "swing",
           "x": 3.01,
-          "y": -8.32,
+          "y": -7.91,
           "scale": 0.9
         }
       ]
@@ -827,17 +827,17 @@
     "market-t1": {
       "file": "market-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/market-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/market-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -850,17 +850,17 @@
     "market-t2": {
       "file": "market-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/market-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/market-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -874,16 +874,16 @@
       "file": "market-t3.png",
       "width": 455,
       "height": 248,
-      "ax": 227.48,
-      "ay": 131.92,
+      "ax": 227.5,
+      "ay": 132.0,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/market-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/market-t3.png",
       "trimOffset": [
-        117,
+        119,
         465
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -896,15 +896,15 @@
         {
           "type": "anim",
           "kind": "flag",
-          "x": -119.59,
-          "y": -24.0,
+          "x": -120.07,
+          "y": -23.66,
           "scale": 0.7
         },
         {
           "type": "anim",
           "kind": "flag",
-          "x": -41.58,
-          "y": 20.58,
+          "x": -41.74,
+          "y": 21.1,
           "scale": 0.7
         }
       ]
@@ -912,17 +912,17 @@
     "temple-t1": {
       "file": "temple-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/temple-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/temple-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -935,17 +935,17 @@
     "temple-t2": {
       "file": "temple-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/temple-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/temple-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -959,16 +959,16 @@
       "file": "temple-t3.png",
       "width": 455,
       "height": 256,
-      "ax": 227.48,
-      "ay": 139.76,
+      "ax": 227.5,
+      "ay": 139.86,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/temple-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/temple-t3.png",
       "trimOffset": [
-        117,
+        119,
         447
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -981,15 +981,15 @@
         {
           "type": "anim",
           "kind": "smoke",
-          "x": 14.15,
-          "y": 39.23,
+          "x": 14.2,
+          "y": 39.83,
           "scale": 0.85
         },
         {
           "type": "anim",
           "kind": "flag",
-          "x": -91.73,
-          "y": -80.12,
+          "x": -92.09,
+          "y": -79.99,
           "scale": 1.0
         }
       ]
@@ -997,17 +997,17 @@
     "warehouse-t1": {
       "file": "warehouse-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/warehouse-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/warehouse-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -1021,16 +1021,16 @@
       "file": "warehouse-t2.png",
       "width": 455,
       "height": 239,
-      "ax": 227.48,
-      "ay": 122.78,
+      "ax": 227.5,
+      "ay": 122.82,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/warehouse-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/warehouse-t2.png",
       "trimOffset": [
-        117,
+        119,
         486
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -1044,16 +1044,16 @@
       "file": "warehouse-t3.png",
       "width": 455,
       "height": 270,
-      "ax": 227.48,
-      "ay": 154.12,
+      "ax": 227.5,
+      "ay": 154.29,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/warehouse-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/warehouse-t3.png",
       "trimOffset": [
-        117,
+        119,
         414
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -1066,8 +1066,8 @@
         {
           "type": "anim",
           "kind": "swing",
-          "x": 8.58,
-          "y": -15.4,
+          "x": 8.61,
+          "y": -15.03,
           "scale": 1.0
         }
       ]
@@ -1075,17 +1075,17 @@
     "waystation-t1": {
       "file": "waystation-t1.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/waystation-t1.png",
+      "source": "../../../tmp/tmpu9cfhvdy/waystation-t1.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -1098,17 +1098,17 @@
     "waystation-t2": {
       "file": "waystation-t2.png",
       "width": 455,
-      "height": 236,
-      "ax": 227.48,
-      "ay": 119.73,
+      "height": 235,
+      "ax": 227.5,
+      "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/waystation-t2.png",
+      "source": "../../../tmp/tmpu9cfhvdy/waystation-t2.png",
       "trimOffset": [
-        117,
-        493
+        119,
+        495
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -1122,16 +1122,16 @@
       "file": "waystation-t3.png",
       "width": 455,
       "height": 242,
-      "ax": 227.48,
-      "ay": 125.82,
+      "ax": 227.5,
+      "ay": 125.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpriaf2de2/waystation-t3.png",
+      "source": "../../../tmp/tmpu9cfhvdy/waystation-t3.png",
       "trimOffset": [
-        117,
+        119,
         479
       ],
-      "sourceScale": 0.435374,
+      "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
@@ -1144,8 +1144,8 @@
         {
           "type": "anim",
           "kind": "flag",
-          "x": 28.08,
-          "y": 23.77,
+          "x": 28.19,
+          "y": 24.3,
           "scale": 0.7
         }
       ]

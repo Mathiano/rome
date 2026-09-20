@@ -464,9 +464,16 @@ def plate(sc, paved=True):
     N, E, S, W = iso(0, 0, z), iso(8, 0, z), iso(8, 8, z), iso(0, 8, z)
     Nb, Eb, Sb, Wb = (iso(0, 0, -PLATE_EDGE), iso(8, 0, -PLATE_EDGE),
                       iso(8, 8, -PLATE_EDGE), iso(0, 8, -PLATE_EDGE))
-    sc.add(-100, poly([W, S, Sb, Wb], shade(PAL["earth_mid"], 0.86), W_MAIN), -1)
-    sc.add(-100, poly([S, E, Eb, Sb], shade(PAL["earth_dark"], 0.82), W_MAIN), -1)
-    sc.add(-100, poly([N, E, S, W], PAL["earth_light"], W_MAIN), -1)
+    # The colony now draws one continuous floor under every plot
+    # (src/render/environment.ts), so a plate outlined in ink turned the town
+    # into a quilt of tiles. The plate keeps its geometry — the anchor is
+    # measured from it — but reads as worked ground, not as a separate object.
+    sc.add(-100, poly([W, S, Sb, Wb], shade(PAL["earth_mid"], 0.94), W_HAIR,
+                      stroke=shade(PAL["earth_dark"], 0.9)), -1)
+    sc.add(-100, poly([S, E, Eb, Sb], shade(PAL["earth_dark"], 0.9), W_HAIR,
+                      stroke=shade(PAL["earth_dark"], 0.9)), -1)
+    sc.add(-100, poly([N, E, S, W], PAL["earth_light"], W_HAIR,
+                      stroke=shade(PAL["earth_mid"], 0.9)), -1)
     # mottling: a few faint patches of darker earth
     for gx, gy, r in ((2.2, 5.4, 1.1), (5.6, 2.4, 0.9), (4.0, 6.2, 0.7), (6.4, 5.6, 0.8)):
         c = iso(gx, gy, z)
@@ -770,6 +777,83 @@ def sundial(sc, gx, gy, z=0.0):
     d = gx + gy + 0.3
     sc.add(d, ellipse(c, 0.26 * TILE_W, 0.26 * TILE_H, PAL["stone_light"], W_DETAIL), z + 0.6)
     sc.add(d, line(c, (c[0] + 4, c[1] - 20), PAL["iron"], W_DETAIL), z + 0.7)
+
+
+
+# --------------------------------------------------------------- inhabitants
+TUNIC = ("roof_mid", "leaf_mid", "plaster_light", "roof_dark", "leaf_dark")
+
+
+def worker(sc, gx, gy, z=0.0, tunic=0, facing=1, carrying=None, s=1.15):
+    """One inhabitant, drawn at about a fifth of a plate wide.
+
+    A yard with nobody in it reads as a model rather than a place, and figures
+    are the cheapest way to say a building is worked. They are deliberately
+    plain: at this scale a face is two pixels, so the silhouette carries it.
+    """
+    d = gx + gy + 0.35
+    c = iso(gx, gy, z)
+    col = PAL[TUNIC[tunic % len(TUNIC)]]
+    h = 34.0 * s
+    w = 7.0 * s
+    # tunic
+    sc.add(d, poly([(c[0] - w, c[1]), (c[0] + w, c[1]), (c[0] + w * 0.78, c[1] - h * 0.52),
+                    (c[0] - w * 0.78, c[1] - h * 0.52)], col, W_HAIR), z + 0.4)
+    # legs, as one dark wedge so the figure keeps a silhouette at small sizes
+    sc.add(d, poly([(c[0] - w * 0.5, c[1]), (c[0] + w * 0.5, c[1]), (c[0] + w * 0.3, c[1] - h * 0.18),
+                    (c[0] - w * 0.3, c[1] - h * 0.18)], PAL["timber_dark"], 0), z + 0.3)
+    # arm toward what is being carried or worked
+    ax = c[0] + facing * w * 1.15
+    sc.add(d, line((c[0] + facing * w * 0.6, c[1] - h * 0.44), (ax, c[1] - h * 0.3), col, W_HAIR * 1.6), z + 0.5)
+    # head
+    sc.add(d, circle((c[0], c[1] - h * 0.66), 4.6 * s, PAL["plaster_dark"], W_HAIR), z + 0.6)
+    sc.add(d, poly([(c[0] - 4.6 * s, c[1] - h * 0.7), (c[0] + 4.6 * s, c[1] - h * 0.7),
+                    (c[0] + 3.4 * s, c[1] - h * 0.82), (c[0] - 3.4 * s, c[1] - h * 0.82)],
+                   PAL["timber_deep"], 0), z + 0.7)
+    if carrying == "sack":
+        sc.add(d, ellipse((ax + facing * 4, c[1] - h * 0.26), 7 * s, 8 * s, PAL["grain"], W_HAIR), z + 0.5)
+    elif carrying == "plank":
+        sc.add(d, poly([(ax - 26 * s, c[1] - h * 0.34), (ax + 26 * s, c[1] - h * 0.4),
+                        (ax + 26 * s, c[1] - h * 0.28), (ax - 26 * s, c[1] - h * 0.22)],
+                       PAL["timber_light"], W_HAIR), z + 0.5)
+
+
+def plank_stack(sc, gx, gy, z=0.0, rows=4, w=1.1):
+    """Sawn timber, stacked and stickered — the output side of a wood yard."""
+    d = gx + gy + 0.3
+    for i in range(rows):
+        zz = z + i * 0.11
+        box(sc, gx, gy, gx + w, gy + 0.42, zz, zz + 0.09, "timber", w=W_HAIR)
+
+
+def chopping_block(sc, gx, gy, z=0.0):
+    d = box(sc, gx - 0.18, gy - 0.18, gx + 0.18, gy + 0.18, z, z + 0.3, "timberdark", w=W_DETAIL)
+    c = iso(gx, gy, z + 0.3)
+    # an axe left standing in it
+    sc.add(d + 0.01, line((c[0] + 2, c[1]), (c[0] + 11, c[1] - 26), PAL["timber_mid"], W_DETAIL), z + 0.5)
+    sc.add(d + 0.01, poly([(c[0] + 9, c[1] - 26), (c[0] + 19, c[1] - 30), (c[0] + 20, c[1] - 23),
+                           (c[0] + 11, c[1] - 21)], PAL["iron"], W_HAIR), z + 0.6)
+
+
+def brushwood(sc, gx, gy, z=0.0, n=7):
+    """Lopped branches in a heap: what a felling yard is actually full of."""
+    d = gx + gy + 0.25
+    c = iso(gx, gy, z)
+    for i in range(n):
+        a = math.pi * (0.15 + 0.7 * (i / max(1, n - 1)))
+        sc.add(d, line((c[0] - 14 + i * 2, c[1]), (c[0] - 14 + i * 2 + math.cos(a) * 22,
+                                                   c[1] - abs(math.sin(a)) * 16), PAL["timber_mid"], W_HAIR), z)
+    sc.add(d, ellipse((c[0], c[1]), 20, 7, PAL["leaf_dark"], W_HAIR), z - 0.01)
+
+
+def fire_pit(sc, gx, gy, z=0.0):
+    d = gx + gy + 0.25
+    c = iso(gx, gy, z)
+    sc.add(d, ellipse(c, 15, 7, PAL["earth_dark"], W_DETAIL), z)
+    for i in range(4):
+        sc.add(d, line((c[0] - 9 + i * 6, c[1] + 2), (c[0] - 4 + i * 6, c[1] - 9),
+                       PAL["timber_dark"], W_HAIR), z + 0.1)
+    sc.add(d, ellipse((c[0], c[1] - 3), 7, 4, PAL["fire"], 0), z + 0.2)
 
 
 # ------------------------------------------------------------- the buildings
@@ -1248,26 +1332,50 @@ def waystation(sc, tier):
 
 
 def lumber_camp(sc, tier):
+    """A felling camp. The standing wood is the point of the plot, so the trees
+    are the scene rather than one token pine at the back."""
     if tier == 1:
+        # the stand being worked: a wood, thinning toward the yard
+        for gx, gy, h in ((7.4, 1.0, 1.7), (6.9, 2.0, 1.45), (7.5, 3.0, 1.55),
+                          (6.4, 1.1, 1.3), (7.6, 4.2, 1.35), (5.9, 0.8, 1.2)):
+            pine(sc, gx, gy, 0, h)
         with sc.group(6.2 + 4.2):
             frame_shed(sc, 3.2, 2.2, 6.2, 4.2, 0, 1.0)
             gable(sc, 3.2, 2.2, 6.2, 4.2, 1.0, 0.55, "x")
         log_pile(sc, 1.2, 4.6, 3, 4)
+        log_pile(sc, 1.4, 6.0, 2, 3)
+        plank_stack(sc, 2.6, 3.2, 0, 4, 1.0)
         sawhorse(sc, 4.2, 5.6)
-        pine(sc, 7.0, 2.2, 0, 1.45)
+        chopping_block(sc, 5.3, 5.1)
+        brushwood(sc, 3.2, 6.6)
+        worker(sc, 4.6, 5.0, 0, 0, 1)
+        worker(sc, 2.3, 4.2, 0, 2, -1, "plank")
         barrel(sc, 6.7, 4.8)
         crate(sc, 2.2, 6.2)
+        tuft(sc, 1.0, 2.2)
+        tuft(sc, 6.2, 6.6)
     elif tier == 2:
+        for gx, gy, h in ((7.5, 0.9, 1.8), (7.0, 1.9, 1.55), (7.6, 3.1, 1.6),
+                          (6.5, 1.0, 1.35), (7.7, 4.4, 1.4)):
+            pine(sc, gx, gy, 0, h)
         with sc.group(6.3 + 4.3):
             box(sc, 3.0, 2.0, 6.3, 4.3, 0, 0.35, "stone")
             frame_shed(sc, 3.0, 2.0, 6.3, 4.3, 0.35, 1.32, 4)
             gable(sc, 3.0, 2.0, 6.3, 4.3, 1.32, 0.62, "x")
         log_pile(sc, 1.0, 4.6, 3, 4)
+        log_pile(sc, 1.2, 6.1, 3, 4)
+        plank_stack(sc, 2.3, 3.0, 0, 5, 1.2)
+        plank_stack(sc, 2.3, 3.6, 0, 3, 1.2)
         sawhorse(sc, 3.6, 5.8)
+        chopping_block(sc, 5.0, 5.4)
+        brushwood(sc, 6.4, 6.2)
+        fire_pit(sc, 4.6, 6.6)
+        worker(sc, 4.0, 5.2, 0, 1, 1)
+        worker(sc, 5.6, 4.6, 0, 3, -1)
+        worker(sc, 2.0, 4.0, 0, 0, 1, "plank")
         crane(sc, 5.7, 5.6, 0, 1.45)
-        pine(sc, 7.2, 2.0, 0, 1.55)
-        pine(sc, 6.7, 1.3, 0, 1.25)
         crate(sc, 2.0, 6.4)
+        tuft(sc, 0.9, 2.0)
     else:
         with sc.group(6.4 + 4.4):
             box(sc, 2.8, 1.8, 6.4, 4.4, 0, 0.45, "stone")
@@ -1278,6 +1386,17 @@ def lumber_camp(sc, tier):
             box(sc, 5.7, 2.0, 6.0, 2.4, 2.32, 2.9, "stone", w=W_DETAIL)
         sc.anim("smoke", 5.85, 2.2, 3.0)
         sc.anim("swing", 5.9, 5.8, 1.75, 0.9)
+        for gx, gy, h in ((7.6, 0.8, 1.9), (7.1, 1.8, 1.6), (7.7, 3.0, 1.7), (7.8, 4.5, 1.45)):
+            pine(sc, gx, gy, 0, h)
+        plank_stack(sc, 1.9, 2.8, 0, 6, 1.3)
+        plank_stack(sc, 1.9, 3.5, 0, 4, 1.3)
+        chopping_block(sc, 4.8, 5.6)
+        brushwood(sc, 6.6, 6.4)
+        fire_pit(sc, 3.2, 6.8)
+        worker(sc, 3.8, 5.4, 0, 1, 1)
+        worker(sc, 5.2, 4.8, 0, 4, -1)
+        worker(sc, 1.7, 3.9, 0, 2, 1, "plank")
+        worker(sc, 6.0, 6.0, 0, 0, -1)
         log_pile(sc, 0.8, 4.8, 4, 5)
         sawhorse(sc, 3.4, 6.2)
         crane(sc, 5.9, 5.8, 0, 1.75)
@@ -1292,19 +1411,30 @@ def clay_works(sc, tier):
     clay_pit(sc, 2.5, 5.2, 0, 1.7 + 0.35 * tier)
     if tier == 1:
         drying_rack(sc, 4.4, 2.2, 0, 4)
+        drying_rack(sc, 5.6, 2.0, 0, 3)
         box(sc, 5.8, 3.4, 6.5, 4.3, 0, 0.6, "timberdark", w=W_DETAIL)
         a = iso(3.8, 4.4, 0)
         sc.add(3.8 + 4.4 + 0.2, line(a, (a[0] + 28, a[1] - 50), PAL["timber_mid"], W_DETAIL), 0.3)
-        amphora(sc, 6.2, 5.4)
+        for i in range(4):
+            amphora(sc, 6.2 + (i % 2) * 0.3, 5.4 + i * 0.26)
         crate(sc, 5.4, 6.0)
+        crate(sc, 5.9, 6.5, 0.26)
+        worker(sc, 3.4, 4.4, 0, 0, 1)
+        worker(sc, 4.9, 3.3, 0, 1, -1)
+        tuft(sc, 1.4, 2.6)
     elif tier == 2:
         kiln(sc, 5.2, 2.4, 0, 1.0)
         drying_rack(sc, 3.4, 1.9, 0, 4)
+        drying_rack(sc, 4.5, 1.7, 0, 4)
         box(sc, 6.0, 3.8, 6.7, 4.7, 0, 0.62, "timberdark", w=W_DETAIL)
-        for i in range(3):
-            crate(sc, 5.9 + i * 0.06, 5.0 + i * 0.34, 0.26)
-        amphora(sc, 4.4, 6.0)
-        amphora(sc, 4.7, 6.25)
+        for i in range(5):
+            crate(sc, 5.9 + (i % 2) * 0.06, 5.0 + i * 0.34, 0.26)
+        for i in range(4):
+            amphora(sc, 4.4 + (i % 2) * 0.32, 6.0 + i * 0.24)
+        worker(sc, 6.0, 2.9, 0, 1, -1)
+        worker(sc, 3.0, 4.6, 0, 0, 1)
+        worker(sc, 4.2, 5.4, 0, 3, -1, "sack")
+        tuft(sc, 1.2, 2.4)
     else:
         with sc.group(4.6 + 3.6):
             box(sc, 2.4, 1.7, 4.6, 3.6, 0, 1.05, "plaster")
@@ -1356,7 +1486,8 @@ def iron_mine(sc, tier):
         ore_pile(sc, 2.1, 4.7)
         ore_pile(sc, 2.5, 5.7, n=5)
         crate(sc, 1.6, 6.3)
-
+        worker(sc, 2.6, 5.4, 0, 3, 1)
+        worker(sc, 4.4, 6.0, 0, 0, -1)
 
 def farm(sc, tier):
     if tier == 1:
@@ -1368,8 +1499,12 @@ def farm(sc, tier):
             gable(sc, 4.6, 1.6, 6.4, 3.0, 0.85, 0.48, "x", gable_mat="timberdark")
         a = iso(2.8, 2.6, 0)
         sc.add(2.8 + 2.6 + 0.2, line(a, (a[0] + 22, a[1] - 52), PAL["timber_mid"], W_DETAIL), 0.3)
-        sack(sc, 4.0, 2.4)
+        for i in range(4):
+            sack(sc, 4.0 + (i % 2) * 0.34, 2.4 + i * 0.22, 0.95)
         crate(sc, 1.6, 2.6)
+        worker(sc, 3.0, 5.0, 0, 1, 1)
+        worker(sc, 5.2, 5.6, 0, 0, -1, "sack")
+        bush(sc, 1.2, 2.0, 0.9)
     elif tier == 2:
         furrows(sc, 0.7, 3.7, 6.9, 7.2, 0, 11)
         with sc.group(6.4 + 3.2):
