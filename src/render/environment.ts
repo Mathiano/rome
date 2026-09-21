@@ -14,10 +14,40 @@ import { layout } from '../data';
 
 const NS = 'http://www.w3.org/2000/svg';
 
+/**
+ * The painted country (assets/src/base-map-v1.jpg), generated against the spec
+ * in assets/style/PROMPTS.md. Loaded the same way the sprites are, so it is
+ * absent rather than fatal if the file is ever removed.
+ */
+const baseMapUrls = import.meta.glob('../../assets/src/base-map-*.jpg', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
+const BASE_MAP: string | undefined = Object.entries(baseMapUrls).sort().pop()?.[1];
+
+/**
+ * How the painting lands on the wall.
+ *
+ * The clearing it was generated with is 2.42:1 and the wall is exactly 2:1, so
+ * the two cannot both be honoured. The scale is uniform — stretching terrain
+ * would show on the trees — and it matches the clearing's *height*: painted
+ * earth spilling outside the wall reads as cleared approach, where grass inside
+ * the wall would read as a bug. Measured off the source, not guessed
+ * (tools: the fit check in the session capsule).
+ */
+const MAP_FIT = {
+  /** Where the clearing's centre sits in the source image, as a fraction. */
+  cx: 0.470,
+  cy: 0.525,
+  /** Half the clearing's height, as a fraction of the source. */
+  semiH: 0.325,
+  width: 3168,
+  height: 1344,
+};
+
 /** The same palette the sprites are drawn from (tools/artgen/palette.json). */
 const PAL = {
   ink: '#1e0702',
   grass: '#8d9a5f',
+  /** The median colour of base-map-v1's outer edge, for the letterbox. */
+  mapEdge: '#7e804e',
   grassDark: '#78854f',
   leafLight: '#8a9a5c',
   leafMid: '#6e7d48',
@@ -52,22 +82,6 @@ function el<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, 
   return e;
 }
 
-/**
- * A fixed-seed generator. The country is the same on every load and in every
- * colony — it is scenery, not content, and a tree that jumps between frames
- * would read as a bug.
- */
-function rng(seed: number): () => number {
-  let s = seed >>> 0;
-  return () => {
-    s = (s + 0x6d2b79f5) >>> 0;
-    let t = s;
-    t = Math.imul(t ^ (t >>> 15), t | 1);
-    t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-  };
-}
-
 function project(x: number, y: number): [number, number] {
   const { w, h } = layout.tile;
   return [((x - y) * w) / 2, ((x + y) * h) / 2];
@@ -88,55 +102,6 @@ const WALL_R = 6.15;
 /** Where the gate sits on the ring, in radians: due south, facing the viewer. */
 const GATE_AT = Math.PI / 2;
 const GATE_HALF = 0.2;
-
-function path(d: string, fill: string, stroke = 'none', width = 0): SVGPathElement {
-  const p = el('path', { d, fill });
-  if (stroke !== 'none') { p.setAttribute('stroke', stroke); p.setAttribute('stroke-width', String(width)); p.setAttribute('stroke-linejoin', 'round'); }
-  return p;
-}
-
-/** One conifer, drawn small: these are country, not the sprites' own trees. */
-function tree(x: number, y: number, s: number, rand: () => number): SVGGElement {
-  const g = el('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
-  const h = 13 * s;
-  const w = 5.2 * s;
-  g.appendChild(el('rect', { x: -0.9 * s, y: -1.5 * s, width: 1.8 * s, height: 4 * s, fill: PAL.timberDark }));
-  const tiers = rand() > 0.45 ? 3 : 2;
-  for (let i = 0; i < tiers; i++) {
-    const t = i / tiers;
-    const top = -h * (0.42 + 0.58 * t) - 1.5 * s;
-    const half = w * (1 - t * 0.34);
-    g.appendChild(el('polygon', {
-      points: `0,${top.toFixed(1)} ${half.toFixed(1)},${(top + h * 0.42).toFixed(1)} ${(-half).toFixed(1)},${(top + h * 0.42).toFixed(1)}`,
-      fill: i === tiers - 1 ? PAL.leafMid : PAL.leafDark,
-      stroke: PAL.ink,
-      'stroke-width': 0.6,
-      'stroke-linejoin': 'round',
-    }));
-  }
-  return g;
-}
-
-/** A broadleaf, for variety at the wood's edge. */
-function bush(x: number, y: number, s: number): SVGGElement {
-  const g = el('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
-  g.appendChild(el('ellipse', { cx: 0, cy: -3 * s, rx: 5 * s, ry: 3.6 * s, fill: PAL.leafMid, stroke: PAL.ink, 'stroke-width': 0.6 }));
-  g.appendChild(el('ellipse', { cx: -1.6 * s, cy: -4.6 * s, rx: 3 * s, ry: 2.2 * s, fill: PAL.leafLight }));
-  return g;
-}
-
-function rock(x: number, y: number, s: number): SVGGElement {
-  const g = el('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
-  g.appendChild(el('polygon', {
-    points: `${-6 * s},${1.5 * s} ${-3.4 * s},${-4 * s} ${2 * s},${-5 * s} ${6 * s},${0.5 * s} ${1.5 * s},${2.5 * s}`,
-    fill: PAL.stoneMid, stroke: PAL.ink, 'stroke-width': 0.7, 'stroke-linejoin': 'round',
-  }));
-  g.appendChild(el('polygon', {
-    points: `${-3.4 * s},${-4 * s} ${2 * s},${-5 * s} ${1 * s},${-1 * s} ${-2.4 * s},${-0.6 * s}`,
-    fill: PAL.stoneLight,
-  }));
-  return g;
-}
 
 /** A tower on the wall: a drum of stone with a tiled cap. */
 function tower(x: number, y: number): SVGGElement {
@@ -159,84 +124,27 @@ function tower(x: number, y: number): SVGGElement {
  */
 export function createEnvironment(view: { x: number; y: number; w: number; h: number }): SVGGElement {
   const root = el('g', { class: 'env' });
-  const rand = rng(0x52_4f_4d_45); // "ROME"
 
-  // --- the country, filling the frame behind everything
-  root.appendChild(el('rect', { x: view.x, y: view.y, width: view.w, height: view.h, fill: PAL.grass }));
-
-  // a few darker sweeps so the grass is not one flat field
-  for (let i = 0; i < 5; i++) {
-    const cx = view.x + rand() * view.w;
-    const cy = view.y + rand() * view.h;
-    root.appendChild(el('ellipse', { cx: cx.toFixed(1), cy: cy.toFixed(1), rx: (70 + rand() * 90).toFixed(1), ry: (26 + rand() * 30).toFixed(1), fill: PAL.grassDark, opacity: 0.35 }));
-  }
-
-  // --- the river, east and south-east, where the clay banks are
-  const river = el('g', { class: 'river' });
-  const rp = 'M 355,-190 C 320,-120 330,-40 300,30 C 275,92 300,140 288,180';
-  river.appendChild(el('path', { d: rp, fill: 'none', stroke: PAL.waterDeep, 'stroke-width': 54, 'stroke-linecap': 'round' }));
-  river.appendChild(el('path', { d: rp, fill: 'none', stroke: PAL.water, 'stroke-width': 44, 'stroke-linecap': 'round' }));
-  river.appendChild(el('path', { d: 'M 348,-180 C 316,-112 326,-38 296,32 C 272,92 296,138 284,176', fill: 'none', stroke: '#9fb2ba', 'stroke-width': 3, opacity: 0.7 }));
-  root.appendChild(river);
-
-  // --- the wood, north and north-east, behind the forest plots
-  const wood = el('g', { class: 'wood' });
-  // no blob under it: a flat dark ellipse read as a shadow. The mass comes
-  // from the trees themselves, standing close.
-  const woodTrees: [number, number, number][] = [];
-  for (let i = 0; i < 90; i++) {
-    const x = -330 + rand() * 430;
-    const y = -192 + rand() * 74 + Math.abs(x + 90) * 0.04;
-    woodTrees.push([x, y, 0.8 + rand() * 0.75]);
-  }
-  woodTrees.sort((a, b) => a[1] - b[1]);
-  for (const [x, y, s] of woodTrees) wood.appendChild(tree(x, y, s, rand));
-  root.appendChild(wood);
-
-  // --- ploughed strips, south and west, beyond the farms
-  // Strips lie along the same isometric grid as everything else; axis-aligned
-  // rectangles read as labels stuck on the grass.
-  const fields = el('g', { class: 'fields' });
-  for (const [gx0, gy0, wTiles, hTiles] of [[-9.5, 1.5, 4, 2.6], [-7.5, 5.5, 4.5, 2.4], [-1.5, 8.5, 5, 2.6]] as const) {
-    const corners: [number, number][] = [
-      project(gx0, gy0), project(gx0 + wTiles, gy0),
-      project(gx0 + wTiles, gy0 + hTiles), project(gx0, gy0 + hTiles),
-    ];
-    const pts = corners.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
-    fields.appendChild(el('polygon', { points: pts, fill: PAL.grain, opacity: 0.42, stroke: PAL.earthDark, 'stroke-width': 1 }));
-    for (let i = 1; i < 7; i++) {
-      const a = project(gx0 + (wTiles * i) / 7, gy0);
-      const b = project(gx0 + (wTiles * i) / 7, gy0 + hTiles);
-      fields.appendChild(el('line', { x1: a[0].toFixed(1), y1: a[1].toFixed(1), x2: b[0].toFixed(1), y2: b[1].toFixed(1), stroke: PAL.earthDark, 'stroke-width': 1.2, opacity: 0.45 }));
-    }
-  }
-  root.appendChild(fields);
-
-  // --- rock, south-east, where the iron is
-  const rocks = el('g', { class: 'rocks' });
-  for (const [x, y, s] of [[236, 128, 1.9], [268, 148, 1.3], [212, 152, 1.1], [-292, 22, 1.6], [-300, 58, 1.1]] as const) {
-    rocks.appendChild(rock(x, y, s));
-  }
-  root.appendChild(rocks);
-
-  // --- the town ground: one continuous floor inside the wall
-  const groundPts: [number, number][] = [];
-  for (let i = 0; i < 48; i++) {
-    const t = (i / 48) * Math.PI * 2;
-    const [x, y] = ring(WALL_R * 0.995, t);
-    groundPts.push([x, y]);
-  }
-  let gd = `M ${groundPts[0][0].toFixed(1)},${groundPts[0][1].toFixed(1)}`;
-  for (const [x, y] of groundPts.slice(1)) gd += ` L ${x.toFixed(1)},${y.toFixed(1)}`;
-  root.appendChild(el('ellipse', { cx: 0, cy: 14, rx: (RING_X * WALL_R * 1.02).toFixed(1), ry: (RING_Y * WALL_R * 1.02).toFixed(1), fill: PAL.ink, opacity: 0.13 }));
-  root.appendChild(path(gd + ' Z', PAL.earthLight, PAL.ink, 1.2));
-
-  // worn patches, so the floor is not flat colour
-  for (let i = 0; i < 14; i++) {
-    const t = rand() * Math.PI * 2;
-    const r = Math.sqrt(rand()) * WALL_R * 0.88;
-    const [x, y] = ring(r, t);
-    root.appendChild(el('ellipse', { cx: x.toFixed(1), cy: y.toFixed(1), rx: (18 + rand() * 34).toFixed(1), ry: (9 + rand() * 15).toFixed(1), fill: PAL.earthMid, opacity: 0.16 }));
+  // --- the country: one painted image, fitted so the wall lands on its clearing
+  if (BASE_MAP) {
+    // The painting is wider than the frame but not always taller than the
+    // letterbox a tall window leaves, so the frame is flooded first with the
+    // painting's own edge colour. Sampled from its outer 12px, not guessed.
+    root.appendChild(el('rect', { x: view.x - view.w, y: view.y - view.h, width: view.w * 3, height: view.h * 3, fill: PAL.mapEdge }));
+    const k = (RING_Y * WALL_R) / (MAP_FIT.semiH * MAP_FIT.height);
+    root.appendChild(el('image', {
+      href: BASE_MAP,
+      x: (-MAP_FIT.cx * MAP_FIT.width * k).toFixed(1),
+      y: (-MAP_FIT.cy * MAP_FIT.height * k).toFixed(1),
+      width: (MAP_FIT.width * k).toFixed(1),
+      height: (MAP_FIT.height * k).toFixed(1),
+      preserveAspectRatio: 'none',
+      class: 'base-map',
+    }));
+  } else {
+    // No painting: fall back to plain ground rather than a blank frame.
+    root.appendChild(el('rect', { x: view.x, y: view.y, width: view.w, height: view.h, fill: PAL.grass }));
+    root.appendChild(el('ellipse', { cx: 0, cy: 0, rx: (RING_X * WALL_R).toFixed(1), ry: (RING_Y * WALL_R).toFixed(1), fill: PAL.earthLight }));
   }
 
   // --- roads: one way in from the gate, and a ring inside the wall. Spurs to
@@ -330,14 +238,6 @@ export function createEnvironment(view: { x: number; y: number; w: number; h: nu
     gate.appendChild(el('line', { x1: x.toFixed(1), y1: y.toFixed(1), x2: x.toFixed(1), y2: (y - 13).toFixed(1), stroke: PAL.timberMid, 'stroke-width': 1.6 }));
   }
   root.appendChild(gate);
-
-  // --- a handful of trees and bushes inside the wall, for softness
-  const inside = el('g', { class: 'inside-green' });
-  for (const [t, r, s] of [[2.5, 5.3, 0.85], [3.5, 5.4, 0.7], [4.4, 5.2, 0.9], [5.4, 5.3, 0.75], [0.35, 5.35, 0.8]] as const) {
-    const [x, y] = ring(r, t);
-    inside.appendChild(rand() > 0.5 ? tree(x, y, s, rand) : bush(x, y, s));
-  }
-  root.appendChild(inside);
 
   return root;
 }

@@ -33,9 +33,11 @@ header .res span { display: inline-flex; flex-direction: column; align-items: fl
 header .res b { font-weight: normal; font-size: 15px; }
 header .res small { opacity: 0.7; font-size: 11px; }
 header .res .neg b { color: #e0885a; }
-/* The village ground is drawn in SVG now (render/environment.ts); this only
-   has to match the grass at the edges of the frame. */
+/* The country is a painted image now (assets/src/base-map-v1.jpg), larger than
+   the frame, so it fills the letterbox too; this only shows if it fails to
+   load. */
 #village { position: relative; overflow: hidden; background: #8d9a5f; }
+#village .base-map { image-rendering: auto; }
 #village .env { pointer-events: none; }
 #village svg { width: 100%; height: 100%; display: block; }
 #village .slot { cursor: pointer; }

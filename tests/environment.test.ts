@@ -8,14 +8,40 @@ import { layout } from '../src/data';
 const VIEW = { x: -330, y: -190, w: 660, h: 360 };
 
 describe('the colony environment (DESIGN §10)', () => {
-  it('draws the wall, its towers, the gate and the country around them', () => {
+  it('draws the wall, its towers, the gate and the roads over painted country', () => {
     const env = createEnvironment(VIEW);
-    for (const cls of ['wall', 'towers', 'gate', 'roads', 'wood', 'fields', 'rocks', 'river']) {
+    for (const cls of ['wall', 'towers', 'gate', 'roads']) {
       expect(env.querySelector('.' + cls), cls).not.toBeNull();
     }
     expect(env.querySelectorAll('.towers > g').length).toBeGreaterThanOrEqual(6);
-    // a wood is trees standing close, not one dark blob
-    expect(env.querySelectorAll('.wood > g').length).toBeGreaterThan(40);
+    // The country is one painted image now; the grass, river, wood, fields and
+    // rocks that used to be drawn are in it.
+    const map = env.querySelector('image.base-map');
+    expect(map).not.toBeNull();
+    for (const cls of ['wood', 'fields', 'rocks', 'river']) {
+      expect(env.querySelector('.' + cls), `${cls} should be painted, not drawn`).toBeNull();
+    }
+    // it must sit behind everything but the letterbox flood
+    expect(env.firstElementChild!.tagName.toLowerCase()).toBe('rect');
+    expect(env.children[1]).toBe(map);
+  });
+
+  it('lands the painting so the wall sits on its clearing', () => {
+    const env = createEnvironment(VIEW);
+    const map = env.querySelector('image.base-map')!;
+    const x = Number(map.getAttribute('x'));
+    const y = Number(map.getAttribute('y'));
+    const w = Number(map.getAttribute('width'));
+    const h = Number(map.getAttribute('height'));
+    // The clearing's centre must land on the world origin, where the wall is
+    // centred — within a viewBox unit.
+    expect(x + w * 0.470).toBeCloseTo(0, 0);
+    expect(y + h * 0.525).toBeCloseTo(0, 0);
+    // and the clearing's half-height must equal the wall's
+    const RY = Math.SQRT2 * (layout.tile.h / 2) * 6.15;
+    expect(h * 0.325).toBeCloseTo(RY, 0);
+    // the painting is larger than the frame, so the country is cropped, not tiled
+    expect(w).toBeGreaterThan(VIEW.w);
   });
 
   it('encloses every plot inside the wall', () => {
@@ -33,11 +59,8 @@ describe('the colony environment (DESIGN §10)', () => {
     expect(env).toBeTruthy();
   });
 
-  it('stays inside the frame it is given', () => {
+  it('never emits a coordinate the renderer will silently drop', () => {
     const env = createEnvironment(VIEW);
-    const ground = env.querySelector('rect')!;
-    expect(Number(ground.getAttribute('width'))).toBe(VIEW.w);
-    expect(Number(ground.getAttribute('height'))).toBe(VIEW.h);
     // nothing may carry a NaN coordinate: one bad number silently drops a shape
     for (const node of Array.from(env.querySelectorAll('*'))) {
       for (const attr of Array.from(node.attributes)) {

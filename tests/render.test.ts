@@ -34,7 +34,8 @@ describe('render', () => {
     const view = createVillageView(() => {});
     view.update(g.state, 0, null);
     expect(view.root.querySelectorAll('.slot')).toHaveLength(layout.slots.length);
-    const images = view.root.querySelectorAll('image');
+    // The painted country is an <image> as well, and is not anchored on a plate.
+    const images = [...view.root.querySelectorAll('image')].filter((i) => !i.classList.contains('base-map'));
     for (const img of images) {
       const ax = Number(img.getAttribute('data-ax'));
       const ay = Number(img.getAttribute('data-ay'));

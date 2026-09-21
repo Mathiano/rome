@@ -57,7 +57,16 @@ To generate (edit freely before running):
 
 ## Base map — the country the colony stands in
 
-**Status: 🟡 proposed, not yet generated.** Approved as a single experiment
+**Status: ✅ v1 generated and wired in, 2026-09-21.** `base-map-v1.jpg`,
+3168×1344. The clearing it came back with is 2.42:1 against the wall's exact
+2:1, so the fit is uniform and matches the clearing's *height*: painted earth
+spilling outside the wall reads as cleared approach, where grass inside the
+wall would read as a bug. The river and most of the fields fall outside the
+frame, as expected for v1. Findings are in the session capsule; the short
+version is that the painted country is a clear win and the drawn **wall** is
+now the thing that looks wrong, ahead of the buildings.
+
+Original brief: Approved as a single experiment
 (2026-09-20): one painted terrain asset behind the drawn environment, to judge
 painted-versus-drawn on real evidence before anything is decided about the
 building sprites. Claude cannot generate this; it has to be produced and
