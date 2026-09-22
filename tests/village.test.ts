@@ -1,13 +1,14 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { createInitialState } from '../src/state/store';
+import { createInitialState, deserialise, serialise } from '../src/state/store';
 import { accrue, denariiIncomePerHour, netPerHour } from '../src/village/economy';
 import { capacity, populationCap } from '../src/village/storage';
-import { checkBuild, startBuild, rushPrice, rush, completeFinished } from '../src/village/construction';
+import { checkBuild, startBuild, rushPrice, rush, completeFinished, eligibleBuildings, slotById } from '../src/village/construction';
 import { tick } from '../src/village/clock';
 import { building, config } from '../src/data';
+import { defenceStrength } from '../src/combat/raids';
 import { Game } from '../src/game';
-import { remainingText, renderPanel } from '../src/render/panel';
+import { bindPanel, remainingText, renderPanel, type PanelHandlers } from '../src/render/panel';
 import { createVillageView } from '../src/render/village';
 
 const H = 3_600_000;
@@ -153,3 +154,75 @@ describe('time left on a job (DESIGN §3.1, amended 2026-09-20)', () => {
     expect(label).toMatch(/left$/);
   });
 });
+
+/**
+ * The wall arrived after saves already existed, and it is the first thing
+ * pinned to a slot that a save can predate. A migration that forgot
+ * `fixedBuilding` would have left it as an unnamed empty plot that nothing
+ * could ever be built on, since only the pin makes it eligible.
+ */
+describe('a save older than the wall', () => {
+  /** A save as it stood before the perimeter slot existed. */
+  function saveWithoutTheWall(): string {
+    const raw = JSON.parse(serialise(createInitialState(0, 1))) as { slots: { id: string }[] };
+    raw.slots = raw.slots.filter((s) => s.id !== 'w1');
+    expect(raw.slots.some((s) => s.id === 'w1')).toBe(false);
+    return JSON.stringify(raw);
+  }
+
+  it('loads with the wall on its perimeter slot, not as an empty plot', () => {
+    const back = deserialise(saveWithoutTheWall());
+    const w1 = back.slots.find((s) => s.id === 'w1');
+    expect(w1, 'the perimeter slot is added to an older save').toBeTruthy();
+    expect(w1!.building, 'and it is the wall, not empty ground').toBe('wall');
+    expect(w1!.ring).toBe('perimeter');
+    expect(w1!.tier, 'unraised: the colony keeps its ditch and bank').toBe(0);
+  });
+
+  it('names the wall and offers it for building', () => {
+    const back = deserialise(saveWithoutTheWall());
+    expect(eligibleBuildings(back, slotById(back, 'w1'))).toEqual(['wall']);
+    const check = checkBuild(back, 'w1', 'wall');
+    expect(check.toTier).toBe(1);
+    expect(check.reason ?? 'ok').not.toBe('Cannot build that here');
+  });
+
+  it('adds no defence of its own until it is raised', () => {
+    const back = deserialise(saveWithoutTheWall());
+    const before = defenceStrength(back);
+    slotById(back, 'w1').tier = 1;
+    expect(defenceStrength(back)).toBeGreaterThan(before);
+  });
+});
+
+/** The wall is reachable from the panel: it stands at the gate, not on a plot. */
+describe('the colony index', () => {
+  it('lists every pinned building, raised or not, and selects it', () => {
+    const g = new Game(createInitialState(0, 1));
+    const html = renderPanel(g, 'village', null, 1);
+    for (const id of ['forum', 'castellum', 'wall']) {
+      expect(html, id).toContain(building(id).name);
+    }
+    expect(html, 'the wall is a button that selects its slot').toContain('data-select-slot="w1"');
+    expect(html).toContain('not yet raised');
+  });
+
+  it('hands the slot id back when one is clicked', () => {
+    const panel = document.createElement('div');
+    const picked: string[] = [];
+    bindPanel(panel, { ...noHandlers(), onSelectSlot: (id) => picked.push(id) });
+    panel.innerHTML = renderPanel(new Game(createInitialState(0, 1)), 'village', null, 1);
+    panel.querySelector<HTMLButtonElement>('[data-select-slot="w1"]')!.click();
+    expect(picked).toEqual(['w1']);
+  });
+});
+
+/** Every handler a no-op, so a test can override only the one it is watching. */
+function noHandlers(): PanelHandlers {
+  return {
+    onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
+    onSelectSlot: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
+    onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
+    onExport: () => {}, onImport: () => {}, onReset: () => {},
+  };
+}

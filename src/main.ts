@@ -155,6 +155,7 @@ function render(force = false): void {
 
 bindPanel(panelEl, {
   onTab: (t) => { tab = t; render(true); },
+  onSelectSlot: (id) => { selected = id; tab = 'village'; render(true); },
   onChoice: (id) => guard(() => game.choose(id, dev.now())),
   onScout: (hex) => guard(() => game.scout(hex, dev.now())),
   onBuild: (slot, b) => guard(() => game.build(slot, b, dev.now())),

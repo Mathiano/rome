@@ -44,10 +44,13 @@ header .res .neg b { color: #e0885a; }
 #village .slot .tile { fill: rgba(132,104,89,0.14); stroke: rgba(30,7,2,0.5); stroke-width: 1.2; stroke-dasharray: 6 5; }
 #village .slot.built .tile { fill: none; stroke: none; }
 /* The wall has no plate and no sprite of its own: its circuit is drawn by
-   src/render/environment.ts. Its 'tile' is only the gate's span, so it is a
-   faint outline to aim at rather than a plot to fill. */
-#village .slot.ring-perimeter .tile { fill: rgba(132,104,89,0.10); stroke: rgba(30,7,2,0.38); stroke-width: 1; stroke-dasharray: 4 6; }
-#village .slot.ring-perimeter.built .tile { fill: rgba(0,0,0,0); stroke: none; }
+   src/render/environment.ts, and with none raised there is nothing to mark.
+   Its 'tile' is only the gate's span — unpainted at rest, so the colony is
+   not spoilt by a box standing in the fields, and lit by the :hover and
+   .selected rules below. `pointer-events: all` is inherited from .slot and
+   catches the pointer regardless of fill, so an unpainted tile is still a
+   target. Kept above those rules: they are equally specific and win on order. */
+#village .slot.ring-perimeter .tile { fill: rgba(0,0,0,0); stroke: none; stroke-dasharray: none; }
 /* Selection was a hard gold rule around a nearly invisible plot; the two
    states now differ by weight rather than by shouting. */
 #village .slot.selected .tile, #village .slot.built.selected .tile { fill: rgba(201,162,74,0.22); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: none; }
@@ -248,3 +251,12 @@ header .res .neg b { color: #e0885a; }
 /* The library (DESIGN §4.6). */
 #panel .known { margin: 4px 0 0 0; padding-left: 18px; }
 #panel .known li { margin: 2px 0; }
+
+/* The colony index: a list that selects, so nothing has to be hunted for on
+   the map. The wall is the reason it exists — it stands at the gate, not on a
+   plot in a ring. */
+#panel ul.index { list-style: none; margin: 0.4rem 0; padding: 0; }
+#panel ul.index li { padding: 0.15rem 0; }
+#panel button.link { background: none; border: none; padding: 0; font: inherit;
+  color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+#panel button.link:hover { color: var(--ink); }

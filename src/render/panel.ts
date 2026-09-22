@@ -42,6 +42,7 @@ export interface PanelHandlers {
   onChoice(id: string): void;
   onScout(hex: string): void;
   onBuild(slotId: string, buildingId: string): void;
+  onSelectSlot(slotId: string): void;
   onRush(slotId: string): void;
   onPolitical(a: Political): void;
   onEnvoy(tribeId: string, envoyId: string): void;
@@ -159,7 +160,7 @@ function renderVillage(s: GameState, selected: string | null, now: number): stri
   const a = s.constructions.filter((c) => c.kind === 'building').length;
   const f = s.constructions.filter((c) => c.kind === 'field').length;
   let out = `<h2>Village</h2><p class="muted">One building and one field may be under construction at a time. Building ${a}/${config.concurrency.building}, field ${f}/${config.concurrency.field}. Cellars hide ${hiddenPerResource(s)} of each resource from raiders.</p>`;
-  if (!selected) return out + `<p>Select a plot on the map.</p>`;
+  if (!selected) return out + colonyIndex(s);
   const slot = slotById(s, selected);
   const c = s.constructions.find((x) => x.slotId === slot.id);
   out += `<h3>${slot.building ? esc(building(slot.building).name) : slot.site ? esc(slot.site.replace('_', ' ')) : 'Empty plot'} ${slot.tier ? ROMAN[slot.tier] : ''}</h3>`;
@@ -187,6 +188,32 @@ function renderVillage(s: GameState, selected: string | null, now: number): stri
     out += `</div>`;
   }
   return out;
+}
+
+/**
+ * Everything the colony has, as a list that selects it.
+ *
+ * The wall is the reason this exists: it stands on the perimeter at the gate
+ * rather than on a plot in a ring, so "click the thing on the map" was a hunt.
+ * Anything pinned to a slot is listed whether or not it has been raised yet,
+ * and the empty plots are counted rather than named.
+ */
+function colonyIndex(s: GameState): string {
+  const rows = s.slots
+    .filter((slot) => slot.building)
+    .map((slot) => {
+      const def = building(slot.building!);
+      const work = s.constructions.find((c) => c.slotId === slot.id);
+      const state = work
+        ? `<span class="muted">tier ${work.toTier} under way</span>`
+        : slot.tier
+          ? `<span class="muted">${ROMAN[slot.tier]}</span>`
+          : `<span class="muted">not yet raised</span>`;
+      return `<li><button class="link" data-select-slot="${slot.id}">${esc(def.name)}</button> ${state}</li>`;
+    });
+  const free = s.slots.filter((slot) => !slot.building).length;
+  return `<h3>In the colony</h3><ul class="index">${rows.join('')}</ul>`
+    + `<p class="muted">${free ? `${free} plot${free === 1 ? '' : 's'} still open — ` : ''}select one on the map.</p>`;
 }
 
 function charOption(s: GameState, id: string, stat: keyof typeof s.characters[string]['stats'], postId: string): string {
@@ -694,6 +721,7 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     const d = t.dataset;
     if (d.tab) return h.onTab(d.tab as Tab);
     if (d.build && d.building) return h.onBuild(d.build, d.building);
+    if (d.selectSlot) return h.onSelectSlot(d.selectSlot);
     if (d.rush) return h.onRush(d.rush);
     if (d.research) return h.onResearch(d.research);
     if (d.rushResearch) return h.onRushResearch(d.rushResearch);
