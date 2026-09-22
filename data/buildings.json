@@ -54,7 +54,7 @@
       "name": "Castellum",
       "ring": "centre",
       "kind": "building",
-      "role": "Garrison and walls. Sets defence strength and the militia pool bonus.",
+      "role": "Garrison. Sets the militia pool and the bodyguards a house may keep.",
       "tiers": [
         {
           "cost": {
@@ -90,6 +90,51 @@
           "requiresForumTier": 2,
           "effects": {
             "militiaBonus": 35
+          }
+        }
+      ]
+    },
+    {
+      "id": "wall",
+      "name": "Wall",
+      "ring": "perimeter",
+      "kind": "building",
+      "role": "The circuit around the colony. Raising it is what a raid has to get through before it reaches the stores.",
+      "_tuning": "DESIGN §4.4 — costs, buildSeconds and defence are first-pass defaults (2026-09-22) and want a balance pass. Defence carries over the old raid.wallStrengthPerCastellumTier of 12 per tier, so the walls term of §8.2 is unchanged in size; what changed is which building supplies it.",
+      "tiers": [
+        {
+          "cost": {
+            "wood": 120,
+            "clay": 60
+          },
+          "buildSeconds": 420,
+          "requiresForumTier": 1,
+          "effects": {
+            "defence": 12
+          }
+        },
+        {
+          "cost": {
+            "wood": 260,
+            "clay": 340,
+            "iron": 120
+          },
+          "buildSeconds": 3600,
+          "requiresForumTier": 1,
+          "effects": {
+            "defence": 24
+          }
+        },
+        {
+          "cost": {
+            "wood": 600,
+            "clay": 900,
+            "iron": 400
+          },
+          "buildSeconds": 13500,
+          "requiresForumTier": 2,
+          "effects": {
+            "defence": 36
           }
         }
       ]

@@ -14,7 +14,7 @@ const H = 3_600_000;
 const SEEDS = 12;
 const ROUNDS = 40;
 
-const WANTED = [['c2', 'castellum'], ['o5', 'iron_mine'], ['i1', 'warehouse']] as const;
+const WANTED = [['w1', 'wall'], ['c2', 'castellum'], ['o5', 'iron_mine'], ['i1', 'warehouse']] as const;
 
 /** Raise the first affordable thing on the list. */
 function buildSomething(g: Game, t: number) {
@@ -64,7 +64,7 @@ function colony(seed: number, policy: { build?: boolean; houses?: boolean }) {
 
 /** Convenes the council and nothing else. */
 const idleColony = (seed: number) => colony(seed, {});
-/** Raises walls, ignores the houses — and so loses the office and is obstructed. */
+/** Raises the wall and the castellum, ignores the houses — and so loses the office and is obstructed. */
 const buildingColony = (seed: number) => colony(seed, { build: true }).g;
 /** Keeps the houses in office, never raises a wall. */
 const politicColony = (seed: number) => colony(seed, { houses: true }).g;
@@ -80,11 +80,14 @@ const repelRate = (g: Game) => g.state.stats.raidsSuffered
  * colony was raided by round 4 and not one raid was ever thrown back. If a
  * future tuning pass breaks the shape below, that is worth knowing.
  *
- * The shape, measured over 12 seeds × 40 rounds: idle repels 3%, walls alone
- * 42%, politics alone 16%, both 89%. Walls are the lever; holding the office is
- * the multiplier, because a colony that loses it is obstructed by its rivals.
+ * The shape, re-measured over 12 seeds × 40 rounds once the wall became a
+ * building of its own (2026-09-22): idle repels 3%, walls alone 34%, politics
+ * alone 16%, both 86%. Walls are the lever; holding the office is the
+ * multiplier, because a colony that loses it is obstructed by its rivals. The
+ * walls arm fell from 42% because the circuit and the castellum now compete
+ * for the same one-building-at-a-time slot.
  */
-describe('balance: raids answer to the castellum', () => {
+describe('balance: raids answer to the wall', () => {
   it('nobody is raided before they could have built anything', () => {
     for (let seed = 1; seed <= SEEDS; seed++) {
       const { firstRaid } = idleColony(seed);
@@ -136,15 +139,15 @@ describe('balance: raids answer to the castellum', () => {
       idleRepelled += idle.state.stats.raidsRepelled;
       builtRepelled += built.state.stats.raidsRepelled;
       // An idle colony sits at a flat 17 on every seed: the ditch and bank plus
-      // the militia it grows anyway. One castellum tier doubles that exactly;
-      // the seeds whose economy reached tier 2 more than triple it.
+      // the militia it grows anyway. One wall tier doubles that; the seeds
+      // whose economy reached tier 2 more than triple it.
       expect(defenceStrength(built.state), `seed ${seed}`)
         .toBeGreaterThanOrEqual(defenceStrength(idle.state) * 2);
     }
     // Goods lost in absolute terms flatters a colony too poor to own anything.
     // The honest comparison is the share of raids thrown back. Walls without
     // politics cost you the office and the rivals then obstruct you, so this
-    // arm sits well below competentColony's 89% — but far above idle's 3%.
+    // arm sits well below competentColony's 86% — but far above idle's 3%.
     const idleRate = idleRepelled / idleRaids;
     const builtRate = builtRepelled / builtRaids;
     expect(builtRate, `walls ${builtRate.toFixed(2)} vs idle ${idleRate.toFixed(2)}`)

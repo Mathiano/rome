@@ -13,7 +13,8 @@ import researchJson from '../data/research.json';
 
 export type ResourceId = 'wood' | 'clay' | 'iron' | 'grain' | 'denarii';
 export type StatId = 'authority' | 'discipline' | 'craft' | 'connections' | 'piety';
-export type Ring = 'centre' | 'inner' | 'outer';
+/** `perimeter` is the wall's alone: one slot, in no ring, at the gate (DESIGN §4.4, §4.5). */
+export type Ring = 'centre' | 'inner' | 'outer' | 'perimeter';
 export type Cost = Partial<Record<ResourceId, number>>;
 
 export interface BuildingTier {

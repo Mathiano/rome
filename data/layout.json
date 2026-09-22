@@ -1,5 +1,5 @@
 {
-  "_comment": "Fixed slots (DESIGN \u00a74.5). Grid coordinates are isometric tile units; render converts to screen. Centre slots are pinned to a building. Inner slots take any inner-ring building. Outer slots are tied to a site.",
+  "_comment": "Fixed slots (DESIGN §4.5). Grid coordinates are isometric tile units; render converts to screen. Centre slots are pinned to a building. The perimeter slot is the wall: it stands in no ring, and its coordinates put it at the gate. Inner slots take any inner-ring building. Outer slots are tied to a site.",
   "tile": {
     "w": 64,
     "h": 32
@@ -122,6 +122,13 @@
       "x": -4,
       "y": 3,
       "site": "farmland"
+    },
+    {
+      "id": "w1",
+      "ring": "perimeter",
+      "x": 4.36,
+      "y": 4.36,
+      "fixedBuilding": "wall"
     }
   ],
   "startBuilt": [

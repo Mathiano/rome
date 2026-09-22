@@ -195,7 +195,7 @@ export function migrate(state: GameState): GameState {
   // Slots added to the layout after a save was made appear as empty ground.
   for (const def of layout.slots) {
     if (state.slots.some((s) => s.id === def.id)) continue;
-    state.slots.push({ id: def.id, ring: def.ring, site: def.site, building: null, tier: 0 });
+    state.slots.push({ id: def.id, ring: def.ring, site: def.site, building: def.fixedBuilding ?? null, tier: 0 });
   }
   if (state.challenge === undefined) state.challenge = null;
   if (state.lastChallengeRound === undefined) state.lastChallengeRound = -999;

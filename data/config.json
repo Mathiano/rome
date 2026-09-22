@@ -140,7 +140,6 @@
     "leakedStrengthMultiplier": 1.5,
     "leakedChanceBonus": 0.15,
     "maxLossFraction": 0.5,
-    "wallStrengthPerCastellumTier": 12,
     "garrisonDisciplineWeight": 1.5,
     "militiaWeight": 1,
     "minRoundsBetweenRaids": 2,

@@ -148,9 +148,9 @@ function shade(hex: string, f: number): string {
   return '#' + ch.map((c) => c.toString(16).padStart(2, '0')).join('');
 }
 
-/** What the wall is made of at each castellum tier (DESIGN §4.4). */
+/** What the circuit is made of at each tier of the wall building (DESIGN §4.4). */
 const WALL_TIERS = [
-  // 0 — no castellum: the ditch and bank a colonia throws up on day one
+  // 0 — no wall raised yet: the ditch and bank a colonia throws up on day one
   { h: 7, foot: '#6b5a44', face: '#8a7357', top: '#a68a68', merlons: false, towers: 0, stakes: false, courses: 0 },
   // 1 — a timber palisade on that bank: posts, each with a shadow side
   { h: 12, foot: '#4a3b2c', face: '#6d4d3d', top: '#9b7c68', merlons: false, towers: 3, stakes: true, courses: 0 },
@@ -161,6 +161,19 @@ const WALL_TIERS = [
 ];
 
 export interface ScenePiece { depth: number; g: SVGGElement }
+
+/**
+ * The gate's span, for the perimeter slot's hit area (`layout.json` w1).
+ * Derived from the same ring the gate is drawn on, so the two cannot drift:
+ * the leaves run from `GATE_AT - GATE_HALF` to `GATE_AT + GATE_HALF`, and the
+ * finished circuit's gate stands `WALL_TIERS[3].h * 0.8` high. It is the gate's
+ * own span and no more: any taller and the marker reads as a plot standing in
+ * the fields rather than as the way into the colony.
+ */
+export const GATE_HIT = {
+  w: 2 * Math.abs(ring(WALL_R, GATE_AT + GATE_HALF)[0]),
+  h: WALL_TIERS[WALL_TIERS.length - 1].h * 0.8,
+};
 
 /**
  * The flat ground: the painting, the roads and the square.
@@ -249,8 +262,9 @@ export function createGround(view: { x: number; y: number; w: number; h: number 
  * front. Each arc carries its own depth and the village merges them into the
  * same sort as the plots.
  *
- * `tier` is the castellum's: the wall IS the castellum (data/buildings.json
- * calls it "garrison and walls"), and it was decoration unconnected to it.
+ * `tier` is the wall building's own (DESIGN §4.4, ✅ 2026-09-22). The wall is
+ * not the castellum: the castellum garrisons the colony from the centre, and
+ * the circuit is raised separately, on the perimeter slot at the gate.
  */
 export function createWall(tier: number): ScenePiece[] {
   const T = WALL_TIERS[Math.max(0, Math.min(WALL_TIERS.length - 1, tier))];

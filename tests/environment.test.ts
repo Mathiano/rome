@@ -41,18 +41,25 @@ describe('the colony environment (DESIGN §10)', () => {
     expect(w).toBeGreaterThan(VIEW.w);
   });
 
-  it('encloses every plot inside the wall', () => {
+  it('encloses every plot inside the wall, and stands the wall itself on it', () => {
     const env = createGround(VIEW);
     // The wall is an isometric circle, so on screen it is an axis-aligned
     // ellipse; every plot centre must sit inside it or the town has a building
     // standing in the fields.
     const RX = Math.SQRT2 * (layout.tile.w / 2) * 6.15;
     const RY = Math.SQRT2 * (layout.tile.h / 2) * 6.15;
-    for (const s of layout.slots) {
+    const reach = (s: { x: number; y: number }) => {
       const { sx, sy } = project(s.x, s.y);
-      const d = (sx * sx) / (RX * RX) + (sy * sy) / (RY * RY);
-      expect(d, `${s.id} is outside the wall`).toBeLessThan(1);
+      return (sx * sx) / (RX * RX) + (sy * sy) / (RY * RY);
+    };
+    for (const s of layout.slots.filter((s) => s.ring !== 'perimeter')) {
+      expect(reach(s), `${s.id} is outside the wall`).toBeLessThan(1);
     }
+    // The wall's own slot is the exception: it is not a plot in a ring, it is
+    // the gate, and so it sits on the ring itself (DESIGN §4.4, §4.5).
+    const perimeter = layout.slots.filter((s) => s.ring === 'perimeter');
+    expect(perimeter).toHaveLength(1);
+    expect(reach(perimeter[0]), 'the wall stands on its own circuit').toBeCloseTo(1, 1);
     expect(env).toBeTruthy();
   });
 
@@ -101,10 +108,10 @@ describe('the village answers the pointer without waiting for a tick', () => {
   });
 });
 
-describe('the wall is the castellum, and it sorts with the buildings', () => {
+describe('the wall is its own building, and it sorts with the others', () => {
   it('rises through its tiers, from a bank to a crenellated circuit', () => {
     const towers = (t: number) => createWall(t).filter((p) => p.g.classList.contains('tower')).length;
-    expect(towers(0), 'no castellum, no towers').toBe(0);
+    expect(towers(0), 'no wall raised, no towers').toBe(0);
     expect(towers(1)).toBeGreaterThan(0);
     expect(towers(2)).toBeGreaterThan(towers(1));
     expect(towers(3)).toBeGreaterThan(towers(2));
@@ -119,19 +126,23 @@ describe('the wall is the castellum, and it sorts with the buildings', () => {
 
   it('spans the plots in depth, so some of it is in front and some behind', () => {
     const depths = createWall(3).map((p) => p.depth);
-    const plotDepths = layout.slots.map((s) => s.x + s.y);
+    const plotDepths = layout.slots.filter((s) => s.ring !== 'perimeter').map((s) => s.x + s.y);
     // the ring reaches past the plots at both ends, or it could never occlude
     expect(Math.min(...depths)).toBeLessThan(Math.min(...plotDepths));
     expect(Math.max(...depths)).toBeGreaterThan(Math.max(...plotDepths));
-    // and the gate is the nearest thing of all
+    // and the gate is the nearest piece of the circuit
     expect(Math.max(...depths)).toBeCloseTo(wallDepthAt(Math.PI / 2) + 0.01, 5);
+    // The wall's own slot is nearer still, by a whisker: it carries the hit
+    // area the player clicks, and that has to paint over the gate it belongs to.
+    const w1 = layout.slots.find((s) => s.ring === 'perimeter')!;
+    expect(w1.x + w1.y).toBeGreaterThan(Math.max(...depths));
+    expect(w1.x + w1.y - Math.max(...depths)).toBeLessThan(0.1);
   });
 
   it('paints wall pieces in depth order with the plots', () => {
     const view = createVillageView(() => {});
     const state = createInitialState(0, 4);
-    const c2 = state.slots.find((s) => s.id === 'c2')!;
-    c2.building = 'castellum'; c2.tier = 3;
+    state.slots.find((s) => s.id === 'w1')!.tier = 3;
     view.update(state, 0, null);
     const world = view.root.querySelector('g')!;
     const kids = Array.from(world.children);
@@ -148,16 +159,22 @@ describe('the wall is the castellum, and it sorts with the buildings', () => {
     expect(firstSeg).toBeLessThan(farPlot);
   });
 
-  it('rebuilds the wall only when the castellum tier moves', () => {
+  it('rebuilds the circuit when the wall tier moves, and not for the castellum', () => {
     const view = createVillageView(() => {});
     const state = createInitialState(0, 4);
-    const c2 = state.slots.find((s) => s.id === 'c2')!;
-    c2.building = 'castellum'; c2.tier = 1;
+    const w1 = state.slots.find((s) => s.id === 'w1')!;
+    expect(w1.building, 'the perimeter slot is pinned to the wall').toBe('wall');
+    w1.tier = 1;
     view.update(state, 0, null);
     const before = view.root.querySelectorAll('.tower').length;
     view.update(state, 1000, null);
     expect(view.root.querySelectorAll('.tower').length, 'no churn on an unchanged tier').toBe(before);
-    c2.tier = 3;
+    // the castellum is a separate building now: raising it leaves the circuit alone
+    const c2 = state.slots.find((s) => s.id === 'c2')!;
+    c2.building = 'castellum'; c2.tier = 3;
+    view.update(state, 1500, null);
+    expect(view.root.querySelectorAll('.tower').length, 'the castellum is not the wall').toBe(before);
+    w1.tier = 3;
     view.update(state, 2000, null);
     expect(view.root.querySelectorAll('.tower').length).toBeGreaterThan(before);
   });

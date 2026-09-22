@@ -100,14 +100,15 @@ One number. Needs housing and grain upkeep. Grows with buildings. More populatio
 - Construction is timed. Finishing early costs denarii per Pillar 3.
 - **Concurrency:** one building and one resource field may be under construction at the same time — Travian's actual Roman-faction rule ✅. No build queue beyond that.
 - Resource buildings sit on their site: the clay works on the clay bank, the mine on the iron seam.
-- **The castellum is the wall.** ✅ 2026-09-22. The circuit drawn around the colony is not scenery and is not a building of its own: it is the castellum's tier made visible, which is what "walls anchor" in the table below has always meant. No castellum is the ditch and bank a colonia throws up on arrival; tier 1 is a timber palisade on it; tier 2 is coursed stone with towers; tier 3 is the full crenellated circuit, and flies the colony's standard over the gate as its §10 tier-3 animation. A separate wall building would be an addition to this list, which is ✅ confirmed, so it is Mathias's call and not an implementation choice.
+- **The wall is a building of its own, not the castellum.** ✅ 2026-09-22, decided by Mathias. They are two things. The castellum stays in the centre and garrisons the colony — militia pool, bodyguards — and its tier drives only its own sprite. The **Wall** is the circuit, and it is raised separately: it stands on a **perimeter slot**, which belongs to no ring and sits at the gate, and it counts as a building for the concurrency rule above, so the colony chooses between raising its walls and raising anything else. Its tier is the *walls* term of §8.2 defence strength. The circuit at each tier: **none** is the ditch and bank a colonia throws up on arrival; **I** a timber palisade on that bank; **II** coursed stone with towers; **III** the full crenellated circuit, which flies the colony's standard over the gate as its §10 tier-3 animation. Adding it to the list below needed this decision because that list is ✅ confirmed.
 
 **v0 building list ✅** — confirmed 2026-09-16; edit freely as the doc evolves:
 
 | Building | Ring | Role |
 |---|---|---|
 | Forum (with basilica) | centre | seat of the council; its tier is the colony's tier |
-| Castellum | centre | garrison, bodyguard pool, walls anchor, defence strength |
+| Castellum | centre | garrison, militia pool, bodyguard pool |
+| Wall | perimeter | the circuit; its tier is the walls term of §8.2 defence strength |
 | Warehouse | inner | storage |
 | Granary | inner | storage |
 | Cellars | inner | hidden storage |
@@ -120,7 +121,7 @@ One number. Needs housing and grain upkeep. Grows with buildings. More populatio
 | Iron mine | outer | iron site |
 | Farm | outer | grain site |
 
-Library (research, §4.6). ✅ Built 2026-09-20: inner ring, three tiers, and an eighth inner plot added to §4.5's layout to stand on. Its tier is the gate on how far the tree opens, and it reads faster at each tier.
+Wall ✅ added 2026-09-22 (see the rule above). Library (research, §4.6). ✅ Built 2026-09-20: inner ring, three tiers, and an eighth inner plot added to §4.5's layout to stand on. Its tier is the gate on how far the tree opens, and it reads faster at each tier.
 
 ### 4.5 Layout ✅
 
@@ -129,6 +130,8 @@ Three fixed rings, expanding outward as the colony grows:
 1. **Centre:** Forum and Castellum, side by side.
 2. **Inner ring:** buildings. Fixed slots; the player chooses which building fills which slot.
 3. **Outer ring:** fields, mines, lumber. Fixed slots tied to resource sites.
+
+Outside the three rings there is one **perimeter slot**, `w1`, pinned to the Wall ✅ 2026-09-22. It is not a plot: it carries no ground plate, it stands on the circuit itself at the gate, and it exists so the wall can be selected and raised like any other building.
 
 This is Travian's fixed-slot model with player-chosen placement, and it preserves the concentric-rings idea from the earlier castle-builder design.
 
@@ -197,7 +200,7 @@ One pool of men-at-arms, sized by population and the Castellum tier, with three 
 
 ### 8.2 Raids ✅
 
-Defence strength (walls + home militia + the garrison post-holder's discipline) versus raid strength → a percentage of stored goods lost. Cellars are exempt. Raids on a distant site follow the same formula against that site's garrison.
+Defence strength (walls — the Wall building's tier, §4.4 — plus home militia and the garrison post-holder's discipline) versus raid strength → a percentage of stored goods lost. Cellars are exempt. Raids on a distant site follow the same formula against that site's garrison.
 
 ### 8.3 Offence — banked ✅
 
@@ -352,3 +355,4 @@ v0.2.1 — 2026-09-20 — first playtest. §10: the village draws a walled colon
 v0.2.2 — 2026-09-20 — §3.1 amended: a job under way states the time left in rounded words. The no-countdown rule stood from 2026-09-15 until the first playtest overturned it.
 v0.2.3 — 2026-09-22 — §10: the country is a painted image (`assets/src/base-map-v1.jpg`) with the roads, square and wall drawn over it. The wall now carries depth and sorts with the buildings — it used to be painted behind them, so a building on the south edge was drawn through it — and it shows the castellum's tier, since §4.4 already calls that "garrison and walls": a bank with no castellum, then a palisade, stone, and a crenellated circuit.
 v0.2.4 — 2026-09-22 — §4.4: the castellum is the wall, recorded as a design rule. §10: the wall is shaded by each arc's facing against the top-left light, coursed at tiers II and III, posted at tier I, and the finished circuit flies a standard over the gate.
+v0.2.5 — 2026-09-22 — §4.4 **reverses v0.2.4**: the wall is *not* the castellum. Mathias's decision. Wall is a new ✅ building on its own perimeter slot (§4.5 `w1`, at the gate), counting for construction concurrency, and its tier is the walls term of §8.2. The castellum keeps the garrison, the militia pool and the bodyguards, and its tier now drives only its own sprite. Costs, times and per-tier defence are first-pass defaults in `data/buildings.json`, flagged there for a balance pass; the old `raid.wallStrengthPerCastellumTier` is gone, since the wall carries its defence as an effect like every other building.

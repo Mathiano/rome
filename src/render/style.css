@@ -43,6 +43,11 @@ header .res .neg b { color: #e0885a; }
 #village .slot { cursor: pointer; }
 #village .slot .tile { fill: rgba(132,104,89,0.14); stroke: rgba(30,7,2,0.5); stroke-width: 1.2; stroke-dasharray: 6 5; }
 #village .slot.built .tile { fill: none; stroke: none; }
+/* The wall has no plate and no sprite of its own: its circuit is drawn by
+   src/render/environment.ts. Its 'tile' is only the gate's span, so it is a
+   faint outline to aim at rather than a plot to fill. */
+#village .slot.ring-perimeter .tile { fill: rgba(132,104,89,0.10); stroke: rgba(30,7,2,0.38); stroke-width: 1; stroke-dasharray: 4 6; }
+#village .slot.ring-perimeter.built .tile { fill: rgba(0,0,0,0); stroke: none; }
 /* Selection was a hard gold rule around a nearly invisible plot; the two
    states now differ by weight rather than by shouting. */
 #village .slot.selected .tile, #village .slot.built.selected .tile { fill: rgba(201,162,74,0.22); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: none; }

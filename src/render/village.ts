@@ -1,9 +1,10 @@
 import { layout, building } from '../data';
 import type { GameState, Slot } from '../state/types';
 import { progress } from '../village/construction';
+import { buildingTier } from '../village/storage';
 import { remainingText } from './panel';
 import { sprite, type AnimPlacement, type LoopPlacement } from './sprites';
-import { createGround, createWall, type ScenePiece } from './environment';
+import { createGround, createWall, GATE_HIT, type ScenePiece } from './environment';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -27,8 +28,8 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
   const world = el('g');
   root.appendChild(world);
   // The ground — painting, roads, square — lies under everything and never
-  // changes (DESIGN §10). The wall does not: it has depth, and it is the
-  // castellum, so it is rebuilt when that is raised.
+  // changes (DESIGN §10). The wall does not: it has depth, and it is a building
+  // of its own, so it is rebuilt when its tier is raised.
   world.appendChild(createGround(VIEW));
   // Labels live above every plot: a plot drawn later would otherwise cover its
   // neighbour's name now that the plates touch.
@@ -44,14 +45,22 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
   for (const def of ordered) {
     const { sx, sy } = project(def.x, def.y);
     const g = el('g', { class: `slot ring-${def.ring}${def.site ? ' site-' + def.site : ''}`, 'data-slot': def.id, transform: `translate(${sx},${sy})` });
-    const tile = el('polygon', { class: 'tile', points: `${-w / 2},0 0,${h / 2} ${w / 2},0 0,${-h / 2}` });
+    // The wall stands on no plate: its own circuit is its sprite, and a ground
+    // diamond at the gate would only draw a tile across the road. It still
+    // needs something to click, so its `tile` is the gate's own span.
+    const perimeter = def.ring === 'perimeter';
+    const tile = perimeter
+      ? el('polygon', { class: 'tile', points: `${-GATE_HIT.w / 2},2 ${GATE_HIT.w / 2},2 ${GATE_HIT.w / 2},${-GATE_HIT.h} ${-GATE_HIT.w / 2},${-GATE_HIT.h}` })
+      : el('polygon', { class: 'tile', points: `${-w / 2},0 0,${h / 2} ${w / 2},0 0,${-h / 2}` });
     g.appendChild(tile);
-    const empty = el('g', { class: 'empty-marks' });
-    for (const [sx, sy] of [[-w / 2, 0], [0, h / 2], [w / 2, 0], [0, -h / 2]] as [number, number][]) {
-      empty.appendChild(el('line', { x1: sx * 0.86, y1: sy * 0.86, x2: sx * 0.86, y2: sy * 0.86 - 7, class: 'stake' }));
+    if (!perimeter) {
+      const empty = el('g', { class: 'empty-marks' });
+      for (const [sx, sy] of [[-w / 2, 0], [0, h / 2], [w / 2, 0], [0, -h / 2]] as [number, number][]) {
+        empty.appendChild(el('line', { x1: sx * 0.86, y1: sy * 0.86, x2: sx * 0.86, y2: sy * 0.86 - 7, class: 'stake' }));
+      }
+      if (def.site) empty.appendChild(siteGlyph(def.site));
+      g.appendChild(empty);
     }
-    if (def.site) empty.appendChild(siteGlyph(def.site));
-    g.appendChild(empty);
     const spriteG = el('g', { class: 'sprite' });
     g.appendChild(spriteG);
     const barBg = el('rect', { class: 'progress', x: -20, y: h / 2 + 2, width: 40, height: 4, rx: 1, visibility: 'hidden' });
@@ -103,7 +112,10 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
     const def = layout.slots.find((s) => s.id === named)!;
     const slot = last.state.slots.find((s) => s.id === named)!;
     const { sx, sy } = project(def.x, def.y);
-    hoverLabel.setAttribute('transform', `translate(${sx},${sy + h * 1.1})`);
+    // The gate sits on the south edge of the frame, so the wall's name goes
+    // above it rather than off the bottom.
+    const dy = def.ring === 'perimeter' ? -h * 1.1 : h * 1.1;
+    hoverLabel.setAttribute('transform', `translate(${sx},${sy + dy})`);
     const work = last.state.constructions.find((x) => x.slotId === named);
     hoverLabel.textContent = work
       ? `${labelFor(slot)} — ${remainingText(work.finishAt - last.now)}`
@@ -112,7 +124,7 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
 
   function update(state: GameState, now: number, selected: string | null): void {
     last = { state, now, selected };
-    composeWall(Math.max(0, ...state.slots.filter((s) => s.building === 'castellum').map((s) => s.tier)));
+    composeWall(buildingTier(state, 'wall'));
     for (const slot of state.slots) {
       const gr = groups.get(slot.id)!;
       gr.g.classList.toggle('selected', selected === slot.id);

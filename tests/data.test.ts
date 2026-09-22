@@ -1,13 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import { buildings, posts, tribes, requestProgression, layout, unlocks, RESOURCE_IDS, families, config, researchNodes, researchConfig } from '../src/data';
 
-const KNOWN_EFFECTS = new Set(['gravitasPerRound', 'militiaBonus', 'warehouseCapacity', 'granaryCapacity', 'hiddenPerResource', 'populationCap', 'taxMultiplier', 'tradeRate', 'pietyBonus', 'romeRewardMultiplier', 'productionPerHour', 'researchSpeed', 'researchRank']);
+const KNOWN_EFFECTS = new Set(['gravitasPerRound', 'militiaBonus', 'warehouseCapacity', 'granaryCapacity', 'hiddenPerResource', 'populationCap', 'taxMultiplier', 'tradeRate', 'pietyBonus', 'romeRewardMultiplier', 'productionPerHour', 'researchSpeed', 'researchRank', 'defence']);
 /** Research speaks the same vocabulary, plus the multipliers only it moves. */
-const KNOWN_RESEARCH_EFFECTS = new Set([...KNOWN_EFFECTS, 'buildSpeed', 'grainMultiplier', 'materialMultiplier', 'defence', 'corruptionDrift']);
+const KNOWN_RESEARCH_EFFECTS = new Set([...KNOWN_EFFECTS, 'buildSpeed', 'grainMultiplier', 'materialMultiplier', 'corruptionDrift']);
 
 describe('data integrity', () => {
-  it('has 14 buildings with three tiers each (DESIGN §4.4)', () => {
-    expect(buildings).toHaveLength(14);
+  it('has 15 buildings with three tiers each (DESIGN §4.4)', () => {
+    // 14, plus the wall — its own building since 2026-09-22, not the castellum's tier.
+    expect(buildings).toHaveLength(15);
     for (const b of buildings) expect(b.tiers, b.id).toHaveLength(3);
   });
   it('uses only effect keys the code reads', () => {

@@ -6,7 +6,7 @@
     { "id": "r03", "title": "Grain for the Rhine forts", "text": "The garrisons on the river are short. Send grain.", "kind": "deliver", "deliver": { "grain": 150 }, "reward": { "denarii": 100 } },
     { "id": "r04", "title": "Recruits for the auxilia", "text": "Rome asks for men. They will not come back.", "kind": "recruits", "recruits": 5, "reward": { "denarii": 90, "gravitas": 3 } },
     { "id": "r05", "title": "Host the quaestor", "text": "A quaestor tours the frontier. House him well.", "kind": "host", "hostCost": 50, "reward": { "denarii": 40, "scrolls": 1, "unlock": "citizenship_grant" } },
-    { "id": "r06", "title": "Strengthen the castellum", "text": "The legate wants walls he can point to.", "kind": "build", "build": { "building": "castellum", "tier": 2 }, "reward": { "denarii": 150, "unlock": "catapult" } },
+    { "id": "r06", "title": "Strengthen the castellum", "text": "The legate wants a garrison he can count.", "kind": "build", "build": { "building": "castellum", "tier": 2 }, "reward": { "denarii": 150, "unlock": "catapult" } },
     { "id": "r07", "title": "Iron for the smiths", "text": "The legion's smiths at Vetera need iron.", "kind": "deliver", "deliver": { "iron": 150 }, "reward": { "denarii": 140 } },
     { "id": "r08", "title": "Quarter a cohort", "text": "A cohort winters with you. Your militia stands down while it does.", "kind": "host", "hostCost": 80, "reward": { "denarii": 120, "unlock": "veteran_cohort" } },
     { "id": "r09", "title": "A temple for the colony", "text": "A colonia without an altar to Jupiter is a camp.", "kind": "build", "build": { "building": "temple", "tier": 1 }, "reward": { "denarii": 100, "scrolls": 2, "gravitas": 4 } },

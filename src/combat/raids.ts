@@ -1,22 +1,24 @@
 import { config, unlocks, RESOURCE_IDS, tribeDef, type ResourceId } from '../data';
 import type { GameState, TribeState } from '../state/types';
 import { log } from '../state/store';
-import { buildingTier, hiddenPerResource, researchEffect } from '../village/storage';
+import { hiddenPerResource, sumEffect } from '../village/storage';
 import { homeMilitia } from './militia';
 import { holderOf, lesserEffect } from '../politics/posts';
 
 export function defenceStrength(state: GameState): number {
   const r = config.raid;
-  // Even before a castellum, a colonia sits behind its own ditch and bank.
-  let d = r.baseDefence + buildingTier(state, 'castellum') * r.wallStrengthPerCastellumTier
-    + homeMilitia(state) * r.militiaWeight;
+  // Before any wall is raised, a colonia sits behind its own ditch and bank.
+  // Above that the walls term of DESIGN §8.2 is the wall building's tier, which
+  // it carries as a `defence` effect in data/buildings.json. `sumEffect` folds
+  // the Library's completed studies in with it.
+  let d = r.baseDefence + sumEffect(state, 'defence') + homeMilitia(state) * r.militiaWeight;
   const g = holderOf(state, 'garrison');
   if (g) {
     const obstructed = (state.obstructed['defence'] ?? 0) > state.round;
     d += obstructed ? 0 : g.stats.discipline * r.garrisonDisciplineWeight;
   }
   for (const u of state.rome.unlocks) d += unlocks[u]?.defenceBonus ?? 0;
-  d += lesserEffect(state, 'defence') + researchEffect(state, 'defence');
+  d += lesserEffect(state, 'defence');
   return d;
 }
 
