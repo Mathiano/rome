@@ -125,16 +125,39 @@ function tower(x: number, y: number, T: { h: number; foot: string; face: string;
  */
 export const wallDepthAt = (t: number) => WALL_R * Math.SQRT2 * Math.sin(t);
 
+/**
+ * How lit a stretch of wall is, from -1 (full shade) to +1 (full light), for
+ * the ring's screen angle t.
+ *
+ * Light comes from the top left, as it does on every sprite. The ring's
+ * outward normal at tile angle θ is (cos θ, sin θ), and θ = t − 45° on this
+ * parameterisation; a screen direction of (−1,−1) works back to (−3,−1) in
+ * tile space, so the dot product of the two reduces to the line below. It puts
+ * the north-west of the ring in light and the south-east in shade, which is
+ * what the eye expects of a drum lit from that corner.
+ */
+export function wallLight(t: number): number {
+  return -(0.448 * Math.cos(t) + 0.894 * Math.sin(t));
+}
+
+/** Darken or lift a hex by a fraction, for that shading. */
+function shade(hex: string, f: number): string {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = [(n >> 16) & 255, (n >> 8) & 255, n & 255]
+    .map((c) => Math.max(0, Math.min(255, Math.round(c * (1 + f)))));
+  return '#' + ch.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+
 /** What the wall is made of at each castellum tier (DESIGN §4.4). */
 const WALL_TIERS = [
   // 0 — no castellum: the ditch and bank a colonia throws up on day one
-  { h: 7, foot: '#6b5a44', face: '#8a7357', top: '#a68a68', merlons: false, towers: 0, stakes: true },
-  // 1 — a timber palisade on that bank
-  { h: 12, foot: '#4a3b2c', face: '#6d4d3d', top: '#9b7c68', merlons: false, towers: 3, stakes: true },
-  // 2 — stone, coped, with towers
-  { h: 15, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: false, towers: 5, stakes: false },
-  // 3 — the full circuit, crenellated
-  { h: 17, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: true, towers: 8, stakes: false },
+  { h: 7, foot: '#6b5a44', face: '#8a7357', top: '#a68a68', merlons: false, towers: 0, stakes: false, courses: 0 },
+  // 1 — a timber palisade on that bank: posts, each with a shadow side
+  { h: 12, foot: '#4a3b2c', face: '#6d4d3d', top: '#9b7c68', merlons: false, towers: 3, stakes: true, courses: 0 },
+  // 2 — stone, coped, with towers and coursed blocks
+  { h: 15, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: false, towers: 5, stakes: false, courses: 3 },
+  // 3 — the full circuit, crenellated, and the standard over the gate
+  { h: 17, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: true, towers: 8, stakes: false, courses: 4 },
 ];
 
 export interface ScenePiece { depth: number; g: SVGGElement }
@@ -251,19 +274,35 @@ export function createWall(tier: number): ScenePiece[] {
     const a = from + ((to - from) * i) / SEGMENTS - (i ? 0.012 : 0);
     const b = from + ((to - from) * (i + 1)) / SEGMENTS + 0.012;
     const g = el('g', { class: 'wall-seg' });
+    // One tone per arc, from its own facing: the circuit is a drum, and a flat
+    // band of stone all the way round is what made it read as a ribbon.
+    const lit = wallLight((a + b) / 2);
+    const face = shade(T.face, lit * 0.26);
+    const foot = shade(T.foot, lit * 0.16);
     g.appendChild(el('path', { d: arcPath(a, b, 0), fill: 'none', stroke: PAL.ink, 'stroke-width': T.h + 3 }));
-    g.appendChild(el('path', { d: arcPath(a, b, 1.5), fill: 'none', stroke: T.foot, 'stroke-width': T.h }));
-    g.appendChild(el('path', { d: arcPath(a, b, T.h * 0.33), fill: 'none', stroke: T.face, 'stroke-width': T.h * 0.76 }));
+    g.appendChild(el('path', { d: arcPath(a, b, 1.5), fill: 'none', stroke: foot, 'stroke-width': T.h }));
+    g.appendChild(el('path', { d: arcPath(a, b, T.h * 0.33), fill: 'none', stroke: face, 'stroke-width': T.h * 0.76 }));
+    for (let c = 1; c <= T.courses; c++) {
+      // Courses, staggered segment to segment so the joints do not line up
+      // into one continuous seam around the ring.
+      const lift = T.h * (0.12 + (c / (T.courses + 1)) * 0.6);
+      g.appendChild(el('path', {
+        d: arcPath(a, b, lift), fill: 'none', stroke: shade(T.foot, lit * 0.16),
+        'stroke-width': 0.9, opacity: 0.45,
+        'stroke-dasharray': c % 2 ? '9 7' : '7 9', 'stroke-dashoffset': (i % 2) * 8,
+      }));
+    }
     if (T.stakes) {
-      // a palisade reads by its posts, not by a smooth face
-      for (let k = 0; k <= 5; k++) {
-        const [x, y] = ring(WALL_R, a + ((b - a) * k) / 5);
-        g.appendChild(el('line', { x1: x.toFixed(1), y1: (y - 1).toFixed(1), x2: x.toFixed(1), y2: (y - T.h).toFixed(1), stroke: PAL.ink, 'stroke-width': 1, opacity: 0.5 }));
+      // a palisade reads by its posts, and each post has a lit and a dark side
+      for (let k = 0; k <= 6; k++) {
+        const [x, y] = ring(WALL_R, a + ((b - a) * k) / 6);
+        g.appendChild(el('line', { x1: (x + 0.7).toFixed(1), y1: (y - 1).toFixed(1), x2: (x + 0.7).toFixed(1), y2: (y - T.h * 0.95).toFixed(1), stroke: shade(T.face, -0.3), 'stroke-width': 1.4, opacity: 0.75 }));
+        g.appendChild(el('line', { x1: (x - 0.6).toFixed(1), y1: (y - 1).toFixed(1), x2: (x - 0.6).toFixed(1), y2: (y - T.h * 0.95).toFixed(1), stroke: shade(T.face, 0.24), 'stroke-width': 1, opacity: 0.6 }));
       }
     }
-    g.appendChild(el('path', { d: arcPath(a, b, T.h * 0.78), fill: 'none', stroke: T.top, 'stroke-width': T.h * 0.27 }));
+    g.appendChild(el('path', { d: arcPath(a, b, T.h * 0.78), fill: 'none', stroke: shade(T.top, lit * 0.1), 'stroke-width': T.h * 0.27 }));
     if (T.merlons) {
-      g.appendChild(el('path', { d: arcPath(a, b, T.h), fill: 'none', stroke: T.top, 'stroke-width': 5, 'stroke-dasharray': '7 7' }));
+      g.appendChild(el('path', { d: arcPath(a, b, T.h), fill: 'none', stroke: shade(T.top, lit * 0.12), 'stroke-width': 5, 'stroke-dasharray': '7 7' }));
       g.appendChild(el('path', { d: arcPath(a, b, T.h), fill: 'none', stroke: PAL.ink, 'stroke-width': 5, 'stroke-dasharray': '0.9 13.1', opacity: 0.55 }));
     }
     pieces.push({ depth: wallDepthAt((a + b) / 2), g });
@@ -273,7 +312,7 @@ export function createWall(tier: number): ScenePiece[] {
     const span = Math.PI * 2 - GATE_HALF * 2 - 0.44;
     const t = from + 0.22 + (T.towers === 1 ? span / 2 : (span * i) / (T.towers - 1));
     const [x, y] = ring(WALL_R, t);
-    const g = tower(x, y, T);
+    const g = tower(x, y, { ...T, face: shade(T.face, wallLight(t) * 0.22), foot: shade(T.foot, wallLight(t) * 0.14) });
     g.setAttribute('class', 'tower');
     pieces.push({ depth: wallDepthAt(t), g });
   }
@@ -292,6 +331,18 @@ export function createWall(tier: number): ScenePiece[] {
     const x = gxl + (gxr - gxl) * t;
     const y = gyl + (gyr - gyl) * t;
     gate.appendChild(el('line', { x1: x.toFixed(1), y1: y.toFixed(1), x2: x.toFixed(1), y2: (y - gh).toFixed(1), stroke: PAL.timberMid, 'stroke-width': 1.6 }));
+  }
+  if (T.merlons) {
+    // A finished circuit flies the colony's standard over its gate. This is
+    // the wall's tier-3 animated feature (DESIGN §10): drawn here, waved by
+    // the same `cloth-wave` keyframes the sprite overlays use, so there is one
+    // flag in the game and not two.
+    const [bx, by] = ring(WALL_R, GATE_AT);
+    const mast = el('g', { class: 'anim-flag gate-banner', transform: `translate(${bx.toFixed(1)},${(by - T.h).toFixed(1)})` });
+    mast.appendChild(el('line', { x1: 0, y1: 2, x2: 0, y2: -26, stroke: PAL.ink, 'stroke-width': 1.6 }));
+    const cloth = el('polygon', { class: 'cloth', points: '0,-25 13,-22.2 11,-15.5 0,-14' });
+    mast.appendChild(cloth);
+    gate.appendChild(mast);
   }
   pieces.push({ depth: wallDepthAt(GATE_AT) + 0.01, g: gate });
 

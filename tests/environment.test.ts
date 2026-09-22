@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { createGround, createWall, wallDepthAt } from '../src/render/environment';
+import { createGround, createWall, wallDepthAt, wallLight } from '../src/render/environment';
 import { createVillageView, project } from '../src/render/village';
 import { createInitialState } from '../src/state/store';
 import { layout } from '../src/data';
@@ -160,5 +160,58 @@ describe('the wall is the castellum, and it sorts with the buildings', () => {
     c2.tier = 3;
     view.update(state, 2000, null);
     expect(view.root.querySelectorAll('.tower').length).toBeGreaterThan(before);
+  });
+});
+
+describe('the wall is lit from the top left', () => {
+  it('puts the north-west of the ring in light and the south-east in shade', () => {
+    // screen angle: 0 = east, π/2 = south (nearest), π = west, 3π/2 = north
+    const NW = (5 * Math.PI) / 4;
+    const SE = Math.PI / 4;
+    expect(wallLight(NW)).toBeGreaterThan(0.9);
+    expect(wallLight(SE)).toBeLessThan(-0.9);
+    // and the two halves are opposites, as a ring lit from one side must be
+    for (let t = 0; t < Math.PI * 2; t += 0.3) {
+      expect(wallLight(t) + wallLight(t + Math.PI)).toBeCloseTo(0, 6);
+    }
+    expect(Math.abs(wallLight(0))).toBeLessThanOrEqual(1);
+  });
+
+  it('shades each arc rather than painting one flat band', () => {
+    const segs = createWall(3).filter((p) => p.g.classList.contains('wall-seg'));
+    const faces = segs.map((p) => {
+      const paths = p.g.querySelectorAll('path');
+      return paths[2].getAttribute('stroke');
+    });
+    // a ribbon has one colour; a drum has many
+    expect(new Set(faces).size).toBeGreaterThan(8);
+  });
+
+  it('courses the stone at II and III, and posts the palisade at I', () => {
+    const dashed = (t: number) => createWall(t)
+      .filter((p) => p.g.classList.contains('wall-seg'))
+      .some((p) => Array.from(p.g.querySelectorAll('path')).some((n) => (n.getAttribute('stroke-dasharray') ?? '').startsWith('9 7')));
+    expect(dashed(1), 'a palisade has no stone courses').toBe(false);
+    expect(dashed(2)).toBe(true);
+    expect(dashed(3)).toBe(true);
+    const posts = (t: number) => createWall(t)
+      .filter((p) => p.g.classList.contains('wall-seg'))
+      .reduce((n, p) => n + p.g.querySelectorAll('line').length, 0);
+    expect(posts(1), 'the palisade is posts').toBeGreaterThan(50);
+    expect(posts(2), 'stone is not').toBe(0);
+  });
+
+  it('flies the standard over the gate only on a finished circuit', () => {
+    for (const t of [0, 1, 2]) {
+      expect(createWall(t).some((p) => p.g.querySelector('.gate-banner')), `tier ${t}`).toBe(false);
+    }
+    const banner = createWall(3).find((p) => p.g.querySelector('.gate-banner'))!;
+    expect(banner).toBeTruthy();
+    // it must use the same cloth the sprite overlays wave, not a second one
+    const mast = banner.g.querySelector('.gate-banner')!;
+    expect(mast.classList.contains('anim-flag')).toBe(true);
+    expect(mast.querySelector('.cloth')).not.toBeNull();
+    // and it rides on the gate, which is the nearest piece of the ring
+    expect(banner.depth).toBeCloseTo(wallDepthAt(Math.PI / 2) + 0.01, 5);
   });
 });
