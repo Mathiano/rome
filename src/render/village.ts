@@ -3,7 +3,7 @@ import type { GameState, Slot } from '../state/types';
 import { progress } from '../village/construction';
 import { remainingText } from './panel';
 import { sprite, type AnimPlacement, type LoopPlacement } from './sprites';
-import { createEnvironment } from './environment';
+import { createGround, createWall, type ScenePiece } from './environment';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -26,9 +26,10 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
   const root = el('svg', { viewBox: `${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`, preserveAspectRatio: 'xMidYMid meet' });
   const world = el('g');
   root.appendChild(world);
-  // The colony itself: wall, ground, roads and country. Drawn once, behind
-  // every plot, and never touched again (DESIGN §10).
-  world.appendChild(createEnvironment(VIEW));
+  // The ground — painting, roads, square — lies under everything and never
+  // changes (DESIGN §10). The wall does not: it has depth, and it is the
+  // castellum, so it is rebuilt when that is raised.
+  world.appendChild(createGround(VIEW));
   // Labels live above every plot: a plot drawn later would otherwise cover its
   // neighbour's name now that the plates touch.
   const labelLayer = el('g', { class: 'labels' });
@@ -66,6 +67,32 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
     groups.set(def.id, { g, spriteG, key: '', bar, barBg, label });
   }
 
+  /**
+   * Paint the wall in with the plots rather than behind them.
+   *
+   * The ring runs from depth -8.7 due north to +8.7 due south and the plots
+   * from -7 to +7, so one arc of the wall belongs behind a given building and
+   * another in front of it. Appending everything in depth order is the whole
+   * of the fix: SVG paints in document order.
+   */
+  let wallTier = -1;
+  function composeWall(tier: number): void {
+    if (tier === wallTier) return;
+    wallTier = tier;
+    for (const old of Array.from(world.querySelectorAll('.wall-seg, .gate, .tower'))) old.remove();
+    const pieces: ScenePiece[] = createWall(tier);
+    const slotDepth = (id: string) => {
+      const d = layout.slots.find((s) => s.id === id)!;
+      return d.x + d.y;
+    };
+    for (const piece of pieces) {
+      // the first plot that sits nearer the viewer than this piece
+      const after = ordered.find((d) => slotDepth(d.id) > piece.depth);
+      if (after) world.insertBefore(piece.g, groups.get(after.id)!.g);
+      else world.appendChild(piece.g);
+    }
+  }
+
   /** Whatever update() last drew, so a hover can answer without waiting for it. */
   let last: { state: GameState; now: number; selected: string | null } | null = null;
 
@@ -85,6 +112,7 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
 
   function update(state: GameState, now: number, selected: string | null): void {
     last = { state, now, selected };
+    composeWall(Math.max(0, ...state.slots.filter((s) => s.building === 'castellum').map((s) => s.tier)));
     for (const slot of state.slots) {
       const gr = groups.get(slot.id)!;
       gr.g.classList.toggle('selected', selected === slot.id);

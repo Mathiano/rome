@@ -103,15 +103,15 @@ const WALL_R = 6.15;
 const GATE_AT = Math.PI / 2;
 const GATE_HALF = 0.2;
 
-/** A tower on the wall: a drum of stone with a tiled cap. */
-function tower(x: number, y: number): SVGGElement {
+/** A tower on the wall, in whatever the wall is made of at this tier. */
+function tower(x: number, y: number, T: { h: number; foot: string; face: string; top: string }): SVGGElement {
   const g = el('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
-  g.appendChild(el('ellipse', { cx: 0, cy: 0, rx: 9, ry: 4.5, fill: PAL.wallFoot, stroke: PAL.ink, 'stroke-width': 1 }));
-  g.appendChild(el('path', { d: 'M -9,0 L -9,-20 A 9,4.5 0 0 1 9,-20 L 9,0 A 9,4.5 0 0 1 -9,0 Z', fill: PAL.wallMid, stroke: PAL.ink, 'stroke-width': 1, 'stroke-linejoin': 'round' }));
-  g.appendChild(el('path', { d: 'M -9,-3 L -9,-20 A 9,4.5 0 0 1 0,-24.5 L 0,-7.5 A 9,4.5 0 0 0 -9,-3 Z', fill: PAL.wallDark, opacity: 0.45 }));
-  g.appendChild(el('path', { d: 'M -9,-20 A 9,4.5 0 0 1 9,-20 A 9,4.5 0 0 1 -9,-20 Z', fill: PAL.wallLight, stroke: PAL.ink, 'stroke-width': 1 }));
+  g.appendChild(el('ellipse', { cx: 0, cy: 0, rx: 9, ry: 4.5, fill: T.foot, stroke: PAL.ink, 'stroke-width': 1 }));
+  g.appendChild(el('path', { d: 'M -9,0 L -9,-20 A 9,4.5 0 0 1 9,-20 L 9,0 A 9,4.5 0 0 1 -9,0 Z', fill: T.face, stroke: PAL.ink, 'stroke-width': 1, 'stroke-linejoin': 'round' }));
+  g.appendChild(el('path', { d: 'M -9,-3 L -9,-20 A 9,4.5 0 0 1 0,-24.5 L 0,-7.5 A 9,4.5 0 0 0 -9,-3 Z', fill: T.foot, opacity: 0.35 }));
+  g.appendChild(el('path', { d: 'M -9,-20 A 9,4.5 0 0 1 9,-20 A 9,4.5 0 0 1 -9,-20 Z', fill: T.top, stroke: PAL.ink, 'stroke-width': 1 }));
   for (let i = -1; i <= 1; i++) {
-    g.appendChild(el('rect', { x: i * 5.6 - 2.1, y: -25.5, width: 4.2, height: 5.8, fill: PAL.wallLight, stroke: PAL.ink, 'stroke-width': 0.8 }));
+    g.appendChild(el('rect', { x: i * 5.6 - 2.1, y: -25.5, width: 4.2, height: 5.8, fill: T.top, stroke: PAL.ink, 'stroke-width': 0.8 }));
   }
   g.appendChild(el('polygon', { points: '-10,-25 10,-25 0,-34', fill: PAL.roofMid, stroke: PAL.ink, 'stroke-width': 1, 'stroke-linejoin': 'round' }));
   g.appendChild(el('polygon', { points: '0,-25 10,-25 0,-34', fill: PAL.roofDark }));
@@ -119,10 +119,33 @@ function tower(x: number, y: number): SVGGElement {
 }
 
 /**
- * The whole environment, as one group to sit behind every plot.
- * `viewBox` is the village view's own, so the country fills it edge to edge.
+ * Depth on this projection. A tile at (x,y) sits at x+y; the wall ring is
+ * parameterised by screen angle t, and works out to WALL_R·√2·sin(t) — due
+ * south (t = π/2) is nearest the viewer, due north is furthest.
  */
-export function createEnvironment(view: { x: number; y: number; w: number; h: number }): SVGGElement {
+export const wallDepthAt = (t: number) => WALL_R * Math.SQRT2 * Math.sin(t);
+
+/** What the wall is made of at each castellum tier (DESIGN §4.4). */
+const WALL_TIERS = [
+  // 0 — no castellum: the ditch and bank a colonia throws up on day one
+  { h: 7, foot: '#6b5a44', face: '#8a7357', top: '#a68a68', merlons: false, towers: 0, stakes: true },
+  // 1 — a timber palisade on that bank
+  { h: 12, foot: '#4a3b2c', face: '#6d4d3d', top: '#9b7c68', merlons: false, towers: 3, stakes: true },
+  // 2 — stone, coped, with towers
+  { h: 15, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: false, towers: 5, stakes: false },
+  // 3 — the full circuit, crenellated
+  { h: 17, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: true, towers: 8, stakes: false },
+];
+
+export interface ScenePiece { depth: number; g: SVGGElement }
+
+/**
+ * The flat ground: the painting, the roads and the square.
+ *
+ * Everything here lies on the ground and belongs behind every building, so it
+ * needs no depth of its own. The wall does — see `createWall`.
+ */
+export function createGround(view: { x: number; y: number; w: number; h: number }): SVGGElement {
   const root = el('g', { class: 'env' });
 
   // --- the country: one painted image, fitted so the wall lands on its clearing
@@ -188,56 +211,89 @@ export function createEnvironment(view: { x: number; y: number; w: number; h: nu
     }));
   }
 
-  // --- the wall: a banded ring, broken where the gate stands. Stroking the
-  // ring three times — footing, face, coping — gives it mass without needing a
-  // separate polygon for the near and far halves.
-  const wall = el('g', { class: 'wall' });
-  const arcPath = (from: number, to: number, lift: number) => {
-    const steps = Math.max(8, Math.round(((to - from) / (Math.PI * 2)) * 96));
+  return root;
+}
+
+
+
+/**
+ * The wall, as pieces that sort with the buildings.
+ *
+ * It used to be one ring painted behind every plot, so a building on the south
+ * edge was drawn *through* the near wall. On this projection the ring's depth
+ * runs from -8.7 due north to +8.7 due south, and the plots' from -7 to +7, so
+ * the two interleave: the far arc belongs behind them and the near arc in
+ * front. Each arc carries its own depth and the village merges them into the
+ * same sort as the plots.
+ *
+ * `tier` is the castellum's: the wall IS the castellum (data/buildings.json
+ * calls it "garrison and walls"), and it was decoration unconnected to it.
+ */
+export function createWall(tier: number): ScenePiece[] {
+  const T = WALL_TIERS[Math.max(0, Math.min(WALL_TIERS.length - 1, tier))];
+  const pieces: ScenePiece[] = [];
+  const from = GATE_AT + GATE_HALF;
+  const to = GATE_AT + Math.PI * 2 - GATE_HALF;
+  const SEGMENTS = 24;
+
+  const arcPath = (a: number, b: number, lift: number) => {
+    const steps = 6;
     let d = '';
     for (let i = 0; i <= steps; i++) {
-      const [x, y] = ring(WALL_R, from + ((to - from) * i) / steps);
+      const [x, y] = ring(WALL_R, a + ((b - a) * i) / steps);
       d += `${i ? ' L' : 'M'} ${x.toFixed(1)},${(y - lift).toFixed(1)}`;
     }
     return d;
   };
-  const from = GATE_AT + GATE_HALF;
-  const to = GATE_AT + Math.PI * 2 - GATE_HALF;
-  wall.appendChild(el('path', { d: arcPath(from, to, 0), fill: 'none', stroke: PAL.ink, 'stroke-width': 20, 'stroke-linecap': 'butt' }));
-  wall.appendChild(el('path', { d: arcPath(from, to, 1.5), fill: 'none', stroke: PAL.wallFoot, 'stroke-width': 17, 'stroke-linecap': 'butt' }));
-  wall.appendChild(el('path', { d: arcPath(from, to, 5), fill: 'none', stroke: PAL.wallDark, 'stroke-width': 13, 'stroke-linecap': 'butt' }));
-  wall.appendChild(el('path', { d: arcPath(from, to, 9), fill: 'none', stroke: PAL.wallMid, 'stroke-width': 9, 'stroke-linecap': 'butt' }));
-  // Coping and merlons in one stroke: a dashed line along the top is a row of
-  // teeth, where seventy little rectangles read as scattered debris.
-  wall.appendChild(el('path', { d: arcPath(from, to, 13.5), fill: 'none', stroke: PAL.wallLight, 'stroke-width': 4, 'stroke-linecap': 'butt' }));
-  wall.appendChild(el('path', { d: arcPath(from, to, 17), fill: 'none', stroke: PAL.wallLight, 'stroke-width': 5, 'stroke-linecap': 'butt', 'stroke-dasharray': '7 7' }));
-  wall.appendChild(el('path', { d: arcPath(from, to, 17), fill: 'none', stroke: PAL.ink, 'stroke-width': 5, 'stroke-linecap': 'butt', 'stroke-dasharray': '0.9 13.1', opacity: 0.55 }));
-  root.appendChild(wall);
 
-  // towers around the ring, and two flanking the gate
-  const towers = el('g', { class: 'towers' });
-  for (let i = 0; i < 8; i++) {
-    const t = GATE_AT + GATE_HALF + 0.22 + ((Math.PI * 2 - GATE_HALF * 2 - 0.44) * i) / 7;
-    const [x, y] = ring(WALL_R, t);
-    towers.appendChild(tower(x, y));
+  for (let i = 0; i < SEGMENTS; i++) {
+    // a sliver of overlap, so the bands join without a visible seam
+    const a = from + ((to - from) * i) / SEGMENTS - (i ? 0.012 : 0);
+    const b = from + ((to - from) * (i + 1)) / SEGMENTS + 0.012;
+    const g = el('g', { class: 'wall-seg' });
+    g.appendChild(el('path', { d: arcPath(a, b, 0), fill: 'none', stroke: PAL.ink, 'stroke-width': T.h + 3 }));
+    g.appendChild(el('path', { d: arcPath(a, b, 1.5), fill: 'none', stroke: T.foot, 'stroke-width': T.h }));
+    g.appendChild(el('path', { d: arcPath(a, b, T.h * 0.33), fill: 'none', stroke: T.face, 'stroke-width': T.h * 0.76 }));
+    if (T.stakes) {
+      // a palisade reads by its posts, not by a smooth face
+      for (let k = 0; k <= 5; k++) {
+        const [x, y] = ring(WALL_R, a + ((b - a) * k) / 5);
+        g.appendChild(el('line', { x1: x.toFixed(1), y1: (y - 1).toFixed(1), x2: x.toFixed(1), y2: (y - T.h).toFixed(1), stroke: PAL.ink, 'stroke-width': 1, opacity: 0.5 }));
+      }
+    }
+    g.appendChild(el('path', { d: arcPath(a, b, T.h * 0.78), fill: 'none', stroke: T.top, 'stroke-width': T.h * 0.27 }));
+    if (T.merlons) {
+      g.appendChild(el('path', { d: arcPath(a, b, T.h), fill: 'none', stroke: T.top, 'stroke-width': 5, 'stroke-dasharray': '7 7' }));
+      g.appendChild(el('path', { d: arcPath(a, b, T.h), fill: 'none', stroke: PAL.ink, 'stroke-width': 5, 'stroke-dasharray': '0.9 13.1', opacity: 0.55 }));
+    }
+    pieces.push({ depth: wallDepthAt((a + b) / 2), g });
   }
-  root.appendChild(towers);
 
-  // --- the gate itself, drawn last of the wall so it reads as the way in
+  for (let i = 0; i < T.towers; i++) {
+    const span = Math.PI * 2 - GATE_HALF * 2 - 0.44;
+    const t = from + 0.22 + (T.towers === 1 ? span / 2 : (span * i) / (T.towers - 1));
+    const [x, y] = ring(WALL_R, t);
+    const g = tower(x, y, T);
+    g.setAttribute('class', 'tower');
+    pieces.push({ depth: wallDepthAt(t), g });
+  }
+
+  // the gate, at the nearest point of the ring, so it is always in front
   const gate = el('g', { class: 'gate' });
   const [gxl, gyl] = ring(WALL_R, GATE_AT - GATE_HALF);
   const [gxr, gyr] = ring(WALL_R, GATE_AT + GATE_HALF);
+  const gh = T.h * 0.8;
   gate.appendChild(el('path', {
-    d: `M ${gxl.toFixed(1)},${gyl.toFixed(1)} L ${gxr.toFixed(1)},${gyr.toFixed(1)} L ${gxr.toFixed(1)},${(gyr - 13).toFixed(1)} L ${gxl.toFixed(1)},${(gyl - 13).toFixed(1)} Z`,
+    d: `M ${gxl.toFixed(1)},${gyl.toFixed(1)} L ${gxr.toFixed(1)},${gyr.toFixed(1)} L ${gxr.toFixed(1)},${(gyr - gh).toFixed(1)} L ${gxl.toFixed(1)},${(gyl - gh).toFixed(1)} Z`,
     fill: PAL.timberDark, stroke: PAL.ink, 'stroke-width': 1.2,
   }));
   for (let i = 1; i < 5; i++) {
     const t = i / 5;
     const x = gxl + (gxr - gxl) * t;
     const y = gyl + (gyr - gyl) * t;
-    gate.appendChild(el('line', { x1: x.toFixed(1), y1: y.toFixed(1), x2: x.toFixed(1), y2: (y - 13).toFixed(1), stroke: PAL.timberMid, 'stroke-width': 1.6 }));
+    gate.appendChild(el('line', { x1: x.toFixed(1), y1: y.toFixed(1), x2: x.toFixed(1), y2: (y - gh).toFixed(1), stroke: PAL.timberMid, 'stroke-width': 1.6 }));
   }
-  root.appendChild(gate);
+  pieces.push({ depth: wallDepthAt(GATE_AT) + 0.01, g: gate });
 
-  return root;
+  return pieces;
 }
