@@ -190,7 +190,10 @@
     "rewardFavourFloor": -0.3,
     "rewardFavourCeiling": 0.5,
     "unlockMinFavour": 25,
-    "backingMinFavour": 10
+    "backingMinFavour": 10,
+    "_complete": "What a completed request earns beyond its reward. These lived in src/rome/requests.ts as literals until 2026-09-23; the values are unchanged.",
+    "completeFavour": 5,
+    "completeLoyalistAttitude": 3
   },
   "collapse": {
     "populationFloor": 5,
@@ -207,6 +210,15 @@
   },
   "log": {
     "max": 200
+  },
+  "reports": {
+    "_comment": "Reports unit, first-pass default 2026-09-23: how many structured reports the save keeps, oldest trimmed first. About twenty rounds at three a round, well past the 7-round away cap of DESIGN \u00a73.3.",
+    "max": 60
+  },
+  "history": {
+    "_comment": "Reports unit, first-pass defaults 2026-09-23: how many rounds' before/after ledgers the save keeps, and the stride of the Save tab's round table.",
+    "max": 100,
+    "tableEvery": 10
   },
   "levelling": {
     "_comment": "DESIGN \u00a79.2: characters level by holding posts and by events.",

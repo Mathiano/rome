@@ -117,6 +117,9 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     logSeq: 0,
     seenLogId: 0,
     lastReport: null,
+    history: [],
+    reports: [],
+    reportSeq: 0,
     pendingChoice: null,
     awayRounds: 0,
     stats: emptyStats(),
@@ -218,6 +221,9 @@ export function migrate(state: GameState): GameState {
     if (f.departedRound === undefined) f.departedRound = null;
     if (f.sourRounds === undefined) f.sourRounds = 0;
   }
+  // Saves from before the reports archive keep their prose; the record starts here.
+  if (!state.reports) { state.reports = []; state.reportSeq = 0; }
+  if (!state.history) state.history = [];
   state.version = config.saveVersion;
   return state;
 }
