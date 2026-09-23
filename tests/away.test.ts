@@ -76,7 +76,8 @@ describe('since you were last here', () => {
     s.resources.grain = 488;
     s.research.completed.push('crop_rotation');
     s.population += 12;
-    const r = awayReport(before, takeSnapshot(s), { wood: 130, clay: 0.4 });
+    s.overflowSinceSeen = { wood: 130, clay: 0.4 };
+    const r = awayReport(before, takeSnapshot(s));
     const clay = building('warehouse').tiers[0].cost.clay!;
     expect(r.resources).toEqual({ wood: 240, clay: -clay, grain: -12 });
     expect(r.overflow).toEqual({ wood: 130 });
@@ -96,7 +97,7 @@ describe('since you were last here', () => {
   it('identical before and after is quiet, and nothing is said', () => {
     const s = createInitialState(0, 1);
     const snap = takeSnapshot(s);
-    const r = awayReport(snap, takeSnapshot(s), {});
+    const r = awayReport(snap, takeSnapshot(s));
     expect(isQuiet(r)).toBe(true);
     expect(awayLines(r)).toEqual([]);
   });
@@ -105,7 +106,23 @@ describe('since you were last here', () => {
     const s = createInitialState(0, 1);
     const before = takeSnapshot(s);
     s.resources.wood += 0.3;
-    expect(isQuiet(awayReport(before, takeSnapshot(s), { clay: 0.4 }))).toBe(true);
+    s.overflowSinceSeen = { clay: 0.4 };
+    expect(isQuiet(awayReport(before, takeSnapshot(s)))).toBe(true);
+  });
+
+  it('reports only what the stores turned away during the gap, not what they turned away while the player watched', () => {
+    const s = createInitialState(0, 1);
+    s.overflowSinceSeen = { wood: 130 }; // counted before the game was closed, not yet acknowledged
+    const before = takeSnapshot(s);
+    expect(isQuiet(awayReport(before, takeSnapshot(s))), 'a stale counter alone is not a change').toBe(true);
+    s.overflowSinceSeen.wood = 160;
+    const r = awayReport(before, takeSnapshot(s));
+    expect(r.overflow).toEqual({ wood: 30 });
+    expect(awayLines(r)).toEqual(['The Warehouse stood full: 30 wood went to waste.']);
+  });
+
+  it('never names a store for the treasury', () => {
+    expect(overflowWords({ denarii: 40 })).toEqual([]);
   });
 
   it('groups the loss by store and lists the resources of each', () => {
@@ -139,7 +156,7 @@ describe('since you were last here', () => {
     g.state.resources.wood = capacity(g.state, 'wood');
     const before = takeSnapshot(g.state);
     g.tick(3 * H);
-    const r = awayReport(before, takeSnapshot(g.state), g.state.overflowSinceSeen);
+    const r = awayReport(before, takeSnapshot(g.state));
     expect(r.overflow.wood).toBe(Math.round(netPerHour(g.state).wood * 3));
     expect(r.resources.clay).toBeGreaterThan(0);
     expect(r.resources.wood).toBeUndefined();

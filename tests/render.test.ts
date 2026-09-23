@@ -10,6 +10,8 @@ import { renderSummary, plotsRaised, sitesSeen } from '../src/render/summary';
 import { mapConfig, site } from '../src/map/world';
 import { nearestUnknown, claimSite } from '../src/map/sites';
 import { playerHoldsOffice } from '../src/politics/challenge';
+import { defenceStrength } from '../src/combat/raids';
+import { n } from '../src/render/overview';
 
 describe('render', () => {
   it('projects the grid isometrically', () => {
@@ -109,6 +111,9 @@ describe('the colony at a glance', () => {
     expect(playerHoldsOffice(s)).toBe(true);
     expect(s.map.claimed.length).toBe(1);
     expect(sitesSeen(s)).toBe(s.map.scouted.length);
+    // a scouted hex with nothing on it is not a site seen
+    s.map.scouted.push('1,0');
+    expect(sitesSeen(s)).toBe(s.map.scouted.length - 1);
     const card = renderSummary(s);
     expect(card).toContain('and the wall');
     const def = site(s.map.claimed[0].siteId);
@@ -116,6 +121,19 @@ describe('the colony at a glance', () => {
     else expect(card).toContain('Holdings</span><span>1</span>');
     expect(renderHeader(s)).toContain('Wall I');
     expect(renderHeader(s)).toContain('1 holding');
+  });
+
+  it('the walls row prints the live defence figure, with the Library and an obstruction folded in', () => {
+    const g = new Game(createInitialState(0, 1));
+    const s = g.state;
+    s.round = 6;
+    const withDefence = researchNodes.find((r) => r.effects['defence'])!;
+    s.research.completed.push(withDefence.id);
+    s.obstructed['defence'] = s.round + 2;
+    const plain = renderSummary(s).match(/Walls<\/span><span>([\d.]+) against/)![1];
+    expect(plain).toBe(n(defenceStrength(s)));
+    s.research.completed.pop();
+    expect(renderSummary(s).match(/Walls<\/span><span>([\d.]+) against/)![1]).toBe(n(defenceStrength(s)));
   });
 });
 

@@ -5,17 +5,21 @@
  * §3.1 sanctions the time left on a job and the hours to the idle round, and
  * nothing else about the clock.
  *
- * Pure: a snapshot before the first tick, a snapshot after, and the overflow
- * counter `accrue` kept. Words are the renderer's business (render/due.ts).
+ * Pure: a snapshot before the first tick and a snapshot after. The overflow
+ * counter `accrue` keeps is part of each snapshot, so the report carries only
+ * what the stores turned away during the gap, not what they turned away while
+ * the player was watching. Words are the renderer's business (render/due.ts).
  */
 import type { GameState, Resources } from '../state/types';
-import { RESOURCE_IDS, type ResourceId } from '../data';
+import { RESOURCE_IDS } from '../data';
 
 export interface AwaySnapshot {
   resources: Resources;
   population: number;
   slots: Record<string, { building: string | null; tier: number }>;
   research: string[];
+  /** The `overflowSinceSeen` counter as it stood. */
+  overflow: Partial<Resources>;
 }
 
 export interface AwayReport {
@@ -37,18 +41,19 @@ export function takeSnapshot(state: GameState): AwaySnapshot {
     population: state.population,
     slots: Object.fromEntries(state.slots.map((s) => [s.id, { building: s.building, tier: s.tier }])),
     research: [...state.research.completed],
+    overflow: { ...(state.overflowSinceSeen ?? {}) },
   };
 }
 
-export function awayReport(before: AwaySnapshot, after: AwaySnapshot, overflow: Partial<Resources> = {}): AwayReport {
+export function awayReport(before: AwaySnapshot, after: AwaySnapshot): AwayReport {
   const resources: Partial<Resources> = {};
   for (const id of RESOURCE_IDS) {
     const d = Math.round(after.resources[id] - before.resources[id]);
     if (d !== 0) resources[id] = d;
   }
   const lost: Partial<Resources> = {};
-  for (const id of Object.keys(overflow) as ResourceId[]) {
-    const v = Math.round(overflow[id] ?? 0);
+  for (const id of RESOURCE_IDS) {
+    const v = Math.round((after.overflow[id] ?? 0) - (before.overflow[id] ?? 0));
     if (v >= 1) lost[id] = v;
   }
   const raised: AwayReport['raised'] = [];

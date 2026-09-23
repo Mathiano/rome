@@ -234,7 +234,7 @@ function renderDevBar(now: number): void {
 // on the Village tab (village/away.ts). Snapshot before the first tick.
 const before = takeSnapshot(game.state);
 game.tick(dev.now());
-const gap = awayReport(before, takeSnapshot(game.state), game.state.overflowSinceSeen);
+const gap = awayReport(before, takeSnapshot(game.state));
 if (!isQuiet(gap)) setReturnStrip(awayLines(gap));
 persist();
 render(true);

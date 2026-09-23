@@ -144,6 +144,8 @@ export function overflowWords(overflow: Partial<Resources>): string[] {
   for (const [id, v] of Object.entries(overflow) as [ResourceId, number][]) {
     const amount = Math.round(v ?? 0);
     if (amount < 1) continue;
+    // The treasury has no cap and no building; `accrue` never counts it.
+    if (storeOf(id) === 'treasury') continue;
     const store = building(storeOf(id)).name;
     byStore.set(store, [...(byStore.get(store) ?? []), `${amount} ${id}`]);
   }
