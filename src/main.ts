@@ -10,6 +10,7 @@ import { bindPanel, pendingNews, renderHeader, renderNews, renderPanel, type Tab
 import { currentAdvice } from './render/advisor';
 import { awayReport, isQuiet, takeSnapshot } from './village/away';
 import { awayLines, setReturnStrip } from './render/due';
+import { resetReportsView } from './render/reports';
 
 const dev = createDevClock(isDevRequested(location.search), () => Date.now(), (() => { try { return globalThis.localStorage ?? null; } catch { return null; } })());
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
@@ -202,6 +203,8 @@ bindPanel(panelEl, {
   onImport: (json) => guard(() => {
     game = new Game(deserialise(json));
     game.tick(dev.now());
+    // Another colony's rounds: the folders it shut and the filter it chose do not carry over.
+    resetReportsView();
     toast('Save imported.');
   }),
   onReset: () => {
@@ -209,6 +212,7 @@ bindPanel(panelEl, {
     clearLocalStorage(saveKey);
     game = new Game(createInitialState(dev.now()));
     selected = null;
+    resetReportsView();
     guard(() => {});
   },
 });
