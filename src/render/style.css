@@ -260,3 +260,24 @@ header .res .neg b { color: #e0885a; }
 #panel button.link { background: none; border: none; padding: 0; font: inherit;
   color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 #panel button.link:hover { color: var(--ink); }
+
+/* The Headquarters overview (wf/headquarters): the two lanes at the top, the
+   two-line row grid the narrow panel needs in place of a six-column table,
+   and the ledger behind the header's per-hour figures. */
+#panel .lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0; }
+#panel .card.lane { margin: 0; font-size: 12px; }
+#panel .card.lane p { margin: 3px 0; }
+#panel .card.lane.free { border-style: dashed; }
+#panel .card.lane.free b { opacity: 0.65; }
+#panel ul.overview li { padding: 0.3rem 0; border-top: 1px solid rgba(42, 33, 24, 0.12); }
+#panel ul.overview li.ring { border-top: 0; padding: 0.55rem 0 0.1rem; font-variant: small-caps; letter-spacing: 0.04em; opacity: 0.65; }
+#panel ul.overview .l1 { display: flex; flex-wrap: wrap; gap: 0.2rem 0.45rem; align-items: baseline; }
+#panel ul.overview .l2 { display: flex; flex-wrap: wrap; gap: 0.15rem 0.55rem; align-items: center; font-size: 12px; margin-top: 2px; }
+#panel ul.overview .l2 .effect { flex-basis: 100%; }
+#panel .gate { color: var(--river); opacity: 0.75; font-size: 12px; }
+#panel .rome-mark { color: var(--gold); font-size: 11px; }
+#panel .rome-mark::before { content: '✦ '; }
+#panel .ledger .res { margin: 4px 0 8px; }
+#panel .ledger .res .l1 { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(42, 33, 24, 0.12); }
+#panel .ledger .line { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding-left: 8px; opacity: 0.85; }
+#panel .ledger .neg, #panel ul.overview .neg { color: var(--terracotta); }

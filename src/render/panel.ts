@@ -1,4 +1,4 @@
-import { activeTribes, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
+import { activeTribes, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS } from '../data';
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, eligibleBuildings, progress, rushPrice, slotById } from '../village/construction';
@@ -25,6 +25,9 @@ import {
   researchRushPrice, researchSpeed, resourcesOf,
 } from '../village/research';
 import { roundsUntilIdle } from '../politics/rounds';
+import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
+
+export { remainingText, durationText } from './overview';
 
 export type Tab = 'village' | 'map' | 'library' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save';
 const TABS: { id: Tab; name: string }[] = [
@@ -59,9 +62,6 @@ export interface PanelHandlers {
   onReset(): void;
 }
 
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const n = (v: number) => (Math.abs(v) >= 100 ? Math.round(v).toString() : (Math.round(v * 10) / 10).toString());
-const ROMAN = ['', 'I', 'II', 'III'];
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 export interface News { title: string; subtitle: string; lines: LogEntry[] }
@@ -153,18 +153,19 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
   return `<nav>${nav}</nav><section>${body}</section>`;
 }
 
-function costTxt(cost: Partial<Record<ResourceId, number>>, state: GameState): string {
-  return Object.entries(cost)
-    .filter(([, v]) => v)
-    .map(([k, v]) => `<span class="${state.resources[k as ResourceId] < (v ?? 0) ? 'neg' : ''}" style="${state.resources[k as ResourceId] < (v ?? 0) ? 'color:var(--terracotta)' : ''}">${v} ${k}</span>`)
-    .join(', ');
-}
-
+/**
+ * The Village panel: the colony overview when nothing is selected (the HQ
+ * page — every building, tier, next tier, cost, time and gate on one screen,
+ * see render/overview.ts), or the plot card when a slot is. Placement stays
+ * on the map (DESIGN §4.5): the card is where a new building is chosen.
+ */
 function renderVillage(s: GameState, selected: string | null, now: number): string {
-  const a = s.constructions.filter((c) => c.kind === 'building').length;
-  const f = s.constructions.filter((c) => c.kind === 'field').length;
-  let out = `<h2>Village</h2><p class="muted">One building and one field may be under construction at a time. Building ${a}/${config.concurrency.building}, field ${f}/${config.concurrency.field}. Cellars hide ${hiddenPerResource(s)} of each resource from raiders.</p>`;
-  if (!selected) return out + colonyIndex(s);
+  let out = `<h2>Village</h2>`;
+  if (!selected) {
+    out += `<p class="muted">One building and one field may be under construction at a time. Cellars hide ${hiddenPerResource(s)} of each resource from raiders.</p>`;
+    return out + renderOverview(s, now);
+  }
+  out += `<p><button class="link" data-overview>← back to the colony</button></p>`;
   const slot = slotById(s, selected);
   const c = s.constructions.find((x) => x.slotId === slot.id);
   out += `<h3>${slot.building ? esc(building(slot.building).name) : slot.site ? esc(slot.site.replace('_', ' ')) : 'Empty plot'} ${slot.tier ? ROMAN[slot.tier] : ''}</h3>`;
@@ -184,40 +185,14 @@ function renderVillage(s: GameState, selected: string | null, now: number): stri
       out += `<div class="card"><b>${esc(def.name)}</b> is at its top tier.</div>`;
       continue;
     }
-    const tier = def.tiers[check.toTier - 1];
-    const effects = Object.entries(tier.effects).map(([k, v]) => `${k.replace(/([A-Z])/g, ' $1').toLowerCase()} ${v}`).join(', ');
-    out += `<div class="card"><b>${esc(def.name)} ${ROMAN[check.toTier]}</b><p class="muted">${esc(def.role)}</p><p>${effects}</p><p>Cost: ${costTxt(check.cost, s)}</p>`;
+    // What the tier buys, now → next, and how long it takes: the one choice of
+    // a session (DESIGN §12) is not made blind.
+    out += `<div class="card"><b>${esc(def.name)} ${ROMAN[check.toTier]}</b><p class="muted">${esc(def.role)}</p><p>${esc(effectNowNext(def, slot.tier, check.toTier))}</p><p>Cost: ${costTxt(check.cost, s)} · ${esc(durationText(check.seconds))}</p>`;
     out += `<button class="act" data-build="${slot.id}" data-building="${bid}" ${check.ok ? '' : 'disabled'}>${slot.tier ? 'Upgrade' : 'Build'}</button>`;
-    if (!check.ok && check.reason) out += ` <span class="muted">${esc(check.reason)}</span>`;
+    if (!check.ok) out += ` ${lockWords(check)}`;
     out += `</div>`;
   }
   return out;
-}
-
-/**
- * Everything the colony has, as a list that selects it.
- *
- * The wall is the reason this exists: it stands on the perimeter at the gate
- * rather than on a plot in a ring, so "click the thing on the map" was a hunt.
- * Anything pinned to a slot is listed whether or not it has been raised yet,
- * and the empty plots are counted rather than named.
- */
-function colonyIndex(s: GameState): string {
-  const rows = s.slots
-    .filter((slot) => slot.building)
-    .map((slot) => {
-      const def = building(slot.building!);
-      const work = s.constructions.find((c) => c.slotId === slot.id);
-      const state = work
-        ? `<span class="muted">tier ${work.toTier} under way</span>`
-        : slot.tier
-          ? `<span class="muted">${ROMAN[slot.tier]}</span>`
-          : `<span class="muted">not yet raised</span>`;
-      return `<li><button class="link" data-select-slot="${slot.id}">${esc(def.name)}</button> ${state}</li>`;
-    });
-  const free = s.slots.filter((slot) => !slot.building).length;
-  return `<h3>In the colony</h3><ul class="index">${rows.join('')}</ul>`
-    + `<p class="muted">${free ? `${free} plot${free === 1 ? '' : 's'} still open — ` : ''}select one on the map.</p>`;
 }
 
 function charOption(s: GameState, id: string, stat: keyof typeof s.characters[string]['stats'], postId: string): string {
@@ -279,48 +254,6 @@ function renderMap(s: GameState, hex: string | null): string {
   return out + `</div>`;
 }
 
-const EFFECT_WORDS: Record<string, (v: number) => string> = {
-  buildSpeed: (v) => `building ${pct(v)} faster`,
-  grainMultiplier: (v) => `${pct(v)} more grain`,
-  materialMultiplier: (v) => `${pct(v)} more wood, clay and iron`,
-  taxMultiplier: (v) => `${pct(v)} more tax`,
-  tradeRate: (v) => `a better rate with the tribes (+${v.toFixed(2)})`,
-  granaryCapacity: (v) => `${v} more grain kept`,
-  warehouseCapacity: (v) => `${v} more of each material kept`,
-  hiddenPerResource: (v) => `${v} more of each resource hidden from raiders`,
-  populationCap: (v) => `room for ${v} more citizens`,
-  militiaBonus: (v) => `${v} more men under arms`,
-  defence: (v) => `${v} to the colony's defence`,
-  gravitasPerRound: (v) => `${v} gravitas a round`,
-  corruptionDrift: (v) => `corruption falls ${Math.abs(v)} a round`,
-  romeRewardMultiplier: (v) => `${pct(v)} more from Rome's rewards`,
-};
-
-function effectWords(effects: Record<string, number>): string {
-  return Object.entries(effects)
-    .map(([k, v]) => (EFFECT_WORDS[k] ? EFFECT_WORDS[k](v) : `${k} ${v}`))
-    .join(', ');
-}
-
-const hours = (sec: number) => (sec >= 3600 ? `${(sec / 3600).toFixed(1)}h` : `${Math.round(sec / 60)} min`);
-
-/**
- * Time left on a job, in the plainest words that are true (DESIGN §3.1, as
- * amended 2026-09-20). Rounded, never ticking down to the second: the village
- * clock is still not a countdown, it just no longer hides how long the wait is.
- */
-export function remainingText(ms: number): string {
-  const sec = Math.max(0, Math.ceil(ms / 1000));
-  if (sec < 60) return 'less than a minute left';
-  const min = Math.round(sec / 60);
-  if (min < 90) return `about ${min} minute${min === 1 ? '' : 's'} left`;
-  const h = sec / 3600;
-  const whole = Math.floor(h);
-  const half = h - whole >= 0.75 ? 1 : h - whole >= 0.25 ? 0.5 : 0;
-  const shown = whole + half;
-  return `about ${shown % 1 ? shown.toFixed(1) : shown} hours left`;
-}
-
 /**
  * The Library (DESIGN §4.6). Research runs on the village clock like a
  * construction, costs denarii and scrolls, and can be finished early at the
@@ -359,7 +292,7 @@ function renderLibrary(s: GameState, now: number): string {
     out += `<div class="card ${locked ? 'lesser' : ''}"><b>${esc(node.name)}</b>
       <p class="muted">${esc(node.description)}</p>
       <p>${esc(effectWords(node.effects))}</p>
-      <p>Cost: ${costTxt(resourcesOf(node.cost), s)}${check.cost.scrolls ? `, <span class="${s.rome.scrolls < check.cost.scrolls ? 'neg' : ''}">${check.cost.scrolls} scroll${check.cost.scrolls === 1 ? '' : 's'}</span>` : ''} · ${hours(check.seconds)}</p>
+      <p>Cost: ${costTxt(resourcesOf(node.cost), s)}${check.cost.scrolls ? `, <span class="${s.rome.scrolls < check.cost.scrolls ? 'neg' : ''}">${check.cost.scrolls} scroll${check.cost.scrolls === 1 ? '' : 's'}</span>` : ''} · ${esc(durationText(check.seconds))}</p>
       <button class="act" data-research="${node.id}" ${check.ok ? '' : 'disabled'}>Take it up</button>`;
     if (!check.ok && check.reason) out += ` <span class="muted">${esc(check.reason)}</span>`;
     out += `</div>`;
@@ -758,6 +691,8 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.tab) return h.onTab(d.tab as Tab);
     if (d.build && d.building) return h.onBuild(d.build, d.building);
     if (d.selectSlot) return h.onSelectSlot(d.selectSlot);
+    // The plot card's way back: no slot selected is the overview.
+    if ('overview' in d) return h.onSelectSlot('');
     if (d.rush) return h.onRush(d.rush);
     if (d.research) return h.onResearch(d.research);
     if (d.rushResearch) return h.onRushResearch(d.rushResearch);
