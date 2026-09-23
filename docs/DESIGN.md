@@ -202,6 +202,8 @@ One pool of men-at-arms, sized by population and the Castellum tier, with three 
 
 Defence strength (walls — the Wall building's tier, §4.4 — plus home militia and the garrison post-holder's discipline) versus raid strength → a percentage of stored goods lost. Cellars are exempt. Raids on a distant site follow the same formula against that site's garrison.
 
+Death by raid (§9.2) built 2026-09-23: a raid that reaches the stores has crossed the wall, and the garrison prefect was on it. He has a small chance of dying there (`raid.holderDeathChance`), eased by his discipline and by nothing else — bodyguards stand over a man in his house, not on the rampart. A repelled raid never kills. First-pass numbers, flagged for tuning.
+
 ### 8.3 Offence — banked ✅
 
 Defence only in v0. Offensive actions (punitive raids for loot, retaking a site, Rome-ordered attacks) come with a later version. The catapult is a defence bonus now and an offensive unlock later.
@@ -360,3 +362,4 @@ v0.2.4 — 2026-09-22 — §4.4: the castellum is the wall, recorded as a design
 v0.2.5 — 2026-09-22 — §4.4 **reverses v0.2.4**: the wall is *not* the castellum. Mathias's decision. Wall is a new ✅ building on its own perimeter slot (§4.5 `w1`, at the gate), counting for construction concurrency, and its tier is the walls term of §8.2. The castellum keeps the garrison, the militia pool and the bodyguards, and its tier now drives only its own sprite. Costs, times and per-tier defence are first-pass defaults in `data/buildings.json`, flagged there for a balance pass; the old `raid.wallStrengthPerCastellumTier` is gone, since the wall carries its defence as an effect like every other building.
 v0.2.6 — 2026-09-22 — §10: with no wall raised the gate draws no marker at rest and lights only under the pointer, so an unbuilt perimeter slot does not stand as a box in the fields. The Village panel now opens on an index of everything pinned to a slot, raised or not, each entry selecting it — the wall stands at the gate rather than on a plot in a ring, so it was the one building that had to be hunted for.
 v0.2.7 — 2026-09-23 — §9.2: heirs by adoption, both routes. A new man for the player's house runs no round; a man taken from another house runs one, and the giving house must consent. Rival houses adopt on the same rule below a floor.
+v0.2.8 — 2026-09-23 — §8.2, §9.2: death by raid. The garrison prefect can fall when a raid gets through; discipline eases it, guards do not.
