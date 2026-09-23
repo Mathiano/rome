@@ -123,6 +123,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     pendingChoice: null,
     awayRounds: 0,
     stats: emptyStats(),
+    overflowSinceSeen: {},
   };
   log(state, 'system', `${config.townName} is founded. ${playerLeader.name} holds the office of ${config.topOffice.title}.`);
   return state;
@@ -224,6 +225,7 @@ export function migrate(state: GameState): GameState {
   // Saves from before the reports archive keep their prose; the record starts here.
   if (!state.reports) { state.reports = []; state.reportSeq = 0; }
   if (!state.history) state.history = [];
+  if (!state.overflowSinceSeen) state.overflowSinceSeen = {};
   state.version = config.saveVersion;
   return state;
 }

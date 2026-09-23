@@ -384,4 +384,9 @@ export interface GameState {
   awayRounds: number;
   /** Local playtest record. Never read by the game; written for the Save tab. */
   stats: PlaytestStats;
+  /**
+   * What full stores turned away since the player last acknowledged the news
+   * (DESIGN §4.2: overflow is lost). A counter per resource, never a time.
+   */
+  overflowSinceSeen: Partial<Resources>;
 }

@@ -28,6 +28,8 @@ import { roundsUntilIdle } from '../politics/rounds';
 import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
 import { blockedBy, currentAdvice, foundingParagraphs, resolveGoto } from './advisor';
 import { rememberOpen, renderHistoryTable, renderNewsRecord, renderReports, reportsUnread, setReportFilter } from './reports';
+import { dueItems, idleLine, overflowWords, renderDue, renderReturnStrip } from './due';
+import { colonyLine, renderSummary } from './summary';
 
 export { remainingText, durationText } from './overview';
 
@@ -135,32 +137,24 @@ export function renderNews(news: News, state: GameState, now: number = Date.now(
     if (step) premise += `<p class="counsel-first"><b>${esc(advisor.title)}:</b> ${esc(step.text)}</p>`;
   }
   const leaving = news.kind === 'report' ? leavingCounsel(state, now) : '';
+  // What full stores turned away since the player last looked (DESIGN §4.2):
+  // the loss stated, and nothing else. The counter resets with Continue.
+  const turnedAway = news.kind === 'opening' ? [] : overflowWords(state.overflowSinceSeen ?? {});
+  const overflow = turnedAway.length ? `<p class="overflow" data-overflow>${turnedAway.map(esc).join(' ')}</p>` : '';
   return `<div class="news-card${state.round === 0 ? ' opening' : ''}"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
-    ${premise}${record.html}<ul>${items}</ul>${leaving}${foot}</div>`;
+    ${premise}${record.html}<ul>${items}</ul>${overflow}${leaving}${foot}</div>`;
 }
 
 /**
- * "Before you go" (DESIGN §12's last verb). What is coming, from state already
- * in hand and each stated once in rounded words (§3.1 as amended): the jobs
- * under way, a tribe massing and its price, a demand and its due round, and
- * the hours until the council meets without you. Nothing here counts down.
+ * "Before you go" (DESIGN §12's last verb). What is coming, from the one
+ * collector the Village tab's Due block reads (render/due.ts), each stated
+ * once in rounded words (§3.1 as amended), and the hours until the council
+ * meets without you. Nothing here counts down.
  */
 export function leavingCounsel(s: GameState, now: number): string {
-  const items: string[] = [];
-  for (const c of s.constructions) items.push(`${esc(building(c.buildingId).name)} ${ROMAN[c.toTier]}: ${esc(remainingText(c.finishAt - now))}.`);
-  for (const p of s.research.active) items.push(`${esc(researchNode(p.id).name)} under study: ${esc(remainingText(p.finishAt - now))}.`);
-  for (const t of Object.values(s.tribes)) {
-    if (t.massingForRound < s.round) continue;
-    items.push(`${esc(tribeDef(t.id).name)} are massing; the raid lands on round ${t.massingForRound}. ${appeasePrice(s, t.id)} denarii turns them back.`);
-  }
-  for (const f of Object.values(s.families)) {
-    if (!f.demand) continue;
-    const d = f.demand;
-    const what = d.kind === 'post' ? `the post of ${esc(postDefs.find((p) => p.id === d.postId)?.name ?? d.postId!)}` : `${d.denarii} denarii`;
-    items.push(`The ${esc(f.name)} ask for ${what}; an answer is expected by round ${d.dueRound}.`);
-  }
-  const h = Math.ceil(roundsUntilIdle(s, now) / 3_600_000);
-  items.push(`If you stay away, the council meets without you in about ${h} hour${h === 1 ? '' : 's'}.`);
+  const d = dueItems(s, now);
+  const items = [...d.village, ...d.nextRound, ...d.later].map((i) => esc(i.text));
+  items.push(esc(idleLine(d.idleHours)));
   return `<div class="leaving"><h3>Before you go</h3><ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul></div>`;
 }
 
@@ -173,18 +167,35 @@ export function renderHeader(state: GameState): string {
     return `<span class="${rate < 0 ? 'neg' : ''}"><b>${n(state.resources[id])}${capTxt}</b><small>${id} ${rate >= 0 ? '+' : ''}${n(rate)}/h</small></span>`;
   }).join('');
   const admin = state.rome.administeringUntilRound > state.round ? ' · <em>Rome administers</em>' : '';
-  return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${admin}</span><div class="res">${res}</div>`;
+  return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${colonyLine(state)}${admin}</span><div class="res">${res}</div>`;
+}
+
+/**
+ * A mark on a tab that is asking the player for an answer: a duty, never a
+ * spend (a build, a study or a scout is a choice, so the Village, Library and
+ * Map carry none). One condition per line, in order, so a unit can add one.
+ * The Council lights for a vote before it, not for being out of office: that
+ * would stay lit until the office was won back and read as a nag (§9.5).
+ */
+const BADGES: ((s: GameState, t: Tab) => boolean)[] = [
+  (s, t) => t === 'rome' && !!s.rome.activeRequest && !s.rome.activeRequest.fulfilled,
+  (s, t) => t === 'family' && Object.values(s.families).some((f) => !f.isPlayer && (!!f.demand || f.sourRounds > 0 || (f.departedRound !== null && mayReturn(s, f)))),
+  (s, t) => t === 'tribe' && Object.values(s.tribes).some((x) => x.massingForRound >= s.round),
+  (s, t) => t === 'council' && !!s.challenge,
+  // The tab the opening counsel points at (unit: advisor).
+  (s, t) => currentAdvice(s)?.goto.tab === t,
+];
+
+export function tabBadge(s: GameState, t: Tab): string {
+  // The Reports tab carries its unread count (unit: reports); every other mark is one '!'.
+  const unread = t === 'log' ? reportsUnread(s) : 0;
+  if (unread > 0) return `<span class="badge">${unread}</span>`;
+  return BADGES.some((lit) => lit(s, t)) ? '<span class="badge">!</span>' : '';
 }
 
 export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number, selectedHex: string | null = null): string {
   const s = game.state;
-  const step = currentAdvice(s);
-  const badge = (t: Tab) => {
-    if (t === 'rome' && s.rome.activeRequest && !s.rome.activeRequest.fulfilled) return '<span class="badge">!</span>';
-    if (t === 'log' && reportsUnread(s) > 0) return `<span class="badge">${reportsUnread(s)}</span>`;
-    if (step && step.goto.tab === t) return '<span class="badge">!</span>';
-    return '';
-  };
+  const badge = (t: Tab) => tabBadge(s, t);
   const nav = TABS.map((t) => `<button data-tab="${t.id}" class="${t.id === tab ? 'active' : ''}">${t.name}${badge(t.id)}</button>`).join('');
   let body = '';
   switch (tab) {
@@ -229,7 +240,10 @@ export function renderCounsel(s: GameState): string {
  */
 function renderVillage(s: GameState, selected: string | null, now: number): string {
   let out = `<h2>Village</h2>`;
+  out += renderReturnStrip();
+  out += renderDue(s, now, openMenus.has('due'));
   if (!selected) {
+    out += renderSummary(s);
     out += `<p class="muted">One building and one field may be under construction at a time. Cellars hide ${hiddenPerResource(s)} of each resource from raiders.</p>`;
     return out + renderOverview(s, now);
   }
@@ -497,11 +511,12 @@ function renderGuards(s: GameState, id: string, isPlayer: boolean): string {
 }
 
 /**
- * Which houses' menus the player has opened. The panel is rebuilt as a string
+ * Which menus the player has open: the houses' intrigue menus, and the Village
+ * tab's Due block, which starts open. The panel is rebuilt as a string
  * whenever anything moves, so without this every round would slam the menu shut
  * under the player's hand.
  */
-const openMenus = new Set<string>();
+const openMenus = new Set<string>(['due']);
 
 /**
  * The full intrigue menu (DESIGN §9.6). Each of these is a move against another
@@ -744,7 +759,7 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
   panel.addEventListener('toggle', (ev) => {
     const d = (ev.target as HTMLElement).closest('details') as HTMLDetailsElement | null;
     if (d?.dataset.menu) rememberOpen(d.dataset.menu, d.open);
-    const id = d?.dataset.intrigue;
+    const id = d?.dataset.intrigue ?? d?.dataset.menu;
     if (!id) return;
     if (d!.open) openMenus.add(id);
     else openMenus.delete(id);

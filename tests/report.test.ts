@@ -219,3 +219,36 @@ describe('the round ledger and the history (reports unit)', () => {
     expect(tail).not.toContain('council meets without you');
   });
 });
+
+/** What full stores turned away (DESIGN §4.2), on the card and nowhere it should not be. */
+describe('the overflow line on the round card', () => {
+  it('is on the round card when the counter is non-zero, and not otherwise', () => {
+    const g = new Game(createInitialState(0, 5));
+    g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
+    g.act({ type: 'convene' }, 1000);
+    const news = pendingNews(g.state) ?? { kind: 'report' as const, title: 'Round 1', subtitle: '', lines: [] };
+    expect(renderNews(news, g.state, 1000)).not.toContain('data-overflow');
+    g.state.overflowSinceSeen = { wood: 130.4, clay: 0.2, grain: 20 };
+    const html = renderNews(news, g.state, 1000);
+    expect(html).toContain('data-overflow');
+    expect(html).toContain('The Warehouse stood full: 130 wood went to waste.');
+    expect(html).toContain('The Granary stood full: 20 grain went to waste.');
+    // a fraction of a unit is not a loss; the round ledger beside it still names every resource
+    const line = html.match(/<p class="overflow" data-overflow>(.*?)<\/p>/)![1];
+    expect(line).not.toContain('clay');
+  });
+
+  it('the founding card never carries it', () => {
+    const g = new Game(createInitialState(0, 5));
+    g.state.overflowSinceSeen = { wood: 50 };
+    const html = renderNews(pendingNews(g.state)!, g.state, 0);
+    expect(html).not.toContain('data-overflow');
+  });
+
+  it('migrates a save without the counter to an empty one', () => {
+    const old = JSON.parse(serialise(createInitialState(0, 5)));
+    delete old.overflowSinceSeen;
+    expect(deserialise(JSON.stringify(old)).overflowSinceSeen).toEqual({});
+  });
+});

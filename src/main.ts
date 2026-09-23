@@ -4,9 +4,12 @@ import { createInitialState, deserialise, loadFromLocalStorage, saveToLocalStora
 import { createDevClock, isDevRequested, DEV_SAVE_KEY, DEV_MULTIPLIERS } from './dev';
 import { createVillageView } from './render/village';
 import { progress as progressOf } from './village/construction';
+import { roundsUntilIdle } from './politics/rounds';
 import { createMapView } from './render/mapview';
 import { bindPanel, pendingNews, renderHeader, renderNews, renderPanel, type Tab } from './render/panel';
 import { currentAdvice } from './render/advisor';
+import { awayReport, isQuiet, takeSnapshot } from './village/away';
+import { awayLines, setReturnStrip } from './render/due';
 
 const dev = createDevClock(isDevRequested(location.search), () => Date.now(), (() => { try { return globalThis.localStorage ?? null; } catch { return null; } })());
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
@@ -52,6 +55,8 @@ function toast(msg: string): void {
 }
 
 function guard(fn: () => void): void {
+  // The first action puts the return strip away.
+  setReturnStrip([]);
   try {
     fn();
   } catch (e) {
@@ -87,6 +92,8 @@ function renderNewsOverlay(): void {
       game.state.seenLogId = game.state.logSeq;
       game.state.awayRounds = 0;
       game.state.seenOpening = true;
+      // The card said what full stores turned away; the count starts again.
+      game.state.overflowSinceSeen = {};
       // Leaving the founding card lands on the colony overview with nothing
       // selected; the counsel card above it says where to go, and the plot it
       // names is already marked on the village.
@@ -122,6 +129,11 @@ function panelKey(now: number): string {
     currentAdvice(st)?.id ?? '',
     Object.values(st.characters).map((c) => c.bodyguards).join(''),
     st.reports.length,
+    // The Due block (render/due.ts): the idle-round hour and every named round it prints.
+    Math.ceil(roundsUntilIdle(st, now) / 3_600_000),
+    Object.values(st.families).map((f) => `${f.demand?.dueRound ?? ''}:${f.sourRounds}`).join(','),
+    st.rome.hostingUntilRound, st.rome.administeringUntilRound, st.rome.activeRequest?.fulfilled ?? '',
+    Object.values(st.tribes).map((t) => `${t.hostagesUntilRound}:${t.leakedUntilRound}`).join(','),
   ].join('|');
 }
 
@@ -163,7 +175,7 @@ function render(force = false): void {
 }
 
 bindPanel(panelEl, {
-  onTab: (t) => { tab = t; render(true); },
+  onTab: (t) => { tab = t; setReturnStrip([]); render(true); },
   onSelectSlot: (id) => { selected = id; tab = 'village'; render(true); },
   onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; render(true); },
   onDismissAdvisor: () => guard(() => game.dismissAdvisor()),
@@ -222,7 +234,12 @@ function renderDevBar(now: number): void {
   devBar.innerHTML = `<b>DEV</b> separate save slot · clock ${mults} · skip <button data-skip="1">1h</button><button data-skip="6">6h</button><button data-skip="24">24h</button><button data-skip="168">7d</button> · virtual ${new Date(now).toISOString().slice(0, 16).replace('T', ' ')}`;
 }
 
+// What the village clock did while the game was closed, told once as amounts
+// on the Village tab (village/away.ts). Snapshot before the first tick.
+const before = takeSnapshot(game.state);
 game.tick(dev.now());
+const gap = awayReport(before, takeSnapshot(game.state));
+if (!isQuiet(gap)) setReturnStrip(awayLines(gap));
 persist();
 render(true);
 setInterval(() => {

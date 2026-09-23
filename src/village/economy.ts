@@ -103,14 +103,23 @@ export function buildTimeMultiplier(state: GameState): number {
   return Math.max(0.2, m);
 }
 
-/** Advance the village economy by `ms` of wall-clock time. Accrual is capped by storage (DESIGN §3.1, §4.2). */
+/**
+ * Advance the village economy by `ms` of wall-clock time. Accrual is capped by
+ * storage (DESIGN §3.1, §4.2), and what the cap turns away is counted in
+ * `overflowSinceSeen` so the player can be told what a full store cost. Only
+ * production that found no room counts: a store already over its cap (a grant
+ * landed on it) loses the excess to `clampToCapacity`, not to this.
+ */
 export function accrue(state: GameState, ms: number): void {
   if (ms <= 0) return;
   const hours = ms / 3_600_000;
   const net = netPerHour(state);
+  const overflow = (state.overflowSinceSeen ??= {});
   for (const id of RESOURCE_IDS) {
     const cap = capacity(state, id);
     const next = state.resources[id] + net[id] * hours;
+    const lost = next - Math.max(cap, state.resources[id]);
+    if (cap !== Infinity && lost > 0) overflow[id] = (overflow[id] ?? 0) + lost;
     state.resources[id] = Math.max(0, Math.min(cap, next));
   }
   // Population grows toward cap while there is grain; it never dies of hunger (Pillar 6) but stalls.
