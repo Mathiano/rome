@@ -345,9 +345,14 @@ describe("Rome's request marked on the row it asks for", () => {
     expect(html.match(/data-rome-asks=/g)).toHaveLength(1);
   });
 
-  it('marks a standing building on its row, and clears once fulfilled', () => {
+  it('marks a standing building on its row, and clears once the tier stands or Rome has marked it fulfilled', () => {
     const s = asking(rich(createInitialState(0, 1)), 'castellum', 2);
     expect(renderOverview(s, 1)).toMatch(/data-slot="c2">[\s\S]*?data-rome-asks="castellum"/);
+    // Raised before Rome's turn has run: the ask is answered, so the row no longer carries it.
+    slotById(s, 'c2').tier = 2;
+    expect(s.rome.activeRequest!.fulfilled).toBe(false);
+    expect(renderOverview(s, 1)).not.toContain('data-rome-asks');
+    slotById(s, 'c2').tier = 1;
     s.rome.activeRequest!.fulfilled = true;
     expect(renderOverview(s, 1)).not.toContain('data-rome-asks');
   });

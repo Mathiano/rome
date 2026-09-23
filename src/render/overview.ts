@@ -14,7 +14,7 @@ import { building, buildings, config, effectVocabulary, post as postDef, unlocks
 import type { ActiveRequest, GameState, Slot } from '../state/types';
 import { checkBuild, openedByForumTier, progress, rushPrice, type BuildCheck } from '../village/construction';
 import { denariiIncomePerHour, grainUpkeepPerHour, netPerHour, postBonus, slotProductionPerHour } from '../village/economy';
-import { researchEffect, sumEffect } from '../village/storage';
+import { buildingTier, researchEffect, sumEffect } from '../village/storage';
 import { holderOf } from '../politics/posts';
 import { site as siteDef } from '../map/world';
 
@@ -128,10 +128,16 @@ export function rewardWords(r: Reward): string {
   ].filter(Boolean).join(', ');
 }
 
-/** The build request Rome is waiting on, if it asks for this building. */
+/**
+ * The build request Rome is waiting on, if it asks for this building and the
+ * tier it asks for does not stand yet. Rome only sets `fulfilled` at its turn
+ * (§3.2 step 4), so the row reads the same condition live: once the tier is
+ * raised the ask is answered, whether or not the round has run.
+ */
 export function romeAsksFor(state: GameState, buildingId: string): ActiveRequest | null {
   const a = state.rome.activeRequest;
-  if (!a || a.kind !== 'build' || a.fulfilled || a.build?.building !== buildingId) return null;
+  if (!a || a.kind !== 'build' || a.fulfilled || !a.build || a.build.building !== buildingId) return null;
+  if (buildingTier(state, a.build.building) >= a.build.tier) return null;
   return a;
 }
 
