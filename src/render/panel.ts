@@ -28,6 +28,7 @@ import { roundsUntilIdle } from '../politics/rounds';
 import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
 import { blockedBy, currentAdvice, foundingParagraphs, resolveGoto } from './advisor';
 import { dueItems, idleLine, overflowWords, renderDue, renderReturnStrip } from './due';
+import { colonyLine, renderSummary } from './summary';
 
 export { remainingText, durationText } from './overview';
 
@@ -162,7 +163,7 @@ export function renderHeader(state: GameState): string {
     return `<span class="${rate < 0 ? 'neg' : ''}"><b>${n(state.resources[id])}${capTxt}</b><small>${id} ${rate >= 0 ? '+' : ''}${n(rate)}/h</small></span>`;
   }).join('');
   const admin = state.rome.administeringUntilRound > state.round ? ' · <em>Rome administers</em>' : '';
-  return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${admin}</span><div class="res">${res}</div>`;
+  return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${colonyLine(state)}${admin}</span><div class="res">${res}</div>`;
 }
 
 export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number, selectedHex: string | null = null): string {
@@ -220,6 +221,7 @@ function renderVillage(s: GameState, selected: string | null, now: number): stri
   out += renderReturnStrip();
   out += renderDue(s, now, openMenus.has('due'));
   if (!selected) {
+    out += renderSummary(s);
     out += `<p class="muted">One building and one field may be under construction at a time. Cellars hide ${hiddenPerResource(s)} of each resource from raiders.</p>`;
     return out + renderOverview(s, now);
   }
