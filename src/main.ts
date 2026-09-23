@@ -157,6 +157,7 @@ bindPanel(panelEl, {
   onTab: (t) => { tab = t; render(true); },
   onSelectSlot: (id) => { selected = id; tab = 'village'; render(true); },
   onChoice: (id) => guard(() => game.choose(id, dev.now())),
+  onAdoptNewMan: () => guard(() => game.adoptNewMan(dev.now())),
   onScout: (hex) => guard(() => game.scout(hex, dev.now())),
   onBuild: (slot, b) => guard(() => game.build(slot, b, dev.now())),
   onRush: (slot) => guard(() => game.rush(slot, dev.now())),

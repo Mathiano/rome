@@ -150,6 +150,7 @@ export interface PlaytestStats {
   assassinationsSucceeded: number;
   marriages: number;
   exiles: number;
+  adoptions: number;
   sitesClaimed: number;
   sitesLost: number;
   siteRaidsRepelled: number;

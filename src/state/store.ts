@@ -128,7 +128,7 @@ export function emptyStats() {
     demandsGranted: 0, demandsRefused: 0, choicesAnswered: 0, romeRequestsCompleted: 0,
     romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
     challengesFaced: 0, challengesWon: 0, roundsOutOfOffice: 0, assassinationsOrdered: 0,
-    assassinationsSucceeded: 0, marriages: 0, exiles: 0,
+    assassinationsSucceeded: 0, marriages: 0, exiles: 0, adoptions: 0,
     sitesClaimed: 0, sitesLost: 0, siteRaidsRepelled: 0, scoutsLost: 0, researchCompleted: 0,
   };
 }

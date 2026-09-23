@@ -242,6 +242,19 @@
     },
     "playerCallMinRank": 2
   },
+  "adoption": {
+    "_comment": "Heirs by adoption (DESIGN \u00a79.2): an adult, from the new men or from another house. Roman practice \u2014 Caesar adopted Octavian, Augustus Tiberius. Raising a new man is household business and runs no round; taking a man from another house moves that house and does. First-pass defaults 2026-09-23, flagged for a balance pass.",
+    "minRank": 1,
+    "newManCost": 150,
+    "newManCostPerMember": 0.25,
+    "houseCost": 200,
+    "houseConsentAttitude": 30,
+    "houseMinSizeAfter": 2,
+    "houseAttitude": 12,
+    "houseGrievanceRelief": 1,
+    "rivalMinSize": 3,
+    "rivalChancePerRound": 0.35
+  },
   "bodyguard": {
     "_comment": "The militia pool's third sink (DESIGN \u00a78.1, \u00a79.2). Guarding one man leaves another exposed.",
     "maxPerCharacter": 4,

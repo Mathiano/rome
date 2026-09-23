@@ -333,6 +333,7 @@ function handlers(): { h: PanelHandlers; acts: Political[]; guards: [string, num
   const h: PanelHandlers = {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
     onSelectSlot: () => {},
+    onAdoptNewMan: () => {},
     onPolitical: (a) => acts.push(a), onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {},
     onGuards: (id, men) => guards.push([id, men]),

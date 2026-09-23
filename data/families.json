@@ -262,7 +262,7 @@
     }
   ],
   "newMen": {
-    "_comment": "Pool used when a family has no living member (DESIGN \u00a71, \u00a79.2). Pillar 7.",
+    "_comment": "The new men (DESIGN \u00a71, \u00a79.2): veterans, freedmen and tribal nobles. A house with no living member raises one (Pillar 7), and any house may adopt one as an heir.",
     "praenomina": [
       "Titus",
       "Quintus",
