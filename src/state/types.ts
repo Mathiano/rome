@@ -36,6 +36,8 @@ export interface Character {
   bodyguards: number;
   spouseId?: string;
   exiled?: boolean;
+  /** Gone with his house when it left the colony (DESIGN §9.7). Alive, but not here. */
+  departed?: boolean;
   causeOfDeath?: string;
 }
 
@@ -61,6 +63,10 @@ export interface Family {
   grievances: number;
   demand: Demand | null;
   denounced: boolean;
+  /** The round the house left the colony (DESIGN §9.7), or null while it is here. */
+  departedRound: number | null;
+  /** Consecutive rounds the house has met the terms for leaving. */
+  sourRounds: number;
 }
 
 export interface TribeState {
@@ -150,6 +156,7 @@ export interface PlaytestStats {
   assassinationsSucceeded: number;
   marriages: number;
   exiles: number;
+  secessions: number;
   sitesClaimed: number;
   sitesLost: number;
   siteRaidsRepelled: number;
