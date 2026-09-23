@@ -230,7 +230,10 @@ function buildingRow(state: GameState, slot: Slot, now: number): string {
   const yieldNow = def.produces ? ` <span class="muted">${n(slotProductionPerHour(state, slot))} ${def.produces}/h</span>` : '';
   if (work) {
     const price = rushPrice(state, work, now);
-    return `<li data-slot="${slot.id}"><div class="l1">${name} <b>${slot.tier ? ROMAN[slot.tier] : ''}</b>${yieldNow}${romeMark(state, def.id)}</div>
+    // A plot still at tier 0 has no tier to show and yields nothing yet; the
+    // second line says what is rising.
+    const standing = slot.tier ? ` <b>${ROMAN[slot.tier]}</b>${yieldNow}` : '';
+    return `<li data-slot="${slot.id}"><div class="l1">${name}${standing}${romeMark(state, def.id)}</div>
       <div class="l2"><span>tier ${ROMAN[work.toTier]} under way — ${esc(remainingText(work.finishAt - now))}</span>
       <button class="act tiny" data-rush="${slot.id}" ${state.resources.denarii < price ? 'disabled' : ''}>Finish now, ${price} denarii</button></div></li>`;
   }

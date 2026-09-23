@@ -371,3 +371,20 @@ it('names resources the way the header does', () => {
   const html = renderOverview(s, 1);
   for (const id of ['wood', 'clay', 'grain'] as ResourceId[]) expect(html).toContain(`${id}/h`);
 });
+
+describe('a plot rising from nothing', () => {
+  it('shows no tier and no zero yield on its row while tier I is under way', () => {
+    const g = new Game(createInitialState(0, 5));
+    g.build('o5', 'iron_mine', 1000);
+    const html = renderPanel(g, 'village', null, 1000, null);
+    const row = html.match(/<li data-slot="o5">[\s\S]*?<\/li>/)![0];
+    expect(row).toContain('tier I under way');
+    expect(row).not.toContain('<b></b>');
+    expect(row).not.toContain('0 iron/h');
+    // once it stands, the tier and the yield come back
+    g.tick(1000 + 60 * 60 * 1000);
+    const later = renderPanel(g, 'village', null, 1000 + 60 * 60 * 1000, null).match(/<li data-slot="o5">[\s\S]*?<\/li>/)![0];
+    expect(later).toContain('<b>I</b>');
+    expect(later).toMatch(/\d+ iron\/h/);
+  });
+});
