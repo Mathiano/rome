@@ -10,6 +10,7 @@ import tribesJson from '../data/tribes.json';
 import requestsJson from '../data/requests.json';
 import eventsJson from '../data/events.json';
 import researchJson from '../data/research.json';
+import advisorJson from '../data/advisor.json';
 
 export type ResourceId = 'wood' | 'clay' | 'iron' | 'grain' | 'denarii';
 export type StatId = 'authority' | 'discipline' | 'craft' | 'connections' | 'piety';
@@ -207,3 +208,27 @@ export function tribeDef(id: string): TribeDef {
 export function activeTribe(): TribeDef {
   return activeTribes()[0];
 }
+
+// ---------------------------------------------------------------- the counsel
+/** Where a counsel step points: a tab, and on it a village slot or a map hex. */
+export interface AdvisorGoto { tab: 'village' | 'map' | 'library' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save'; slot?: string; hex?: 'nearestUnknown' }
+/** What a step asks for, so the card can say what is still short. */
+export interface AdvisorAction { build?: { slot: string; building: string }; scout?: true }
+/** One condition the colony either meets or does not; evaluated in src/render/advisor.ts. */
+export type AdvisorCondition = Record<string, unknown>;
+export interface AdvisorStep {
+  id: string;
+  text: string;
+  goto: AdvisorGoto;
+  action?: AdvisorAction;
+  /** Any one of these holding finishes the step. */
+  done: AdvisorCondition[];
+}
+export interface AdvisorDef {
+  title: string;
+  showMe: string;
+  dismiss: string;
+  founding: { subtitle: string; paragraphs: string[] };
+  steps: AdvisorStep[];
+}
+export const advisor = advisorJson as unknown as AdvisorDef;

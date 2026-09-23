@@ -237,6 +237,7 @@ describe('the adoption controls', () => {
       onPolitical: (a) => { acts.push(a); }, onEnvoy: () => {}, onTrade: () => {},
       onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
       onExport: () => {}, onImport: () => {}, onReset: () => {},
+    onSelectHex: () => {}, onDismissAdvisor: () => {},
     };
     return { h, acts, raised: () => raised };
   }

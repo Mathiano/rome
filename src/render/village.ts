@@ -3,6 +3,7 @@ import type { GameState, Slot } from '../state/types';
 import { progress } from '../village/construction';
 import { buildingTier } from '../village/storage';
 import { remainingText } from './panel';
+import { currentAdvice, resolveGoto } from './advisor';
 import { sprite, type AnimPlacement, type LoopPlacement } from './sprites';
 import { createGround, createWall, GATE_HIT, type ScenePiece } from './environment';
 
@@ -125,9 +126,14 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
   function update(state: GameState, now: number, selected: string | null): void {
     last = { state, now, selected };
     composeWall(buildingTier(state, 'wall'));
+    // The counsel's plot is marked the way the selected one is, so a step that
+    // names a slot can be found without hunting for it.
+    const step = currentAdvice(state);
+    const counsel = step ? resolveGoto(state, step).slot ?? null : null;
     for (const slot of state.slots) {
       const gr = groups.get(slot.id)!;
       gr.g.classList.toggle('selected', selected === slot.id);
+      gr.g.classList.toggle('counsel', counsel === slot.id);
       const key = slot.building ? `${slot.building}_t${slot.tier}` : '';
       if (key !== gr.key) {
         gr.key = key;

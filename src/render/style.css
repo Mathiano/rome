@@ -260,3 +260,21 @@ header .res .neg b { color: #e0885a; }
 #panel button.link { background: none; border: none; padding: 0; font: inherit;
   color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
 #panel button.link:hover { color: var(--ink); }
+
+/* The opening counsel (unit: advisor). One card between the tabs and the tab
+   body, and a pulse on the plot a step names — the selected plot's own gold,
+   so it reads as "here" and not as a box standing in the fields. Selecting
+   the plot ends the pulse: the player has found it. */
+#panel aside.counsel { margin: 8px 12px 0; border-left: 4px solid var(--gold); background: rgba(201,162,74,0.12); }
+#panel aside.counsel p { margin: 4px 0 6px; }
+.news-card .counsel-first { border-left: 3px solid var(--gold); padding-left: 10px; margin: 10px 0 4px; }
+.news-card .leaving { border-top: 1px solid var(--shadow); margin: 6px 0 12px; padding-top: 6px; }
+.news-card .leaving h3 { font-size: 13px; margin: 0 0 4px; font-variant: small-caps; letter-spacing: 0.04em; }
+.news-card .leaving ul { margin: 0; }
+.news-card .leaving li { border-left-color: var(--gold); font-size: 13px; }
+@keyframes counsel-pulse { 0%, 100% { stroke-opacity: 0.35; } 50% { stroke-opacity: 1; } }
+#village .slot.counsel:not(.selected) .tile, #village .slot.built.counsel:not(.selected) .tile {
+  stroke: var(--gold); stroke-width: 1.8; stroke-dasharray: none; animation: counsel-pulse 1.6s ease-in-out infinite; }
+@media (prefers-reduced-motion: reduce) {
+  #village .slot.counsel .tile { animation: none; stroke-opacity: 1; }
+}

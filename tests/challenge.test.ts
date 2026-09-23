@@ -338,6 +338,7 @@ function handlers(): { h: PanelHandlers; acts: Political[]; guards: [string, num
     onResearch: () => {}, onRushResearch: () => {},
     onGuards: (id, men) => guards.push([id, men]),
     onExport: () => {}, onImport: () => {}, onReset: () => {},
+    onSelectHex: () => {}, onDismissAdvisor: () => {},
   };
   return { h, acts, guards };
 }
