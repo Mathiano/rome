@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { buildings, posts, tribes, requestProgression, layout, unlocks, RESOURCE_IDS, families, config, researchNodes, researchConfig } from '../src/data';
+import { buildings, posts, tribes, requestProgression, layout, unlocks, RESOURCE_IDS, families, config, researchNodes, researchConfig, effectVocabulary } from '../src/data';
 
 const KNOWN_EFFECTS = new Set(['gravitasPerRound', 'militiaBonus', 'warehouseCapacity', 'granaryCapacity', 'hiddenPerResource', 'populationCap', 'taxMultiplier', 'tradeRate', 'pietyBonus', 'romeRewardMultiplier', 'productionPerHour', 'researchSpeed', 'researchRank', 'defence']);
 /** Research speaks the same vocabulary, plus the multipliers only it moves. */
@@ -13,6 +13,20 @@ describe('data integrity', () => {
   });
   it('uses only effect keys the code reads', () => {
     for (const b of buildings) for (const t of b.tiers) for (const k of Object.keys(t.effects)) expect(KNOWN_EFFECTS.has(k), `${b.id}: ${k}`).toBe(true);
+  });
+  it('has words for every effect key a building or a study can carry (data/effects.json)', () => {
+    const used = new Set<string>();
+    for (const b of buildings) for (const t of b.tiers) for (const k of Object.keys(t.effects)) used.add(k);
+    for (const n of researchNodes) for (const k of Object.keys(n.effects)) used.add(k);
+    for (const k of used) {
+      const w = effectVocabulary[k];
+      expect(w, `${k} has no words`).toBeDefined();
+      expect(typeof w.noun, k).toBe('string');
+      expect(w.noun.length, k).toBeGreaterThan(0);
+      expect(typeof w.unit, k).toBe('string');
+    }
+    // and nothing in the vocabulary is a key no data uses
+    for (const k of Object.keys(effectVocabulary)) expect(used.has(k), `${k} is worded but never used`).toBe(true);
   });
   it('tier costs and times rise', () => {
     for (const b of buildings) for (let i = 1; i < b.tiers.length; i++) {

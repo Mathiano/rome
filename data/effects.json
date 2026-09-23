@@ -1,0 +1,23 @@
+{
+  "_comment": "The words for every effect key in buildings.json and research.json, so a card can say what a tier buys without splitting camelCase. `noun` is what the number is, `unit` follows the number (empty for a bare count), and `percent` marks a fraction shown as a percentage. tests/data.test.ts asserts every effect key used in data has an entry here. First-pass wording 2026-09-23.",
+  "effects": {
+    "productionPerHour": { "noun": "yield", "unit": "/h" },
+    "militiaBonus": { "noun": "militia", "unit": " men" },
+    "defence": { "noun": "defence", "unit": "" },
+    "warehouseCapacity": { "noun": "kept per material", "unit": "" },
+    "granaryCapacity": { "noun": "grain kept", "unit": "" },
+    "hiddenPerResource": { "noun": "hidden per resource", "unit": "" },
+    "populationCap": { "noun": "housing", "unit": " citizens" },
+    "taxMultiplier": { "noun": "tax", "unit": "%", "percent": true },
+    "tradeRate": { "noun": "trade rate", "unit": "" },
+    "pietyBonus": { "noun": "piety", "unit": "" },
+    "gravitasPerRound": { "noun": "gravitas", "unit": " a round" },
+    "romeRewardMultiplier": { "noun": "Rome's rewards", "unit": "%", "percent": true },
+    "researchSpeed": { "noun": "study speed", "unit": "%", "percent": true },
+    "researchRank": { "noun": "research rank", "unit": "" },
+    "buildSpeed": { "noun": "build speed", "unit": "%", "percent": true },
+    "grainMultiplier": { "noun": "grain yield", "unit": "%", "percent": true },
+    "materialMultiplier": { "noun": "wood, clay and iron yield", "unit": "%", "percent": true },
+    "corruptionDrift": { "noun": "corruption", "unit": " a round" }
+  }
+}

@@ -10,6 +10,7 @@ import tribesJson from '../data/tribes.json';
 import requestsJson from '../data/requests.json';
 import eventsJson from '../data/events.json';
 import researchJson from '../data/research.json';
+import effectsJson from '../data/effects.json';
 
 export type ResourceId = 'wood' | 'clay' | 'iron' | 'grain' | 'denarii';
 export type StatId = 'authority' | 'discipline' | 'craft' | 'connections' | 'piety';
@@ -207,3 +208,7 @@ export function tribeDef(id: string): TribeDef {
 export function activeTribe(): TribeDef {
   return activeTribes()[0];
 }
+
+/** The words for an effect key: what the number is and what follows it (`data/effects.json`). */
+export interface EffectWordsDef { noun: string; unit: string; percent?: boolean }
+export const effectVocabulary = effectsJson.effects as Record<string, EffectWordsDef>;
