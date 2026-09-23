@@ -1,6 +1,7 @@
 import { config, tribeDef, building } from '../data';
 import type { GameState, TribeState } from '../state/types';
 import { log } from '../state/store';
+import { report } from '../state/reports';
 import { clampToCapacity, buildingTier } from '../village/storage';
 import { canAfford, pay } from '../village/economy';
 import { claimedEffect } from '../map/sites';
@@ -55,58 +56,78 @@ export function resolveEnvoy(state: GameState, t: TribeState): void {
   const def = tribeDef(t.id);
   const c = T();
   const trustBefore = t.trust;
+  const fearBefore = t.fear;
+  // The other tribes as they stood, so the report can say what the web did.
+  const others = Object.fromEntries(Object.values(state.tribes).filter((o) => o.id !== t.id).map((o) => [o.id, { trust: o.trust, fear: o.fear }]));
+  let outcome: 'accepted' | 'refused_fear' | 'refused_trust' | 'no_market' = 'accepted';
+  let text = '';
   switch (id) {
     case 'demand_tribute':
       if (t.fear >= c.tributeFearThreshold) {
         state.resources[def.trade.gives] += c.tributeAmount;
         clampToCapacity(state);
         t.trust = clamp(t.trust - 2);
-        log(state, 'tribe', `${def.name} pay tribute: ${c.tributeAmount} ${def.trade.gives}.`);
+        text = `${def.name} pay tribute: ${c.tributeAmount} ${def.trade.gives}.`;
       } else {
         t.trust = clamp(t.trust + c.tributeRefusalTrust);
-        log(state, 'tribe', `${def.name} laugh at the demand for tribute. Trust falls.`);
+        outcome = 'refused_fear';
+        text = `${def.name} laugh at the demand for tribute. Trust falls.`;
       }
       break;
     case 'offer_trade':
       if (buildingTier(state, 'market') < 1) {
-        log(state, 'tribe', `${def.name} would trade, but you have no ${building('market').name}.`);
+        outcome = 'no_market';
+        text = `${def.name} would trade, but you have no ${building('market').name}.`;
       } else {
         t.tradeOpen = true;
         t.trust = clamp(t.trust + c.tradeTrust);
-        log(state, 'tribe', `${def.name} agree to trade ${def.trade.gives} for ${def.trade.wants} at the market.`);
+        text = `${def.name} agree to trade ${def.trade.gives} for ${def.trade.wants} at the market.`;
       }
       break;
     case 'propose_alliance':
       if (t.trust >= c.allianceTrustThreshold && t.fear <= c.allianceFearThreshold) {
         t.allied = true;
         propagateWeb(state, t.id, config.tribe.allianceTrustThreshold, config.tribe.allianceWebShare);
-        log(state, 'tribe', `${def.name} swear alliance. They will not raid an ally, and their enemies have noticed.`);
+        text = `${def.name} swear alliance. They will not raid an ally, and their enemies have noticed.`;
       } else {
+        // Which axis fell short is judged as it stood, before the refusal costs trust.
+        outcome = trustBefore < c.allianceTrustThreshold ? 'refused_trust' : 'refused_fear';
         t.trust = clamp(t.trust + c.allianceRefusalTrust);
-        log(state, 'tribe', `${def.name} are not ready for an alliance.`);
+        text = `${def.name} are not ready for an alliance.`;
       }
       break;
     case 'ask_hostages':
       if (t.fear >= c.hostageFearThreshold) {
         t.hostagesUntilRound = state.round + c.hostageRaidSuppressionRounds;
-        log(state, 'tribe', `${def.name} send the sons of two chiefs. No raids for ${c.hostageRaidSuppressionRounds} rounds.`);
+        text = `${def.name} send the sons of two chiefs. No raids for ${c.hostageRaidSuppressionRounds} rounds.`;
       } else {
         t.trust = clamp(t.trust + c.hostageRefusalTrust);
-        log(state, 'tribe', `${def.name} refuse hostages and take offence.`);
+        outcome = 'refused_fear';
+        text = `${def.name} refuse hostages and take offence.`;
       }
       break;
     case 'warn_of_raid':
       t.fear = clamp(t.fear + c.warnFear);
       t.trust = clamp(t.trust + c.warnTrust);
-      log(state, 'tribe', `Your envoy shows ${def.name} the walls and the men on them. Fear rises.`);
+      text = `Your envoy shows ${def.name} the walls and the men on them. Fear rises.`;
       break;
     case 'invite_festival':
       t.trust = clamp(t.trust + c.festivalTrust);
       t.fear = clamp(t.fear + c.festivalFear);
-      log(state, 'tribe', `${def.name} feast with the colony. Trust rises.`);
+      text = `${def.name} feast with the colony. Trust rises.`;
       break;
   }
   propagateWeb(state, t.id, t.trust - trustBefore);
+  // The web has moved by now, so the report can carry what it did as deltas.
+  const web: Record<string, { trust: number; fear: number }> = {};
+  for (const [oid, was] of Object.entries(others)) {
+    const o = state.tribes[oid];
+    web[oid] = { trust: o.trust - was.trust, fear: o.fear - was.fear };
+  }
+  report(state, 'envoy', {
+    tribeId: t.id, envoyId: id, outcome,
+    fear: { before: fearBefore, after: t.fear }, trust: { before: trustBefore, after: t.trust }, web,
+  }, text, 'tribe');
 }
 
 /** Trade at the market once a trade agreement exists: give `wants`, receive `gives` at the tribe's ratio, improved by market tier. */

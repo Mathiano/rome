@@ -6,7 +6,11 @@ import { applyEffect, pendingChoices, resolveChoice, rollEvent } from '../src/po
 import { appease, appeasePrice, tribeTurn } from '../src/tribes/turn';
 import { dispatchEnvoy, propagateWeb, resolveEnvoy } from '../src/tribes/envoys';
 import { serialise, deserialise } from '../src/state/store';
-import { holderOf } from '../src/politics/posts';
+import { appoint, appointLesser, holderOf } from '../src/politics/posts';
+import { defenceBreakdown, defenceStrength } from '../src/combat/raids';
+import { setBodyguards } from '../src/politics/intrigue';
+import { buildingTier } from '../src/village/storage';
+import { homeMilitia } from '../src/combat/militia';
 import { config, events } from '../src/data';
 import type { GameState } from '../src/state/types';
 /** v0.1 woke the other two tribes; these tests speak to the raider. */
@@ -248,5 +252,54 @@ describe('the tribes watch each other (DESIGN §7)', () => {
     expect(Object.keys(back.tribes).sort()).toEqual(['chatti', 'cherusci', 'sugambri']);
     expect(back.tribes.chatti.trust).toBe(77);
     expect((back as unknown as { tribe?: unknown }).tribe).toBeUndefined();
+  });
+});
+
+describe('the defence by its terms (DESIGN §8.2, reports unit)', () => {
+  /** A colony with a wall, a prefect, guards, a catapult and a lesser office: every term non-zero. */
+  function fortified() {
+    const s = createInitialState(0, 1);
+    const wall = s.slots.find((x) => x.id === 'w1')!;
+    wall.building = 'wall';
+    wall.tier = 2;
+    s.characters.c_nephew.gravitas = 50;
+    appoint(s, 'garrison', 'c_nephew');
+    setBodyguards(s, 'p_leader', 2, 10);
+    s.rome.unlocks.push('catapult');
+    const lesser = 'custos';
+    appointLesser(s, lesser, 'p_son');
+    return s;
+  }
+  it('sums to defenceStrength with every term in play', () => {
+    const s = fortified();
+    const b = defenceBreakdown(s);
+    expect(buildingTier(s, 'wall')).toBe(2);
+    expect(b.ditch).toBe(config.raid.baseDefence);
+    expect(b.wall).toBeGreaterThan(0);
+    expect(b.militia).toBeGreaterThan(0);
+    expect(b.garrison).toBeCloseTo(s.characters.c_nephew.stats.discipline * config.raid.garrisonDisciplineWeight, 9);
+    expect(b.engines).toBe(15);
+    expect(b.men.bodyguards).toBe(2);
+    expect(b.prefectId).toBe('c_nephew');
+    expect(b.obstructed).toBe(false);
+    expect(b.ditch + b.wall + b.militia + b.garrison + b.engines + b.lesser).toBeCloseTo(defenceStrength(s), 9);
+    expect(b.total).toBeCloseTo(defenceStrength(s), 9);
+  });
+  it('an obstructed prefect is a zero term and marked as such', () => {
+    const s = fortified();
+    s.obstructed.defence = s.round + 2;
+    const b = defenceBreakdown(s);
+    expect(b.obstructed).toBe(true);
+    expect(b.garrison).toBe(0);
+    expect(b.total).toBeCloseTo(defenceStrength(s), 9);
+  });
+  it('holds on a bare colony and one with nobody in the post', () => {
+    const s = createInitialState(0, 1);
+    const b = defenceBreakdown(s);
+    expect(b.prefectId).toBeNull();
+    expect(b.garrison).toBe(0);
+    expect(b.engines).toBe(0);
+    expect(b.total).toBeCloseTo(defenceStrength(s), 9);
+    expect(b.men.home).toBe(homeMilitia(s));
   });
 });

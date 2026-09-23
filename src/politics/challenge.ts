@@ -9,6 +9,7 @@ import { config } from '../data';
 import type { GameState, Challenge, Character } from '../state/types';
 import { chance } from '../state/rng';
 import { log } from '../state/store';
+import { report } from '../state/reports';
 import { gainGravitas, gravitasRank, leaderOf, livingMembers, playerFamily, standing } from './characters';
 import { clampAtt } from './posts';
 
@@ -71,7 +72,10 @@ export function callChallenge(state: GameState, callerFamilyId: string, heardInR
   };
   state.lastChallengeRound = heardInRound;
   const fam = state.families[callerFamilyId];
-  log(state, 'council', `The ${fam.name} call a challenge for the office of ${config.topOffice.title}. The houses vote at round ${state.challenge.voteRound}.`);
+  const ch = state.challenge;
+  report(state, 'challenge', {
+    phase: 'called', callerFamilyId, voteRound: ch.voteRound, candidates: cand, tally: tally(state, ch), byHouse: tallyByHouse(state, ch),
+  }, `The ${fam.name} call a challenge for the office of ${config.topOffice.title}. The houses vote at round ${ch.voteRound}.`, 'council');
 }
 
 /**
@@ -111,10 +115,23 @@ export function considerChallenge(state: GameState, familyId: string): void {
 export function tally(state: GameState, ch: Challenge): Record<string, number> {
   const votes: Record<string, number> = {};
   for (const id of Object.values(ch.candidates)) votes[id] = 0;
+  for (const house of Object.values(tallyByHouse(state, ch))) {
+    for (const [id, v] of Object.entries(house)) votes[id] += v;
+  }
+  return votes;
+}
+
+/**
+ * The same count, kept by house: which house's men voted for whom. `tally`
+ * is the sum of this, so the two cannot disagree (reports unit).
+ */
+export function tallyByHouse(state: GameState, ch: Challenge): Record<string, Record<string, number>> {
+  const out: Record<string, Record<string, number>> = {};
   const playerCandidate = ch.candidates[playerFamily(state).id];
 
   for (const fam of Object.values(state.families)) {
     const own = ch.candidates[fam.id];
+    const house: Record<string, number> = {};
     for (const member of livingMembers(state, fam.id)) {
       if (member.exiled) continue;
       let pick = own;
@@ -129,16 +146,18 @@ export function tally(state: GameState, ch: Challenge): Record<string, number> {
           pick = rivals[0]?.[1] ?? playerCandidate;
         }
       }
-      if (pick) votes[pick] += 1;
+      if (pick) house[pick] = (house[pick] ?? 0) + 1;
     }
+    out[fam.id] = house;
   }
-  return votes;
+  return out;
 }
 
 export function resolveChallenge(state: GameState): void {
   const ch = state.challenge;
   if (!ch || state.round < ch.voteRound) return;
   const votes = tally(state, ch);
+  const byHouse = tallyByHouse(state, ch);
   const incumbent = state.office;
   const ranked = Object.entries(votes).sort((a, b) => b[1] - a[1]);
   const top = ranked[0];
@@ -160,7 +179,11 @@ export function resolveChallenge(state: GameState): void {
 
   const playerWon = winner?.familyId === playerFamily(state).id;
   if (playerWon) state.stats.challengesWon += 1;
-  log(state, 'council', `The houses vote: ${board}. ${winner ? winner.name : 'Nobody'} holds the office of ${config.topOffice.title}.`);
+  // The record goes in before ch.result is dropped with the challenge.
+  report(state, 'challenge', {
+    phase: 'resolved', callerFamilyId: ch.callerFamilyId, voteRound: ch.voteRound, candidates: ch.candidates, tally: votes, byHouse,
+    winnerId, held, winnerGravitas: config.challenge.winnerGravitas, loserAttitude: held ? 0 : config.challenge.loserAttitude,
+  }, `The houses vote: ${board}. ${winner ? winner.name : 'Nobody'} holds the office of ${config.topOffice.title}.`, 'council');
   if (!held) {
     const loser = incumbent ? state.characters[incumbent] : null;
     if (loser && !playerWon) {
