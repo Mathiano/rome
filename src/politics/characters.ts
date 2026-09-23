@@ -3,12 +3,18 @@ import type { GameState, Character, Family } from '../state/types';
 import { chance, nextRandom, pick } from '../state/rng';
 import { log } from '../state/store';
 
+/** The members of a house who are alive and here: away with a house that left (§9.7) is not here. */
 export function livingMembers(state: GameState, familyId: string): Character[] {
+  return aliveMembers(state, familyId).filter((c) => !c.departed);
+}
+
+/** Alive, here or away. Succession runs on this, since a house keeps its head in exile. */
+export function aliveMembers(state: GameState, familyId: string): Character[] {
   return state.families[familyId].memberIds.map((id) => state.characters[id]).filter((c) => c.alive);
 }
 
 export function leaderOf(state: GameState, familyId: string): Character | null {
-  return livingMembers(state, familyId).find((c) => c.isLeader) ?? null;
+  return aliveMembers(state, familyId).find((c) => c.isLeader) ?? null;
 }
 
 export function playerFamily(state: GameState): Family {
@@ -74,8 +80,10 @@ export function ageAll(state: GameState): void {
 
 /** The eldest living member leads. With none, a new man is raised (Pillar 7). */
 export function succeed(state: GameState, familyId: string): void {
-  for (const c of livingMembers(state, familyId)) c.isLeader = false;
-  const living = livingMembers(state, familyId).sort((a, b) => b.age - a.age);
+  for (const c of aliveMembers(state, familyId)) c.isLeader = false;
+  // A house away from the colony still has a head; a new man is raised only
+  // when there is truly nobody left, here or away.
+  const living = aliveMembers(state, familyId).sort((a, b) => b.age - a.age);
   let heir = living[0];
   if (!heir) heir = raiseNewMan(state, familyId);
   heir.isLeader = true;

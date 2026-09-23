@@ -258,6 +258,17 @@
     "rivalMinSize": 3,
     "rivalChancePerRound": 0.35
   },
+  "secession": {
+    "_comment": "A failure state (DESIGN \u00a79.7): a house that has been slighted enough, and loathes you enough, for long enough, leaves the colony and takes a share of the citizens with it. Never while it holds the office \u2014 a house in power has no reason to go. It hears terms again after awayRounds if its regard has been mended (a bribe still reaches it), and comes home regardless by maxAwayRounds (Pillar 7). First-pass defaults 2026-09-23, flagged for tuning.",
+    "grievances": 4,
+    "attitude": -40,
+    "rounds": 3,
+    "populationShare": 0.1,
+    "romeFavour": -8,
+    "awayRounds": 6,
+    "returnAttitude": -20,
+    "maxAwayRounds": 12
+  },
   "bodyguard": {
     "_comment": "The militia pool's third sink (DESIGN \u00a78.1, \u00a79.2). Guarding one man leaves another exposed.",
     "maxPerCharacter": 4,

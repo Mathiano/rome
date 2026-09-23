@@ -31,6 +31,8 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       grievances: 0,
       demand: null,
       denounced: false,
+      departedRound: null,
+      sourRounds: 0,
     };
     for (const m of f.members) {
       characters[m.id] = {
@@ -128,7 +130,7 @@ export function emptyStats() {
     demandsGranted: 0, demandsRefused: 0, choicesAnswered: 0, romeRequestsCompleted: 0,
     romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
     challengesFaced: 0, challengesWon: 0, roundsOutOfOffice: 0, assassinationsOrdered: 0,
-    assassinationsSucceeded: 0, marriages: 0, exiles: 0, adoptions: 0,
+    assassinationsSucceeded: 0, marriages: 0, exiles: 0, adoptions: 0, secessions: 0,
     sitesClaimed: 0, sitesLost: 0, siteRaidsRepelled: 0, scoutsLost: 0, researchCompleted: 0,
   };
 }
@@ -210,6 +212,8 @@ export function migrate(state: GameState): GameState {
     if (f.grievances === undefined) f.grievances = 0;
     if (f.demand === undefined) f.demand = null;
     if (f.denounced === undefined) f.denounced = false;
+    if (f.departedRound === undefined) f.departedRound = null;
+    if (f.sourRounds === undefined) f.sourRounds = 0;
   }
   state.version = config.saveVersion;
   return state;

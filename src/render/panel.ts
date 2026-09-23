@@ -16,6 +16,7 @@ import { spareMilitia } from '../combat/militia';
 import { assassinationChance, backingCost, marriageCandidates, totalBodyguards } from '../politics/intrigue';
 import { officeHolder, playerHoldsOffice, tally } from '../politics/challenge';
 import { adoptionCandidates, houseConsent, newManCost } from '../politics/adoption';
+import { mayReturn } from '../politics/secession';
 import { favourRewardMultiplier } from '../rome/requests';
 import { appeasePrice } from '../tribes/turn';
 import { pendingChoices } from '../politics/events';
@@ -506,7 +507,7 @@ const openMenus = new Set<string>();
  * house, so each runs a round, and every one of them is remembered: a grievance
  * outlives the attitude it cost.
  */
-function renderIntrigue(s: GameState, familyId: string): string {
+function renderIntrigue(s: GameState, familyId: string, bribeOnly = false): string {
   const f = s.families[familyId];
   const c = config.intrigue;
   const pl = leaderOf(s, playerFamily(s).id);
@@ -520,6 +521,9 @@ function renderIntrigue(s: GameState, familyId: string): string {
   const b = c.bribe;
   out += `<div class="row"><button class="act" data-political="bribe" data-family="${familyId}" ${gate(b.minRank, b.cost) ? '' : 'disabled'}>Bribe</button>
     <span class="muted">${b.cost} denarii, rank ${b.minRank} · their regard for you rises ${b.attitude}, your own standing slips ${b.gravitasLoss}. ${why(b.minRank, b.cost)}</span></div>`;
+
+  // A house away from the colony can be reached with a gift and nothing else.
+  if (bribeOnly) return out + `</details>`;
 
   const e = c.expose;
   out += `<div class="row"><button class="act" data-political="expose" data-family="${familyId}" ${gate(e.minRank, e.cost) ? '' : 'disabled'}>Expose their skimming</button>
@@ -571,12 +575,22 @@ function renderFamilies(s: GameState): string {
     const members = f.memberIds.map((id) => s.characters[id]);
     const held = postsHeldBy(s, f.id);
     out += `<div class="card ${f.isPlayer ? 'player' : 'rival'}"><b>${esc(f.gensName)}</b> — standing ${n(standing(s, f.id))}, ${livingMembers(s, f.id).length} living, ${held.length} post${held.length === 1 ? '' : 's'}${f.loyalist ? ', loyal to Rome' : ''}`;
-    if (!f.isPlayer) {
+    if (!f.isPlayer && f.departedRound !== null) {
+      const sc = config.secession;
+      const away = s.round - f.departedRound;
+      out += `<p>Attitude toward you: <b>${n(f.attitude)}</b></p><div class="meter att"><i style="width:${(f.attitude + 100) / 2}%"></i></div>`;
+      out += `<p style="color:var(--terracotta)">They left the colony at round ${f.departedRound} and took a share of the citizens with them.</p>
+        <p class="muted">${mayReturn(s, f) ? 'They are ready to come home.' : away < sc.awayRounds
+          ? `They will hear terms from round ${f.departedRound + sc.awayRounds} if their regard for you reaches ${sc.returnAttitude}`
+          : `They will come home once their regard for you reaches ${sc.returnAttitude}`}${away < sc.maxAwayRounds ? `, and by round ${f.departedRound + sc.maxAwayRounds} regardless.` : '.'} A gift still reaches them.</p>`;
+      out += renderIntrigue(s, f.id, true);
+    } else if (!f.isPlayer) {
       out += `<p>Attitude toward you: <b>${n(f.attitude)}</b></p><div class="meter att"><i style="width:${(f.attitude + 100) / 2}%"></i></div>`;
       if (f.attitude <= config.posts.unhappyThreshold && held.length) out += `<p style="color:var(--terracotta)">Unhappy and in office: expect obstruction, skimming or leaks.</p>`;
       if (held.length === 0) out += `<p class="muted">Without a post their regard for you falls each round.</p>`;
       if (held.length >= config.posts.dangerousPostCount) out += `<p style="color:var(--terracotta)">They hold too many posts. Dangerous.</p>`;
       if (f.grievances > 0) out += `<p class="muted">Grievances remembered: <b>${f.grievances}</b>${f.denounced ? ' · they have written to Rome' : ''}</p>`;
+      if (f.sourRounds > 0) out += `<p style="color:var(--terracotta)">They talk of leaving the colony. ${config.secession.rounds - f.sourRounds} more round${config.secession.rounds - f.sourRounds === 1 ? '' : 's'} like this and they will.</p>`;
       if (f.demand) {
         const d = f.demand;
         const what = d.kind === 'post' ? `the post of ${esc(postDefs.find((p) => p.id === d.postId)?.name ?? d.postId!)}` : `${d.denarii} denarii`;
@@ -602,7 +616,7 @@ function renderFamilies(s: GameState): string {
       const postName = c.post ? esc(postDefs.find((p) => p.id === c.post)?.name ?? c.post) : '';
       out += `<div class="member${c.alive ? '' : ' dead'}">${portraitSvg(c, f, { dead: !c.alive })}
         <div class="who"><b>${esc(c.name)}</b>${c.isLeader ? ' <span title="head of the house">★</span>' : ''}
-          <div class="muted">${c.alive ? `age ${c.age}` : `† ${esc(c.causeOfDeath ?? '')}`} · gravitas ${n(c.gravitas)}, rank ${gravitasRank(c)}${postName ? ` · ${postName}` : ''}${spouseTxt(s, c)}</div>
+          <div class="muted">${c.alive ? (c.departed ? `age ${c.age} · gone with the house` : `age ${c.age}`) : `† ${esc(c.causeOfDeath ?? '')}`} · gravitas ${n(c.gravitas)}, rank ${gravitasRank(c)}${postName ? ` · ${postName}` : ''}${spouseTxt(s, c)}</div>
           <div class="stats"><span>auth ${st.authority}</span><span>disc ${st.discipline}</span><span>craft ${st.craft}</span><span>conn ${st.connections}</span><span>piety ${st.piety}</span></div>
           ${c.alive ? renderGuards(s, c.id, f.isPlayer) : ''}
         </div></div>`;

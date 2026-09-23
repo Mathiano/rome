@@ -6,6 +6,7 @@ import { clampAtt, isDangerous, postsHeldBy } from './posts';
 import { gravitasRank, livingMembers } from './characters';
 import { officeFamilyId } from './challenge';
 import { maybeAdopt } from './adoption';
+import { secessionTurn } from './secession';
 
 /**
  * A rival house's step (DESIGN §3.2 step 2, §9.4). It pursues its own ends: it
@@ -13,6 +14,8 @@ import { maybeAdopt } from './adoption';
  * post it holds gets worse the longer the grievance list runs.
  */
 export function rivalTurn(state: GameState, fam: Family): void {
+  // A house that has left the colony does none of this until it comes home.
+  if (secessionTurn(state, fam)) return;
   fillPostsIfInPower(state, fam);
   maybeAdopt(state, fam);
   // A house that has just been ignored does not ask again in the same breath.

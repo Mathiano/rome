@@ -268,6 +268,8 @@ Built 2026-09-20 (`src/politics/intrigue.ts`). In: bribe, expose, denounce to Ro
 
 Coup (the office taken by force), secession (a family or a share of citizens leaves), denunciation to Rome (Rome intervenes — a soft reset, not a loss), assassination of the leader (an heir takes over). Each is a hard setback; none is terminal (Pillar 7).
 
+Secession built 2026-09-23 (`src/politics/secession.ts`), on a mechanism confirmed in session. A rival house that has been slighted enough (`secession.grievances`) and loathes you enough (`secession.attitude`) for enough consecutive rounds (`secession.rounds`) leaves the colony — never while it holds the office, since a house in power has no reason to go. It warns the round before. When it goes its members are away, not dead: their posts fall vacant, their votes leave the council (§9.5), a share of the citizens goes with them (`populationShare`) and Rome thinks the less of the colony (`romeFavour`). Its regard neither sours nor mellows while it is away; a bribe still reaches it. It hears terms again after `awayRounds` if its regard has been mended to `returnAttitude`, and comes home regardless by `maxAwayRounds` — Pillar 7 forbids a permanent loss, and §14 does not bank a house vanishing. On its return its grievances are forgotten. All numbers are first-pass defaults, flagged for tuning.
+
 ### 9.8 Gods ✅
 
 Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
@@ -363,3 +365,4 @@ v0.2.5 — 2026-09-22 — §4.4 **reverses v0.2.4**: the wall is *not* the caste
 v0.2.6 — 2026-09-22 — §10: with no wall raised the gate draws no marker at rest and lights only under the pointer, so an unbuilt perimeter slot does not stand as a box in the fields. The Village panel now opens on an index of everything pinned to a slot, raised or not, each entry selecting it — the wall stands at the gate rather than on a plot in a ring, so it was the one building that had to be hunted for.
 v0.2.7 — 2026-09-23 — §9.2: heirs by adoption, both routes. A new man for the player's house runs no round; a man taken from another house runs one, and the giving house must consent. Rival houses adopt on the same rule below a floor.
 v0.2.8 — 2026-09-23 — §8.2, §9.2: death by raid. The garrison prefect can fall when a raid gets through; discipline eases it, guards do not.
+v0.2.9 — 2026-09-23 — §9.7: secession. A slighted, hostile house out of office leaves the colony with a share of the citizens, and comes home once its regard is mended or by a hard limit.
