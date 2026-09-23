@@ -15,6 +15,7 @@ import { site as siteDef } from '../map/world';
 import { spareMilitia } from '../combat/militia';
 import { assassinationChance, backingCost, marriageCandidates, totalBodyguards } from '../politics/intrigue';
 import { officeHolder, playerHoldsOffice, tally } from '../politics/challenge';
+import { adoptionCandidates, houseConsent, newManCost } from '../politics/adoption';
 import { favourRewardMultiplier } from '../rome/requests';
 import { appeasePrice } from '../tribes/turn';
 import { pendingChoices } from '../politics/events';
@@ -49,6 +50,8 @@ export interface PanelHandlers {
   onResearch(id: string): void;
   onRushResearch(id: string): void;
   onGuards(characterId: string, men: number): void;
+  /** Raise a new man into the house: household business, no round (DESIGN §9.2). */
+  onAdoptNewMan(): void;
   onExport(): void;
   onImport(json: string): void;
   onReset(): void;
@@ -508,6 +511,16 @@ function renderIntrigue(s: GameState, familyId: string): string {
       : '<option>nobody unwed on both sides</option>'}</select>
     <span class="muted">${m.cost} denarii, rank ${m.minRank} · their regard +${m.attitude} and one grievance forgotten. ${why(m.minRank, m.cost)}</span></div>`;
 
+  const ad = config.adoption;
+  const consent = houseConsent(s, familyId);
+  const wards = adoptionCandidates(s, familyId);
+  const adoptOk = consent.ok && gate(ad.minRank, ad.houseCost);
+  out += `<div class="row"><button class="act" data-adopt="${familyId}" ${adoptOk ? '' : 'disabled'}>Adopt one of their men</button>
+    <select data-select-adopt="${familyId}" ${wards.length ? '' : 'disabled'}>${wards.length
+      ? wards.map((w) => `<option value="${w.id}">${esc(w.name)}, age ${w.age}, rank ${gravitasRank(w)}</option>`).join('')
+      : '<option>nobody they could spare</option>'}</select>
+    <span class="muted">${ad.houseCost} denarii, rank ${ad.minRank} · he takes your name and his vote comes with him; their regard +${ad.houseAttitude}. ${consent.ok ? why(ad.minRank, ad.houseCost) : esc(consent.reason ?? '')}</span></div>`;
+
   const living = livingMembers(s, familyId).filter((x) => !x.exiled);
   const x = c.exile;
   const a = c.assassinate;
@@ -547,6 +560,15 @@ function renderFamilies(s: GameState): string {
       }
       out += renderIntrigue(s, f.id);
     }
+    if (f.isPlayer) {
+      const ad = config.adoption;
+      const cost = newManCost(s);
+      const pl = leaderOf(s, f.id);
+      const rank = pl ? gravitasRank(pl) : 0;
+      const ok = rank >= ad.minRank && s.resources.denarii >= cost;
+      out += `<div class="row"><button class="act" data-adopt-new ${ok ? '' : 'disabled'}>Raise a new man into the house</button>
+        <span class="muted">${cost} denarii, rank ${ad.minRank} · a veteran, a freedman or a tribal noble, grown and yours. The price rises with the household. Runs no round. ${rank < ad.minRank ? `rank ${ad.minRank} needed` : s.resources.denarii < cost ? 'not enough denarii' : ''}</span></div>`;
+    }
     out += `<div class="roster">`;
     for (const c of members) {
       const st = c.stats;
@@ -560,7 +582,7 @@ function renderFamilies(s: GameState): string {
     }
     out += `</div></div>`;
   }
-  out += `<p class="muted">A post teaches its trade: its holder's stat grows while he serves. Gravitas rank gates the greater posts. Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Guards are drawn from the same militia pool as the walls and the far holdings: ${spareMilitia(s)} men are uncommitted, and standing ${totalBodyguards(s)} of them over your kin leaves that many fewer behind the ditch. Heirs by birth and adoption wait on DESIGN §15.7.</p>`;
+  out += `<p class="muted">A post teaches its trade: its holder's stat grows while he serves. Gravitas rank gates the greater posts. Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Guards are drawn from the same militia pool as the walls and the far holdings: ${spareMilitia(s)} men are uncommitted, and standing ${totalBodyguards(s)} of them over your kin leaves that many fewer behind the ditch. Heirs by birth wait on DESIGN §15.7; adoption does not, and is Roman practice.</p>`;
   return out;
 }
 
@@ -717,6 +739,11 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.accept) return h.onPolitical({ type: 'accept_demand', familyId: d.accept });
     if (d.refuse) return h.onPolitical({ type: 'refuse_demand', familyId: d.refuse });
     if (d.guards) return h.onGuards(d.guards, Number(d.men));
+    if ('adoptNew' in d) return h.onAdoptNewMan();
+    if (d.adopt) {
+      const id = panel.querySelector<HTMLSelectElement>(`select[data-select-adopt="${d.adopt}"]`)?.value ?? '';
+      return id ? h.onPolitical({ type: 'adopt', characterId: id }) : undefined;
+    }
     if (d.marry) {
       const sel = panel.querySelector<HTMLSelectElement>(`select[data-select-marry="${d.marry}"]`);
       const [aId, bId] = (sel?.value ?? '').split('|');
