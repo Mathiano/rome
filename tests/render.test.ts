@@ -46,3 +46,19 @@ describe('render', () => {
     expect(images).toHaveLength(built.length);
   });
 });
+
+describe('the Reports tab (reports unit)', () => {
+  it('the bar reads Reports on the log tab, nine tabs, and the tab renders with no clock in it', () => {
+    const g = new Game(createInitialState(0, 1));
+    g.act({ type: 'convene' }, 7_654_321);
+    const html = renderPanel(g, 'log', null, 7_654_322);
+    const nav = html.match(/<nav>(.*?)<\/nav>/)![1];
+    expect(nav).toMatch(/data-tab="log"[^>]*>Reports/);
+    expect(nav).not.toContain('>Log<');
+    expect(nav.match(/<button/g)).toHaveLength(9);
+    expect(html).toContain('<h2>Reports</h2>');
+    expect(html).toContain('data-menu="round-1"');
+    expect(html).not.toMatch(/\d{1,2}:\d{2}/);
+    expect(html).not.toContain(String(g.state.lastReport!.at));
+  });
+});

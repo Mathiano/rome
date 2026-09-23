@@ -27,6 +27,7 @@ import {
 import { roundsUntilIdle } from '../politics/rounds';
 import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
 import { blockedBy, currentAdvice, foundingParagraphs, resolveGoto } from './advisor';
+import { rememberOpen, renderHistoryTable, renderNewsRecord, renderReports, reportsUnread, setReportFilter } from './reports';
 
 export { remainingText, durationText } from './overview';
 
@@ -39,7 +40,7 @@ const TABS: { id: Tab; name: string }[] = [
   { id: 'family', name: 'Houses' },
   { id: 'tribe', name: 'Tribe' },
   { id: 'rome', name: 'Rome' },
-  { id: 'log', name: 'Log' },
+  { id: 'log', name: 'Reports' },
   { id: 'save', name: 'Save' },
 ];
 
@@ -111,7 +112,10 @@ function report(state: GameState, lines: LogEntry[]): News | null {
 }
 
 export function renderNews(news: News, state: GameState, now: number = Date.now()): string {
-  const items = news.lines.map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('');
+  // The record (reports unit): the round's ledger and its report cards above
+  // the lines; a line a card already carries is not read twice.
+  const record = renderNewsRecord(state, news);
+  const items = news.lines.filter((e) => !record.covered.has(e.id)).map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('');
   const choices = pendingChoices(state);
   let foot: string;
   if (state.pendingChoice && choices.length) {
@@ -132,7 +136,7 @@ export function renderNews(news: News, state: GameState, now: number = Date.now(
   }
   const leaving = news.kind === 'report' ? leavingCounsel(state, now) : '';
   return `<div class="news-card${state.round === 0 ? ' opening' : ''}"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
-    ${premise}<ul>${items}</ul>${leaving}${foot}</div>`;
+    ${premise}${record.html}<ul>${items}</ul>${leaving}${foot}</div>`;
 }
 
 /**
@@ -177,6 +181,7 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
   const step = currentAdvice(s);
   const badge = (t: Tab) => {
     if (t === 'rome' && s.rome.activeRequest && !s.rome.activeRequest.fulfilled) return '<span class="badge">!</span>';
+    if (t === 'log' && reportsUnread(s) > 0) return `<span class="badge">${reportsUnread(s)}</span>`;
     if (step && step.goto.tab === t) return '<span class="badge">!</span>';
     return '';
   };
@@ -190,7 +195,7 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
     case 'family': body = renderFamilies(s); break;
     case 'tribe': body = renderTribe(s); break;
     case 'rome': body = renderRome(s); break;
-    case 'log': body = renderLog(s); break;
+    case 'log': body = renderReports(s); break;
     case 'save': body = renderSave(s); break;
   }
   return `<nav>${nav}</nav>${renderCounsel(s)}<section>${body}</section>`;
@@ -710,11 +715,6 @@ function renderRome(s: GameState): string {
   return out;
 }
 
-function renderLog(s: GameState): string {
-  const items = [...s.log].reverse().slice(0, 80).map((e) => `<li class="k-${e.kind}"><span class="muted">r${e.round}</span> ${esc(e.text)}</li>`).join('');
-  return `<h2>Log</h2><div class="log"><ul>${items}</ul></div>`;
-}
-
 function renderSave(s: GameState): string {
   const st = s.stats;
   return `<h2>Save</h2><p class="muted">The game saves itself to this browser. Export to carry it to another device; import replaces the current game.</p>
@@ -734,6 +734,7 @@ function renderSave(s: GameState): string {
     <tr><td>Denarii spent on haste</td><td>${Math.round(st.denariiSpentOnHaste)}</td></tr>
     <tr><td>Lesser offices</td><td>corruption ${n(lesserEffect(s, 'corruptionFall'))}/round, build ${Math.round(lesserEffect(s, 'buildSpeed') * 100)}% faster, defence +${n(lesserEffect(s, 'defence'))}</td></tr>
   </table>
+  ${renderHistoryTable(s)}
   <p class="muted">Founded ${new Date(s.createdAt).toLocaleDateString()} · save version ${s.version}</p>`;
 }
 
@@ -742,6 +743,7 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
   // `toggle` does not bubble, so it is caught on the way down instead.
   panel.addEventListener('toggle', (ev) => {
     const d = (ev.target as HTMLElement).closest('details') as HTMLDetailsElement | null;
+    if (d?.dataset.menu) rememberOpen(d.dataset.menu, d.open);
     const id = d?.dataset.intrigue;
     if (!id) return;
     if (d!.open) openMenus.add(id);
@@ -752,6 +754,8 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.tab) return h.onTab(d.tab as Tab);
+    // The Reports folder: panel-module state, re-rendered through the tab.
+    if (d.reportFilter) { setReportFilter(d.reportFilter); return h.onTab('log'); }
     if (d.build && d.building) return h.onBuild(d.build, d.building);
     if (d.selectSlot) return h.onSelectSlot(d.selectSlot);
     // The plot card's way back: no slot selected is the overview.

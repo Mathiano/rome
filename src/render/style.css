@@ -294,3 +294,30 @@ header .res .neg b { color: #e0885a; }
 .news-card .leaving li { border-left-color: var(--gold); font-size: 13px; }
 #village .slot.counsel .tile, #village .slot.built.counsel .tile { fill: rgba(201,162,74,0.22); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: none; }
 #village .slot.built.counsel .tile { fill: rgba(201,162,74,0.16); }
+
+/* The reports archive (unit: reports). Round folders newest first, the
+   before → after ledger, one card per report with its terms in a two-column
+   table, and the folder buttons. Nothing here shows a clock. */
+#panel .filters { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 8px; }
+#panel details.round { margin: 6px 0; border-top: 1px solid var(--shadow); padding-top: 4px; }
+#panel details.round > summary { cursor: pointer; font-variant: small-caps; letter-spacing: 0.04em; font-size: 14px; }
+#panel details.log { margin: 4px 0 2px; }
+#panel details.log > summary { cursor: pointer; font-size: 12px; opacity: 0.7; }
+#panel details.log ul, .news-card details.round ul { list-style: none; padding: 0 0 0 8px; margin: 4px 0; }
+#panel details.log li, .news-card details.round li { font-size: 12px; padding: 1px 0; border-left: 2px solid var(--shadow); padding-left: 6px; margin: 2px 0; }
+.card.report { font-size: 12px; }
+.card.report > b { font-size: 13px; }
+.card.report p { margin: 4px 0; }
+.card.report .fell { color: var(--terracotta); }
+table.terms, table.goods, table.ledger-round, table.history { border-collapse: collapse; margin: 4px 0; font-size: 12px; width: 100%; }
+table.terms td, table.goods td, table.goods th, table.ledger-round td, table.ledger-round th, table.history td, table.history th { padding: 1px 6px 1px 0; text-align: left; }
+table.terms td:last-child, table.goods td:not(:first-child), table.goods th:not(:first-child),
+table.ledger-round td:not(:first-child), table.ledger-round th:not(:first-child), table.history td:not(:first-child), table.history th:not(:first-child) { text-align: right; }
+table.terms tr.total td { border-top: 1px solid var(--shadow); font-weight: 600; }
+table.goods th, table.ledger-round th, table.history th { font-weight: normal; opacity: 0.65; }
+.pos { color: var(--moss); }
+table .neg, .card.report .neg { color: var(--terracotta); }
+.news-card .ledger-round { margin-top: 8px; }
+.news-card .tally-line { font-weight: 600; margin: 8px 0 4px; }
+.news-card details.round { border-top: 1px solid var(--shadow); margin: 6px 0; padding-top: 4px; }
+.news-card details.round > summary { cursor: pointer; font-variant: small-caps; letter-spacing: 0.04em; }

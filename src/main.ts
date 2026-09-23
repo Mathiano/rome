@@ -118,6 +118,7 @@ function panelKey(now: number): string {
     st.rome.activeRequestId, st.office, st.challenge?.voteRound ?? '',
     currentAdvice(st)?.id ?? '',
     Object.values(st.characters).map((c) => c.bodyguards).join(''),
+    st.reports.length,
   ].join('|');
 }
 

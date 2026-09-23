@@ -6,6 +6,8 @@ import { appoint, meetsRank } from '../src/politics/posts';
 import { gravitasRank } from '../src/politics/characters';
 import { bribe, seekRomeBacking } from '../src/politics/intrigue';
 import { config, post } from '../src/data';
+import { runRound } from '../src/politics/rounds';
+import { renderReports } from '../src/render/reports';
 
 const H = 3_600_000;
 
@@ -122,5 +124,95 @@ describe('levelling and gravitas gates', () => {
     expect(() => seekRomeBacking(s)).toThrow(/rank 2/);
     s.characters.p_leader.gravitas = config.gravitas.rankThresholds[2];
     seekRomeBacking(s);
+  });
+});
+
+describe('the round ledger and the history (reports unit)', () => {
+  it('records the colony as the round found it and as it left it', () => {
+    const g = new Game(createInitialState(0, 3));
+    g.state.resources.wood = 321;
+    const before = { ...g.state.resources };
+    const pop = Math.floor(g.state.population);
+    runRound(g.state, 1000);
+    const r = g.state.lastReport!;
+    expect(r.before!.resources).toEqual(before);
+    expect(r.before!.population).toBe(pop);
+    expect(r.resources).toEqual(g.state.resources);
+    expect(r.toLogId).toBe(g.state.logSeq);
+    expect(r.toLogId).toBeGreaterThan(r.fromLogId);
+    expect(r.forumTier).toBe(1);
+    expect(typeof r.standing).toBe('number');
+    expect(r.buildingsRaised).toBe(g.state.slots.filter((s) => s.tier > 0).length);
+    expect(r.claimed).toBe(0);
+  });
+  it('the history grows one a round, idle rounds included, and trims past config.history.max', () => {
+    const g = new Game(createInitialState(0, 11));
+    g.state.seenLogId = g.state.logSeq;
+    g.act({ type: 'convene' }, 1000);
+    expect(g.state.history).toHaveLength(1);
+    g.tick(config.calendarFloorHours * H * 3 + 1000);
+    expect(g.state.awayRounds).toBe(3);
+    expect(g.state.history).toHaveLength(4);
+    expect(g.state.history.map((r) => r.idle)).toEqual([false, true, true, true]);
+    expect(g.state.history.at(-1)).toBe(g.state.lastReport);
+    const was = config.history.max;
+    config.history.max = 5;
+    try {
+      for (let i = 0; i < 4; i++) g.act({ type: 'convene' }, 10_000 + i);
+      expect(g.state.history).toHaveLength(5);
+      expect(g.state.history[0].round).toBe(g.state.round - 4);
+    } finally { config.history.max = was; }
+  });
+  it('an old lastReport without a ledger still renders, and a save without history migrates to none', () => {
+    const g = new Game(createInitialState(0, 3));
+    g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
+    g.act({ type: 'convene' }, 1000);
+    const raw = JSON.parse(serialise(g.state)) as Record<string, unknown> & { lastReport: Record<string, unknown> };
+    delete raw.history;
+    delete raw.lastReport.before;
+    delete raw.lastReport.toLogId;
+    const back = deserialise(JSON.stringify(raw));
+    expect(back.history).toEqual([]);
+    expect(back.lastReport!.before).toBeUndefined();
+    const news = pendingNews(back);
+    if (news) {
+      const html = renderNews(news, back, 1000);
+      expect(html).toContain('Continue');
+      expect(html).not.toContain('ledger-round');
+    }
+    expect(renderReports(back)).toContain('Reports');
+  });
+  it('never prints the clock: the card and the tab show rounds, not times', () => {
+    const g = new Game(createInitialState(0, 3));
+    g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
+    const at = 987_654_321;
+    g.act({ type: 'convene' }, at);
+    expect(g.state.lastReport!.at).toBe(at);
+    const news = pendingNews(g.state);
+    const card = news ? renderNews(news, g.state, at) : '';
+    const tab = renderReports(g.state);
+    for (const html of [card, tab]) {
+      expect(html).not.toMatch(/\d{1,2}:\d{2}/);
+      expect(html).not.toContain(String(at));
+    }
+  });
+  it('the away digest stacks one ledger a round with a tally line on top', () => {
+    const g = new Game(createInitialState(0, 11));
+    g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
+    g.tick(config.calendarFloorHours * H * 3);
+    expect(g.state.awayRounds).toBe(3);
+    const news = pendingNews(g.state)!;
+    expect(news.kind).toBe('away');
+    const html = renderNews(news, g.state, config.calendarFloorHours * H * 3);
+    expect(html.match(/class="ledger-round"/g)).toHaveLength(3);
+    expect(html.match(/class="tally-line"/g)).toHaveLength(1);
+    expect(html).toMatch(/raids?|no raids/);
+    const rounds = [...html.matchAll(/<summary>Round (\d+)<\/summary>/g)].map((m) => Number(m[1]));
+    expect(rounds).toEqual([3, 2, 1]);
+    // every line that reached the digest is inside a round, so the loose list is empty
+    expect(html).toContain('<ul></ul>');
   });
 });
