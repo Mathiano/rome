@@ -6,7 +6,7 @@ import { createVillageView } from './render/village';
 import { progress as progressOf } from './village/construction';
 import { createMapView } from './render/mapview';
 import { bindPanel, pendingNews, renderHeader, renderNews, renderPanel, type Tab } from './render/panel';
-import { currentAdvice, resolveGoto } from './render/advisor';
+import { currentAdvice } from './render/advisor';
 
 const dev = createDevClock(isDevRequested(location.search), () => Date.now(), (() => { try { return globalThis.localStorage ?? null; } catch { return null; } })());
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
@@ -81,19 +81,12 @@ function renderNewsOverlay(): void {
       if (!btn || btn.disabled) return;
       if (btn.dataset.choice) return guard(() => game.choose(btn.dataset.choice!, dev.now()));
       if (!btn.hasAttribute('data-news-ok')) return;
-      // Read the news afresh: the element outlives its first card, and a round
-      // run while the founding card stood turns it into a report.
-      const founding = pendingNews(game.state)?.kind === 'opening';
       game.state.seenLogId = game.state.logSeq;
       game.state.awayRounds = 0;
       game.state.seenOpening = true;
-      // Leaving the founding card lands on the first counsel's plot, so the
-      // colony opens with something selected rather than an empty panel.
-      if (founding) {
-        const step = currentAdvice(game.state);
-        const go = step ? resolveGoto(game.state, step) : null;
-        if (go?.slot) { selected = go.slot; tab = 'village'; }
-      }
+      // Leaving the founding card lands on the colony overview with nothing
+      // selected; the counsel card above it says where to go, and the plot it
+      // names is already marked on the village.
       persist();
       render(true);
     });
