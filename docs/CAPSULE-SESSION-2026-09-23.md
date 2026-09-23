@@ -196,3 +196,75 @@ lands.
 - The base-map brief, the artifact log and the playtest list are the pattern
   that worked: Mathias plays, writes verdicts, I act on the verdicts and not on
   my own theory of what's wrong.
+
+---
+
+## Addendum, 23 Sep evening — the Tribal Wars patch
+
+One integration branch, `claude/tribal-wars-patch`: `main` + PRs #3–#7 merged,
+then four units built in isolated worktrees by a design panel → implementers →
+adversarial reviewers workflow, merged by hand. Mathias's brief: *"base it more
+like Tribal Wars for this patch"*, read as the **shape** of a Tribal Wars town
+(headquarters overview, quest line, reports inbox, a due list, a growing-town
+feel) and none of its mechanics — troops, attacking and countdowns collide with
+Pillar 5, §8.3, §14 and §3.1 as amended. 395 tests, up from 265 on the base.
+
+### What changed
+
+| Unit | DESIGN | What |
+|---|---|---|
+| Effect vocabulary | v0.2.10 | `data/effects.json`: noun, unit and percent flag for every effect key in buildings and research; a data test keeps it complete and unused-free. |
+| Headquarters overview | v0.2.10 | `src/render/overview.ts`. The Village tab opens on the colony: the two lanes, every building grouped centre → inner → outer → perimeter with tier, now → next effect, cost, time in words and either the action or every gate it fails; unplaced buildings with a plot link; open plots by site; a ledger per resource that sums to the header. `BuildCheck` gained `reasons`, `gates`, `short`. |
+| The opening counsel | v0.2.11 | `data/advisor.json`, `src/render/advisor.ts`. Five steps (iron seam → castellum → scouts → curator of works → Rome has written) read off the colony, one card between the tabs and the tab body on every tab, "Show me" selects the plot, hex or tab, "Enough counsel" puts it away per save. The founding card's prose is data. The round report ends on "Before you go". |
+| Reports archive | v0.2.12 | `src/state/reports.ts`, `src/render/reports.ts`. A `Report` record beside its log line for every raid, site raid, scout, envoy, vote and letter from Rome; `defenceBreakdown()` whose parts sum to `defenceStrength()` (tested, with research and obstruction); each round's before → after ledger in `state.history`. The Log tab is labelled Reports (id `log` unchanged): rounds newest first as folds, seven kind filters, the raw lines inside each round, an unread count on the tab. Rome's +5 favour / +3 loyalist regard moved from code to `config.rome`. |
+| Town and loop | v0.2.13 | `src/render/due.ts`, `src/village/away.ts`, `src/render/summary.ts`. A Due block at the top of the Village tab from one collector the report footer shares; the colony summary card (counts, never a score); the header's muted line gains wall, plots and holdings; a return strip of what the village clock changed, amounts only; `overflowSinceSeen` counted in `accrue()` and told as waste on the strip and the round card; duty-only tab badges lifted into `tabBadge()`. |
+
+### Decisions taken at the merge, mine, reversible
+
+- **No pulse on the counsel's plot** (`691b074`). The design pass excluded it; the plot wears the selected look, still.
+- **Continue on the founding card lands on the overview, not on the plot card** (`d4875c2`). The advisor unit's landing predated the overview and hid it at first sight.
+- **A rising tier-0 plot shows no tier and no zero yield** on its row (`e88114c`).
+- **Village block order is counsel → return strip → Due → summary → lanes → overview.** The contract said strip → counsel → Due; the counsel card sits above every tab's body (Mathias: keep it on every tab), so the strip goes under it.
+- **The Reports tab's folders and filter reset with the colony** (`d9f73a3`), the one unfixed review finding that was a bug.
+- Both units track `<details data-menu>` state: the panel's `openMenus` and the reports module's own map. Harmless duplication, kept because reports.ts must not import panel.ts.
+
+### Verified
+
+- ✅ `tsc --noEmit`, 395 tests, `vite build`, at `0b4c737`.
+- ✅ Headless Chromium on the built app, no page errors: the founding card; the overview with lanes, rings and ledger; the counsel card advancing iron seam → castellum and its plot marked; the plot card and its way back; "Enough counsel" clearing the mark on every tab; a convened round's "Before you go"; the Due block with a job and a massing tribe; the summary card and the header line; the raid card's four terms summing to Defence with no roll and no multiplier printed; the Reports tab's folders, filters and count badge, no clock anywhere in it; a six-hour gap with a full store → the return strip (amounts only, no duration) and the waste line on the next round card.
+- 🟡 Not exercised in the browser: scout, envoy, challenge and collapse report cards (unit-tested only); the away digest with several idle rounds (unit-tested only).
+
+### Open for Mathias — first-pass defaults in data
+
+Every number below lives in `data/*.json` with a `_comment`; none is in code.
+
+- `config.reports.max` 60 records kept; `config.history.max` 100 rounds; `config.history.tableEvery` 10 for the Save tab's table.
+- `config.rome.completeFavour` 5, `config.rome.completeLoyalistAttitude` 3 (were literals; values unchanged).
+- The counsel's content and voice (`data/advisor.json`, `_voice` note): five steps, "Counsel" with no speaker, step 3 spends 25 of the founding 80 denarii, step 4 names a post without saying an appointment hands that house leverage; terminal condition `romeAnswered`.
+- Effect words (`data/effects.json`): a first-pass vocabulary.
+
+### Open for Mathias — curation and tone
+
+- Which actors get a report record: raids, site raids, scouts, envoys, votes, Rome, a collapse do; rival-house moves, intrigue, events and deaths by age stay prose.
+- The raid card lists Rome's engines and the lesser office as rows only when non-zero, because the parts must sum; the wall term folds research in. Fear is shown as the observed change, never the rule. The site-raid roll is folded into one attack total.
+- The declined-request card prints "Rome's favour −5" where §6 says no punishment and the prose says Rome says nothing.
+- The challenge card shows whom each house voted for, which reveals the swing house.
+- The ledger snapshot is taken at the top of the round, so the player's own step-1 cost sits outside before → after; the card says so.
+- The Due block: the idle-hours line appears there as well as on the Council tab (§3.1 names the Council tab); the massing line prints live strengths and the appease price, not the figures logged when the warning fired; "Nothing under way." as the empty state; Rome's open request deliberately not listed as due (§6: no due date).
+- Summary card: houses unranked with yours marked; "4 of 18 plots raised" with the wall named beside the count, never counted (§4.5); a "Wall" row (the building's tier) and a "Walls" row (the defence figure) side by side.
+- Return strip: zero threshold (any whole-unit change shows it); the overflow window is "since the last card was acknowledged", so a full store shows the strip on every reload until the next Continue; a store already over its cap (Rome's grant on a full store) is not counted as waste.
+- Badges: Council lights only for a pending vote, not for being out of office; "!" means a duty asking for an answer, plus the counsel's tab; Reports carries a count.
+- §3.1: a build's duration is stated *before* it starts (plot card, rows, Library). One sentence in §3.1 would make that explicit.
+
+### Not built — the four the panel sent back
+
+- **Horizon times** ("enough for this in about 2 hours"): a coarse countdown unless §3.1 is amended to allow it.
+- **Counsel beyond the opening**: always-on UI overlapping the report, the digest, the Due block and the badges.
+- **Rome's first letter waiting at founding**: Rome acting outside a round (§3.2, Pillar 2), and r01's 80 wood is the castellum step's wood.
+- **Milestones**: not in DESIGN; content, a save field and a record.
+
+### Process
+
+- Four units, two waves, each unit a worktree branch off the integration branch with its own reviewer; the reviewers fixed nine bugs before I saw the code (an alliance refused for *too much* fear reported as too little; the stale round ledger on later cards; dead buttons on the news overlay; the return strip counting overflow the player had watched as loss while away; Rome's mark outliving the tier it asked for; the founding Continue reading a stale card).
+- The workflow cuts worktrees from `main`; every unit begins with `git checkout -B <branch> claude/tribal-wars-patch` and a HEAD check. The first attempt skipped that and had to be stopped and relaunched.
+- PRs #3–#7 were still open, unmerged, when this addendum was written. The patch branch contains all five; merge them first and the patch PR shrinks to the patch.
