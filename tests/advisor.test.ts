@@ -3,7 +3,8 @@ import { describe, it, expect } from 'vitest';
 import { createInitialState, deserialise, serialise } from '../src/state/store';
 import { Game } from '../src/game';
 import { advisor, building, layout, posts } from '../src/data';
-import { blockedBy, CONDITION_WORDS, currentAdvice, foundingParagraphs, nextStep, resolveGoto, stepDone } from '../src/render/advisor';
+import { blockedBy, CONDITION_WORDS, currentAdvice, foundingParagraphs, holds, nextStep, resolveGoto, stepDone } from '../src/render/advisor';
+import { capacity } from '../src/village/storage';
 import { checkBuild, startBuild } from '../src/village/construction';
 import { isScouted, nearestUnknown, ringOf, scoutCost, siteAt } from '../src/map/sites';
 import { bindPanel, leavingCounsel, pendingNews, renderNews, renderPanel, type PanelHandlers, type Tab } from '../src/render/panel';
@@ -43,6 +44,68 @@ describe('the counsel line as data', () => {
     const s = createInitialState(0, 1);
     expect(() => stepDone(s, { id: 'x', text: 'x', goto: { tab: 'village' }, done: [{ nonsense: true }] })).toThrow(/unknown counsel condition/);
     expect(() => stepDone(s, { id: 'x', text: 'x', goto: { tab: 'village' }, done: [{}] })).toThrow(/one word/);
+  });
+});
+
+describe('the condition vocabulary', () => {
+  it('every word reads the colony, and answers differently once the colony moves', () => {
+    const g = new Game(createInitialState(0, 5));
+    const s = g.state;
+    const t = (c: Record<string, unknown>) => holds(s, c);
+    // a fresh colony, word by word
+    expect(t({ buildingTier: { id: 'forum', atLeast: 1 } })).toBe(true);
+    expect(t({ buildingTier: { id: 'forum', atLeast: 2 } })).toBe(false);
+    expect(t({ underWay: { building: 'iron_mine' } })).toBe(false);
+    expect(t({ affordable: { slot: 'o5', building: 'iron_mine' } })).toBe(true);
+    expect(t({ roundAtLeast: 1 })).toBe(false);
+    expect(t({ postHeld: { postId: 'works' } })).toBe(false);
+    expect(t({ envoyOut: true })).toBe(false);
+    expect(t({ scoutOut: true })).toBe(false);
+    expect(t({ scoutedAtLeast: 1 })).toBe(false);
+    expect(t({ romeRequestOpen: true })).toBe(false);
+    expect(t({ romeAnswered: true })).toBe(false);
+    expect(t({ storeAtCap: { resource: 'wood' } })).toBe(false);
+    expect(t({ researchStarted: true })).toBe(false);
+    expect(t({ statAtLeast: { key: 'rounds', n: 1 } })).toBe(false);
+    // and each turns with the colony
+    g.build('o5', 'iron_mine', 1000);
+    expect(t({ underWay: { building: 'iron_mine' } })).toBe(true);
+    s.resources.wood = 0;
+    expect(t({ affordable: { slot: 'c2', building: 'castellum' } })).toBe(false);
+    s.resources.wood = capacity(s, 'wood');
+    expect(t({ storeAtCap: { resource: 'wood' } })).toBe(true);
+    Object.values(s.tribes)[0].pendingEnvoy = 'trade';
+    expect(t({ envoyOut: true })).toBe(true);
+    s.map.pendingScout = nearestUnknown(s);
+    expect(t({ scoutOut: true })).toBe(true);
+    s.map.scouted.push(s.map.pendingScout!);
+    expect(t({ scoutedAtLeast: 1 })).toBe(true);
+    s.research.active.push({ id: 'x', startedAt: 0, finishAt: 1 });
+    expect(t({ researchStarted: true })).toBe(true);
+    const rival = Object.values(s.characters).find((c) => !s.families[c.familyId].isPlayer)!;
+    s.posts.works = rival.id;
+    expect(t({ postHeld: { postId: 'works' } })).toBe(true);
+    expect(t({ postHeld: { postId: 'works', byPlayer: true } })).toBe(false);
+    s.posts.works = 'p_leader';
+    expect(t({ postHeld: { postId: 'works', byPlayer: true } })).toBe(true);
+    s.round = 1;
+    s.stats.rounds = 1;
+    expect(t({ roundAtLeast: 1 })).toBe(true);
+    expect(t({ statAtLeast: { key: 'rounds', n: 1 } })).toBe(true);
+    expect(CONDITION_WORDS).toHaveLength(13);
+  });
+
+  it("Rome's two words tell an open letter from an answered one", () => {
+    const g = new Game(createInitialState(0, 5));
+    g.act({ type: 'convene' }, 1000);
+    expect(holds(g.state, { romeRequestOpen: true })).toBe(true);
+    expect(holds(g.state, { romeAnswered: true })).toBe(false);
+    g.act({ type: 'rome_decline' }, 2000);
+    // Rome may write again in the very round that answers it, so an open
+    // letter says nothing about whether one was answered; the line ends on
+    // the word that does.
+    expect(holds(g.state, { romeAnswered: true })).toBe(true);
+    expect(g.state.rome.declinedIds).toHaveLength(1);
   });
 });
 

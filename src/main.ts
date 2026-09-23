@@ -81,7 +81,9 @@ function renderNewsOverlay(): void {
       if (!btn || btn.disabled) return;
       if (btn.dataset.choice) return guard(() => game.choose(btn.dataset.choice!, dev.now()));
       if (!btn.hasAttribute('data-news-ok')) return;
-      const founding = news.kind === 'opening';
+      // Read the news afresh: the element outlives its first card, and a round
+      // run while the founding card stood turns it into a report.
+      const founding = pendingNews(game.state)?.kind === 'opening';
       game.state.seenLogId = game.state.logSeq;
       game.state.awayRounds = 0;
       game.state.seenOpening = true;
