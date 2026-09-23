@@ -4,6 +4,9 @@ import { log } from '../state/store';
 import { hiddenPerResource, sumEffect } from '../village/storage';
 import { homeMilitia } from './militia';
 import { holderOf, lesserEffect } from '../politics/posts';
+import { kill } from '../politics/characters';
+import { chance } from '../state/rng';
+import type { Character } from '../state/types';
 
 export function defenceStrength(state: GameState): number {
   const r = config.raid;
@@ -51,6 +54,19 @@ export interface RaidResult {
   defence: number;
   fraction: number;
   lost: Partial<Record<ResourceId, number>>;
+  /** The garrison prefect, if a raid that got through killed him on the wall. */
+  fell?: Character;
+}
+
+/**
+ * The garrison prefect's chance of dying when a raid gets through (DESIGN
+ * §9.2: death by raid). He is the one man the fiction puts on the rampart.
+ * Discipline eases it; bodyguards do not, since they stand over a man in his
+ * house and not on the wall.
+ */
+export function holderDeathChance(prefect: Character): number {
+  const r = config.raid;
+  return Math.max(0, r.holderDeathChance * (1 - prefect.stats.discipline * r.holderDeathDisciplineRelief));
 }
 
 export function resolveRaid(state: GameState, t: TribeState): RaidResult {
@@ -80,6 +96,12 @@ export function resolveRaid(state: GameState, t: TribeState): RaidResult {
     t.fear = Math.max(0, t.fear - config.raid.fearLossOnSuccess);
     const summary = Object.entries(lost).map(([k, v]) => `${v} ${k}`).join(', ') || 'nothing they could find';
     log(state, 'raid', `${name} raid the colony (${Math.round(raid)} against ${Math.round(defence)}) and carry off ${summary}.`);
+    // A raid that reaches the stores has crossed the wall, and the prefect was on it.
+    const prefect = holderOf(state, 'garrison');
+    if (prefect && chance(state, holderDeathChance(prefect))) {
+      kill(state, prefect, `on the wall against the ${name}`);
+      return { raid, defence, fraction, lost, fell: prefect };
+    }
   }
   return { raid, defence, fraction, lost };
 }
