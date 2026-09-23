@@ -238,6 +238,8 @@ export interface GameState {
   seenLogId: number;
   /** The founding card is shown once, not again after every village action. */
   seenOpening: boolean;
+  /** "Enough counsel": the opening line has been put away for this save. */
+  advisorDismissed: boolean;
   lastReport: RoundReport | null;
   /** An event waiting on the player's answer. Nothing else is blocked by it. */
   pendingChoice: { eventId: string; title: string; text: string } | null;

@@ -1,4 +1,4 @@
-import { activeTribes, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS } from '../data';
+import { activeTribes, advisor, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS } from '../data';
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, eligibleBuildings, progress, rushPrice, slotById } from '../village/construction';
@@ -26,6 +26,7 @@ import {
 } from '../village/research';
 import { roundsUntilIdle } from '../politics/rounds';
 import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
+import { blockedBy, currentAdvice, foundingParagraphs, resolveGoto } from './advisor';
 
 export { remainingText, durationText } from './overview';
 
@@ -48,6 +49,10 @@ export interface PanelHandlers {
   onScout(hex: string): void;
   onBuild(slotId: string, buildingId: string): void;
   onSelectSlot(slotId: string): void;
+  /** Land on a hex of the map, the way onSelectSlot lands on a plot. */
+  onSelectHex(hex: string): void;
+  /** "Enough counsel": put the opening line away. Household business, no round. */
+  onDismissAdvisor(): void;
   onRush(slotId: string): void;
   onPolitical(a: Political): void;
   onEnvoy(tribeId: string, envoyId: string): void;
@@ -64,7 +69,7 @@ export interface PanelHandlers {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-export interface News { title: string; subtitle: string; lines: LogEntry[] }
+export interface News { kind: 'opening' | 'away' | 'report'; title: string; subtitle: string; lines: LogEntry[] }
 
 /**
  * Everything that has happened since the player last acknowledged the news:
@@ -78,13 +83,14 @@ export function pendingNews(state: GameState): News | null {
   if (!lines.length) return null;
   if (state.awayRounds > 0) {
     return {
+      kind: 'away',
       title: 'While you were away',
       subtitle: `${state.awayRounds} round${state.awayRounds === 1 ? '' : 's'} ran without you. The council does not wait.`,
       lines,
     };
   }
   if (state.round === 0 && !state.seenOpening) {
-    return { title: esc(config.townName), subtitle: 'A colonia in Germania, beyond the Rhine. Rome expects it to stand.', lines };
+    return { kind: 'opening', title: esc(config.townName), subtitle: advisor.founding.subtitle, lines };
   }
   // Village work is not news. Laying a foundation writes a log line, and while
   // any unseen line raised the overlay, starting a build at the founding put
@@ -97,13 +103,14 @@ function report(state: GameState, lines: LogEntry[]): News | null {
   if (!lines.length && !state.pendingChoice) return null;
   const r = state.lastReport;
   return {
+    kind: 'report',
     title: `Round ${state.round}`,
     subtitle: r ? `Population ${Math.floor(state.population)} · corruption ${n(state.corruption)}` : '',
     lines,
   };
 }
 
-export function renderNews(news: News, state: GameState): string {
+export function renderNews(news: News, state: GameState, now: number = Date.now()): string {
   const items = news.lines.map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('');
   const choices = pendingChoices(state);
   let foot: string;
@@ -115,8 +122,42 @@ export function renderNews(news: News, state: GameState): string {
   } else {
     foot = `<button class="act" data-news-ok>Continue</button>`;
   }
+  // The founding says who you are (DESIGN §1) before the log says what happened,
+  // and ends on the first counsel so the colony opens with somewhere to go.
+  let premise = '';
+  if (news.kind === 'opening') {
+    premise = foundingParagraphs(state, config.townName).map((p) => `<p>${esc(p)}</p>`).join('');
+    const step = currentAdvice(state);
+    if (step) premise += `<p class="counsel-first"><b>${esc(advisor.title)}:</b> ${esc(step.text)}</p>`;
+  }
+  const leaving = news.kind === 'report' ? leavingCounsel(state, now) : '';
   return `<div class="news-card${state.round === 0 ? ' opening' : ''}"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
-    <ul>${items}</ul>${foot}</div>`;
+    ${premise}<ul>${items}</ul>${leaving}${foot}</div>`;
+}
+
+/**
+ * "Before you go" (DESIGN §12's last verb). What is coming, from state already
+ * in hand and each stated once in rounded words (§3.1 as amended): the jobs
+ * under way, a tribe massing and its price, a demand and its due round, and
+ * the hours until the council meets without you. Nothing here counts down.
+ */
+export function leavingCounsel(s: GameState, now: number): string {
+  const items: string[] = [];
+  for (const c of s.constructions) items.push(`${esc(building(c.buildingId).name)} ${ROMAN[c.toTier]}: ${esc(remainingText(c.finishAt - now))}.`);
+  for (const p of s.research.active) items.push(`${esc(researchNode(p.id).name)} under study: ${esc(remainingText(p.finishAt - now))}.`);
+  for (const t of Object.values(s.tribes)) {
+    if (t.massingForRound < s.round) continue;
+    items.push(`${esc(tribeDef(t.id).name)} are massing; the raid lands on round ${t.massingForRound}. ${appeasePrice(s, t.id)} denarii turns them back.`);
+  }
+  for (const f of Object.values(s.families)) {
+    if (!f.demand) continue;
+    const d = f.demand;
+    const what = d.kind === 'post' ? `the post of ${esc(postDefs.find((p) => p.id === d.postId)?.name ?? d.postId!)}` : `${d.denarii} denarii`;
+    items.push(`The ${esc(f.name)} ask for ${what}; an answer is expected by round ${d.dueRound}.`);
+  }
+  const h = Math.ceil(roundsUntilIdle(s, now) / 3_600_000);
+  items.push(`If you stay away, the council meets without you in about ${h} hour${h === 1 ? '' : 's'}.`);
+  return `<div class="leaving"><h3>Before you go</h3><ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul></div>`;
 }
 
 export function renderHeader(state: GameState): string {
@@ -133,8 +174,10 @@ export function renderHeader(state: GameState): string {
 
 export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number, selectedHex: string | null = null): string {
   const s = game.state;
+  const step = currentAdvice(s);
   const badge = (t: Tab) => {
     if (t === 'rome' && s.rome.activeRequest && !s.rome.activeRequest.fulfilled) return '<span class="badge">!</span>';
+    if (step && step.goto.tab === t) return '<span class="badge">!</span>';
     return '';
   };
   const nav = TABS.map((t) => `<button data-tab="${t.id}" class="${t.id === tab ? 'active' : ''}">${t.name}${badge(t.id)}</button>`).join('');
@@ -150,7 +193,27 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
     case 'log': body = renderLog(s); break;
     case 'save': body = renderSave(s); break;
   }
-  return `<nav>${nav}</nav><section>${body}</section>`;
+  return `<nav>${nav}</nav>${renderCounsel(s)}<section>${body}</section>`;
+}
+
+/**
+ * The counsel card (DESIGN §12): one step at a time, between the tabs and the
+ * tab body so it stays in view whichever tab the step sends the player to.
+ * It points and it says what is short; it never acts (§3.2) and gives nothing.
+ */
+export function renderCounsel(s: GameState): string {
+  const step = currentAdvice(s);
+  if (!step) return '';
+  const g = resolveGoto(s, step);
+  const show = g.slot
+    ? `<button class="act" data-select-slot="${g.slot}">${esc(advisor.showMe)}</button>`
+    : g.hex
+      ? `<button class="act" data-select-hex="${g.hex}">${esc(advisor.showMe)}</button>`
+      : `<button class="act" data-tab="${g.tab}">${esc(advisor.showMe)}</button>`;
+  const blocked = blockedBy(s, step);
+  return `<aside class="counsel card" data-advisor-step="${step.id}"><b>${esc(advisor.title)}</b><p>${esc(step.text)}</p>`
+    + (blocked ? `<p class="muted">Not yet: ${esc(blocked)}.</p>` : '')
+    + `${show} <button class="act secondary" data-advisor-dismiss>${esc(advisor.dismiss)}</button></aside>`;
 }
 
 /**
@@ -693,6 +756,8 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.selectSlot) return h.onSelectSlot(d.selectSlot);
     // The plot card's way back: no slot selected is the overview.
     if ('overview' in d) return h.onSelectSlot('');
+    if (d.selectHex) return h.onSelectHex(d.selectHex);
+    if ('advisorDismiss' in d) return h.onDismissAdvisor();
     if (d.rush) return h.onRush(d.rush);
     if (d.research) return h.onResearch(d.research);
     if (d.rushResearch) return h.onRushResearch(d.rushResearch);

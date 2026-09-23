@@ -1,0 +1,64 @@
+{
+  "_comment": "The opening counsel (DESIGN §12). An ordered line of steps; the first whose `done` is false is the one shown. Nothing is stored — completion is read off the colony itself, so it can never drift. `done` is any-of: a step is finished when any one of its conditions holds. The vocabulary is in src/render/advisor.ts. `goto` is where the Show-me button lands: a tab, and optionally a slot on the village or `nearestUnknown`, the closest unscouted mark on the map. `action` is what the step asks for, so the card can say what is still short. 🟡 First-pass content, a data-file default for confirmation: the line, its order, and every word of it.",
+  "_voice": "🟡 No speaker. The card is titled by `title` alone. A `voice` — the loyalist Cornelii head, or the player's brother Marcus Aurelius Cotta — is Mathias's call.",
+  "title": "Counsel",
+  "showMe": "Show me",
+  "dismiss": "Enough counsel",
+  "founding": {
+    "subtitle": "A colonia in Germania, beyond the Rhine. Rome expects it to stand.",
+    "paragraphs": [
+      "You are the {gens}: a head of house and his heirs, sent north of the Rhine to found a town where Rome has never held one. Rome named you to the office. Rome can take it back.",
+      "Three other houses sit on the council with you — the {houses}. They are companions and rivals at once: they want posts, and a house left without one remembers it.",
+      "Beyond the treeline are three peoples who have watched Rome come and go. Some will trade. Some will count your stores.",
+      "Rome writes when it wants something, and it pays when it gets it. It will not send a legion. What stands here is what you build."
+    ]
+  },
+  "steps": [
+    {
+      "id": "iron",
+      "text": "Open the iron seam. The colony was founded with wood, clay and grain in hand and no mine, and the castellum will want iron before the stores run out of it.",
+      "goto": { "tab": "village", "slot": "o5" },
+      "action": { "build": { "slot": "o5", "building": "iron_mine" } },
+      "done": [
+        { "underWay": { "building": "iron_mine" } },
+        { "buildingTier": { "id": "iron_mine", "atLeast": 1 } }
+      ]
+    },
+    {
+      "id": "castellum",
+      "text": "Raise the castellum while the mine is dug. A field and a building may rise at the same time; neither waits on the other.",
+      "goto": { "tab": "village", "slot": "c2" },
+      "action": { "build": { "slot": "c2", "building": "castellum" } },
+      "done": [
+        { "underWay": { "building": "castellum" } },
+        { "buildingTier": { "id": "castellum", "atLeast": 1 } }
+      ]
+    },
+    {
+      "id": "scouts",
+      "text": "Send scouts toward the nearest mark on the map. They set out now and report when the council next meets.",
+      "goto": { "tab": "map", "hex": "nearestUnknown" },
+      "action": { "scout": true },
+      "done": [
+        { "scoutOut": true },
+        { "scoutedAtLeast": 1 }
+      ]
+    },
+    {
+      "id": "works",
+      "text": "Appoint a curator of works. It is the council's business, and the council's business runs the round: the houses, the tribes and Rome all move, and the scouts come home.",
+      "goto": { "tab": "council" },
+      "done": [
+        { "postHeld": { "postId": "works" } }
+      ]
+    },
+    {
+      "id": "rome",
+      "text": "Rome has written. What it asks, and what it offers for it, waits on the Rome tab. From here Rome's letters are the counsel.",
+      "goto": { "tab": "rome" },
+      "done": [
+        { "romeAnswered": true }
+      ]
+    }
+  ]
+}

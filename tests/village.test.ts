@@ -224,5 +224,6 @@ function noHandlers(): PanelHandlers {
     onSelectSlot: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
     onExport: () => {}, onImport: () => {}, onReset: () => {},
+    onSelectHex: () => {}, onDismissAdvisor: () => {},
   };
 }

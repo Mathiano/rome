@@ -105,6 +105,10 @@ export class Game {
     this.tick(now);
     adoptNewMan(this.state);
   }
+  /** "Enough counsel": household business, no round. Nothing is lost by it (Pillar 7). */
+  dismissAdvisor(): void {
+    this.state.advisorDismissed = true;
+  }
   // --- politics (each runs a round) ---
   act(a: Political, now = Date.now()): void {
     this.tick(now);

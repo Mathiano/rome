@@ -51,6 +51,25 @@ export function dispatchScout(state: GameState, k: string): void {
   log(state, 'map', `Scouts set out toward ${k}.`);
 }
 
+/**
+ * The closest mark on the map nobody has been to: a hex that holds a site and
+ * is not yet scouted, nearest by ring, ties broken in the map's reading order
+ * (north to south, west to east). Null once every mark has been seen. The
+ * opening counsel points its scouts here; the rule is here so it is named.
+ */
+export function nearestUnknown(state: GameState): string | null {
+  const w = world(state);
+  let best: string | null = null;
+  let bestRing = Infinity;
+  for (const h of w.hexes) {
+    const k = hexKey(h);
+    if (!w.sites[k] || isScouted(state, k)) continue;
+    const r = ring(h);
+    if (r < bestRing) { best = k; bestRing = r; }
+  }
+  return best;
+}
+
 /** Resolves at the tribe's step of the next round, like an envoy. */
 export function resolveScout(state: GameState): void {
   const k = state.map.pendingScout;
