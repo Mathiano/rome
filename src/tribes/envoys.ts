@@ -1,5 +1,5 @@
 import { config, tribeDef, building } from '../data';
-import type { GameState, TribeState } from '../state/types';
+import type { EnvoyReportData, GameState, TribeState } from '../state/types';
 import { log } from '../state/store';
 import { report } from '../state/reports';
 import { clampToCapacity, buildingTier } from '../village/storage';
@@ -59,7 +59,7 @@ export function resolveEnvoy(state: GameState, t: TribeState): void {
   const fearBefore = t.fear;
   // The other tribes as they stood, so the report can say what the web did.
   const others = Object.fromEntries(Object.values(state.tribes).filter((o) => o.id !== t.id).map((o) => [o.id, { trust: o.trust, fear: o.fear }]));
-  let outcome: 'accepted' | 'refused_fear' | 'refused_trust' | 'no_market' = 'accepted';
+  let outcome: EnvoyReportData['outcome'] = 'accepted';
   let text = '';
   switch (id) {
     case 'demand_tribute':
@@ -90,8 +90,9 @@ export function resolveEnvoy(state: GameState, t: TribeState): void {
         propagateWeb(state, t.id, config.tribe.allianceTrustThreshold, config.tribe.allianceWebShare);
         text = `${def.name} swear alliance. They will not raid an ally, and their enemies have noticed.`;
       } else {
-        // Which axis fell short is judged as it stood, before the refusal costs trust.
-        outcome = trustBefore < c.allianceTrustThreshold ? 'refused_trust' : 'refused_fear';
+        // Which axis fell short is judged as it stood, before the refusal costs
+        // trust. An alliance wants low fear, so the fear axis fails by excess.
+        outcome = trustBefore < c.allianceTrustThreshold ? 'refused_trust' : 'refused_feared';
         t.trust = clamp(t.trust + c.allianceRefusalTrust);
         text = `${def.name} are not ready for an alliance.`;
       }

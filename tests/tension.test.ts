@@ -11,7 +11,7 @@ import { defenceBreakdown, defenceStrength } from '../src/combat/raids';
 import { setBodyguards } from '../src/politics/intrigue';
 import { buildingTier } from '../src/village/storage';
 import { homeMilitia } from '../src/combat/militia';
-import { config, events } from '../src/data';
+import { config, events, researchNodes } from '../src/data';
 import type { GameState } from '../src/state/types';
 /** v0.1 woke the other two tribes; these tests speak to the raider. */
 const TRIBE_ID = 'chatti';
@@ -301,5 +301,17 @@ describe('the defence by its terms (DESIGN §8.2, reports unit)', () => {
     expect(b.engines).toBe(0);
     expect(b.total).toBeCloseTo(defenceStrength(s), 9);
     expect(b.men.home).toBe(homeMilitia(s));
+  });
+  it('folds a completed study into the wall term and still sums', () => {
+    const s = fortified();
+    const study = researchNodes.find((x) => x.effects?.defence)!;
+    expect(study, 'a study with a defence effect exists in data').toBeDefined();
+    const bare = defenceBreakdown(s);
+    s.research.completed.push(study.id);
+    const b = defenceBreakdown(s);
+    expect(b.wall).toBeCloseTo(bare.wall + study.effects!.defence!, 9);
+    expect(b.ditch + b.wall + b.militia + b.garrison + b.engines + b.lesser).toBeCloseTo(defenceStrength(s), 9);
+    expect(b.total).toBeCloseTo(defenceStrength(s), 9);
+    expect(b.total).toBeGreaterThan(bare.total);
   });
 });

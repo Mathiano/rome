@@ -15,6 +15,7 @@ import { callChallenge, resolveChallenge } from '../src/politics/challenge';
 import { checkCollapse, decline, deliver, romeTurn } from '../src/rome/requests';
 import { bindPanel, pendingNews, renderNews, renderPanel, type PanelHandlers } from '../src/render/panel';
 import { FILTERS, filterOfReport, renderReport, reportFilter, resetReportsView, reportsUnread, setReportFilter } from '../src/render/reports';
+import { n } from '../src/render/overview';
 import type { GameState, Report, ReportKind } from '../src/state/types';
 
 const TRIBE_ID = 'chatti';
@@ -136,9 +137,17 @@ describe('the raid report (DESIGN §8.2, trimmed form)', () => {
     for (const word of ['militiaWeight', 'garrisonDisciplineWeight', 'raidAppetite', 'leakedStrengthMultiplier', 'roll', 'fearLossOnSuccess', 'fearGainOnRepulse']) {
       expect(html, word).not.toContain(word);
     }
-    // the terms shown sum to the defence shown
-    const cells = [...html.matchAll(/<td>([^<]*)<\/td><\/tr>/g)].map((m) => m[1]);
-    expect(cells.length).toBeGreaterThan(4);
+    // the terms shown sum to the defence shown, and the defence shown is the state's
+    const terms = html.match(/<table class="terms">(.*?)<\/table>/)![1];
+    const rows = [...terms.matchAll(/<tr(?: class="(total)")?><td>.*?<\/td><td>([^<]*)<\/td><\/tr>/g)];
+    const parts = rows.filter((m) => !m[1]).map((m) => Number(m[2]));
+    const totals = rows.filter((m) => m[1]).map((m) => Number(m[2]));
+    expect(parts.length).toBeGreaterThanOrEqual(4);
+    expect(totals).toHaveLength(2);
+    for (const v of [...parts, ...totals]) expect(Number.isFinite(v)).toBe(true);
+    expect(Math.abs(parts.reduce((a, b) => a + b, 0) - totals[0])).toBeLessThan(0.5);
+    expect(totals[0]).toBe(Number(n(r.data.defence.total)));
+    expect(totals[1]).toBe(Number(n(r.data.raid)));
     expect(html).not.toMatch(CLOCK);
   });
   it('names the prefect who fell with a way to the houses', () => {
@@ -272,6 +281,29 @@ describe('the envoy report', () => {
     const html = renderReport(r, s);
     expect(html).toContain('They do not fear you enough.');
     expect(html).not.toContain(String(config.tribe.tributeFearThreshold));
+  });
+  it('an alliance refused names the axis on the side it failed: too much fear, or too little trust', () => {
+    const feared = createInitialState(0, 1);
+    feared.tribes.chatti.trust = 100;
+    feared.tribes.chatti.fear = 100;
+    dispatchEnvoy(feared, 'chatti', 'propose_alliance');
+    resolveEnvoy(feared, feared.tribes.chatti);
+    const a = feared.reports.find((x) => x.kind === 'envoy') as Extract<Report, { kind: 'envoy' }>;
+    expect(a.data.outcome).toBe('refused_feared');
+    expect(renderReport(a, feared)).toContain('They fear you too much');
+    expect(renderReport(a, feared)).not.toContain('do not fear you enough');
+    const distrusted = createInitialState(0, 1);
+    distrusted.tribes.chatti.trust = 0;
+    distrusted.tribes.chatti.fear = 0;
+    dispatchEnvoy(distrusted, 'chatti', 'propose_alliance');
+    resolveEnvoy(distrusted, distrusted.tribes.chatti);
+    const b = distrusted.reports.find((x) => x.kind === 'envoy') as Extract<Report, { kind: 'envoy' }>;
+    expect(b.data.outcome).toBe('refused_trust');
+    expect(renderReport(b, distrusted)).toContain('They do not trust you enough.');
+    for (const html of [renderReport(a, feared), renderReport(b, distrusted)]) {
+      expect(html).not.toContain(String(config.tribe.allianceTrustThreshold));
+      expect(html).not.toContain(String(config.tribe.allianceFearThreshold));
+    }
   });
 });
 
@@ -523,5 +555,19 @@ describe('the round card carries the record', () => {
     expect(html.indexOf('ledger-round')).toBeLessThan(html.indexOf('<ul>'));
     expect(html).not.toMatch(CLOCK);
     expect(html).toContain('Continue');
+  });
+  it('a card raised by a later line does not repeat the ledger of a round already read', () => {
+    const g = new Game(createInitialState(0, 5));
+    g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
+    g.act({ type: 'convene' }, 1000);
+    expect(renderNews(pendingNews(g.state)!, g.state, 1000)).toContain('ledger-round');
+    g.state.seenLogId = g.state.logSeq; // Continue
+    g.dispatchEnvoy('chatti', 'warn_of_raid', 2000);
+    const news = pendingNews(g.state)!;
+    expect(news.kind).toBe('report');
+    const html = renderNews(news, g.state, 2000);
+    expect(html).not.toContain('ledger-round');
+    expect(html).toContain('An envoy sets out');
   });
 });

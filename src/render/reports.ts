@@ -160,6 +160,7 @@ export function renderScoutReport(r: Extract<Report, { kind: 'scout' }>, state: 
 const OUTCOME_WORDS: Record<Extract<Report, { kind: 'envoy' }>['data']['outcome'], string> = {
   accepted: '',
   refused_fear: 'They do not fear you enough.',
+  refused_feared: 'They fear you too much to ally.',
   refused_trust: 'They do not trust you enough.',
   no_market: 'There is no market to trade at.',
 };
@@ -277,7 +278,10 @@ export function renderNewsRecord(state: GameState, news: News): { html: string; 
   if (news.kind === 'report') {
     const r = state.lastReport;
     if (!r) return { html: '', covered };
-    let html = renderRoundLedger(r);
+    // The ledger is the round's own news; a card raised by a later line (an
+    // envoy sent, a request declined) does not repeat a round already read.
+    const fresh = r.toLogId === undefined || r.toLogId > state.seenLogId;
+    let html = fresh ? renderRoundLedger(r) : '';
     if (html) html += LEDGER_NOTE;
     for (const rep of state.reports) {
       if (rep.logId <= state.seenLogId) continue;
@@ -311,7 +315,10 @@ function renderAwayDigest(state: GameState, news: News, covered: Set<number>): {
     const lines = linesOfRound(state, r).filter((e) => news.lines.includes(e));
     const reps = state.reports.filter((x) => x.round === r.round);
     for (const rep of reps) covered.add(rep.logId);
-    for (const e of lines) covered.add(e.id);
+    // Everything the round wrote is inside its folder, the idle marker included,
+    // so nothing of it is read again in the loose list below.
+    const { from, to } = rangeOfRound(state, r);
+    for (const e of state.log) if (e.id > from && e.id <= to) covered.add(e.id);
     html += `<details class="round" open><summary>Round ${r.round}</summary>${renderRoundLedger(r)}`
       + reps.map((x) => renderReport(x, state)).join('')
       + `<ul>${lines.filter((e) => !reps.some((x) => x.logId === e.id)).map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('')}</ul></details>`;
@@ -328,11 +335,15 @@ function renderAwayDigest(state: GameState, news: News, covered: Set<number>): {
  * the round) sits with the round it led to. The first round takes the
  * founding with it.
  */
-function linesOfRound(state: GameState, r: RoundReport): LogEntry[] {
+function rangeOfRound(state: GameState, r: RoundReport): { from: number; to: number } {
   const i = state.history.indexOf(r);
   const prev = i > 0 ? state.history[i - 1] : null;
   const from = prev ? prev.toLogId ?? prev.fromLogId : r.round === 1 ? 0 : r.fromLogId;
-  const to = r.toLogId ?? Infinity;
+  return { from, to: r.toLogId ?? Infinity };
+}
+
+function linesOfRound(state: GameState, r: RoundReport): LogEntry[] {
+  const { from, to } = rangeOfRound(state, r);
   return state.log.filter((e) => e.id > from && e.id <= to && !/^Round \d+[.:]/.test(e.text));
 }
 

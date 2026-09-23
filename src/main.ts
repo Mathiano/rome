@@ -80,6 +80,9 @@ function renderNewsOverlay(): void {
       const btn = (ev.target as HTMLElement).closest('button') as HTMLButtonElement | null;
       if (!btn || btn.disabled) return;
       if (btn.dataset.choice) return guard(() => game.choose(btn.dataset.choice!, dev.now()));
+      // A report card's way onward (the houses, the hex to claim) moves the panel; the card stays.
+      if (btn.dataset.tab) { tab = btn.dataset.tab as Tab; return render(true); }
+      if (btn.dataset.selectHex) { selectedHex = btn.dataset.selectHex; tab = 'map'; return render(true); }
       if (!btn.hasAttribute('data-news-ok')) return;
       game.state.seenLogId = game.state.logSeq;
       game.state.awayRounds = 0;

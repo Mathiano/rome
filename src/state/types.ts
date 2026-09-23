@@ -210,7 +210,8 @@ export interface ScoutReportData {
 export interface EnvoyReportData {
   tribeId: string;
   envoyId: string;
-  outcome: 'accepted' | 'refused_fear' | 'refused_trust' | 'no_market';
+  /** A refusal names the axis that fell short: too little fear, too much of it (an alliance), too little trust. */
+  outcome: 'accepted' | 'refused_fear' | 'refused_feared' | 'refused_trust' | 'no_market';
   fear: { before: number; after: number };
   trust: { before: number; after: number };
   /** What the like/hate web did to the other tribes, as deltas. */

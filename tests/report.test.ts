@@ -212,7 +212,10 @@ describe('the round ledger and the history (reports unit)', () => {
     expect(html).toMatch(/raids?|no raids/);
     const rounds = [...html.matchAll(/<summary>Round (\d+)<\/summary>/g)].map((m) => Number(m[1]));
     expect(rounds).toEqual([3, 2, 1]);
-    // every line that reached the digest is inside a round, so the loose list is empty
-    expect(html).toContain('<ul></ul>');
+    // every line that reached the digest is inside a round, the idle markers
+    // included, so the loose list under the last folder is empty
+    const tail = html.slice(html.lastIndexOf('</details>'));
+    expect(tail).toContain('</details><ul></ul>');
+    expect(tail).not.toContain('council meets without you');
   });
 });
