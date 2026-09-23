@@ -166,14 +166,29 @@ export function renderHeader(state: GameState): string {
   return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${colonyLine(state)}${admin}</span><div class="res">${res}</div>`;
 }
 
+/**
+ * A mark on a tab that is asking the player for an answer: a duty, never a
+ * spend (a build, a study or a scout is a choice, so the Village, Library and
+ * Map carry none). One condition per line, in order, so a unit can add one.
+ * The Council lights for a vote before it, not for being out of office: that
+ * would stay lit until the office was won back and read as a nag (§9.5).
+ */
+const BADGES: ((s: GameState, t: Tab) => boolean)[] = [
+  (s, t) => t === 'rome' && !!s.rome.activeRequest && !s.rome.activeRequest.fulfilled,
+  (s, t) => t === 'family' && Object.values(s.families).some((f) => !f.isPlayer && (!!f.demand || f.sourRounds > 0 || (f.departedRound !== null && mayReturn(s, f)))),
+  (s, t) => t === 'tribe' && Object.values(s.tribes).some((x) => x.massingForRound >= s.round),
+  (s, t) => t === 'council' && !!s.challenge,
+  // The tab the opening counsel points at (unit: advisor).
+  (s, t) => currentAdvice(s)?.goto.tab === t,
+];
+
+export function tabBadge(s: GameState, t: Tab): string {
+  return BADGES.some((lit) => lit(s, t)) ? '<span class="badge">!</span>' : '';
+}
+
 export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number, selectedHex: string | null = null): string {
   const s = game.state;
-  const step = currentAdvice(s);
-  const badge = (t: Tab) => {
-    if (t === 'rome' && s.rome.activeRequest && !s.rome.activeRequest.fulfilled) return '<span class="badge">!</span>';
-    if (step && step.goto.tab === t) return '<span class="badge">!</span>';
-    return '';
-  };
+  const badge = (t: Tab) => tabBadge(s, t);
   const nav = TABS.map((t) => `<button data-tab="${t.id}" class="${t.id === tab ? 'active' : ''}">${t.name}${badge(t.id)}</button>`).join('');
   let body = '';
   switch (tab) {

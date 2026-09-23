@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState } from '../src/state/store';
 import { Game } from '../src/game';
-import { renderHeader, renderPanel, type Tab } from '../src/render/panel';
+import { renderHeader, renderPanel, tabBadge, type Tab } from '../src/render/panel';
 import { createVillageView, project } from '../src/render/village';
 import { sprite, spriteCount, spriteManifest } from '../src/render/sprites';
 import { config, layout, researchNodes } from '../src/data';
@@ -116,5 +116,70 @@ describe('the colony at a glance', () => {
     else expect(card).toContain('Holdings</span><span>1</span>');
     expect(renderHeader(s)).toContain('Wall I');
     expect(renderHeader(s)).toContain('1 holding');
+  });
+});
+
+/** A mark on a tab that is asking for an answer: a duty, never a spend. */
+describe('tab badges', () => {
+  const TABS: Tab[] = ['village', 'map', 'library', 'council', 'family', 'tribe', 'rome', 'log', 'save'];
+  const lit = (s: Parameters<typeof tabBadge>[0]) => TABS.filter((t) => tabBadge(s, t));
+  /** A settled colony with the counsel put away, so only duties can light a tab. */
+  function quiet() {
+    const g = new Game(createInitialState(0, 1));
+    g.state.advisorDismissed = true;
+    g.state.round = 6;
+    return g.state;
+  }
+
+  it("a fresh colony lights nothing but the counsel's tab", () => {
+    const g = new Game(createInitialState(0, 1));
+    expect(lit(g.state)).toEqual(['village']);
+    g.state.advisorDismissed = true;
+    expect(lit(g.state)).toEqual([]);
+  });
+
+  it('a demand, a house talking of leaving, or a house ready to return lights Houses', () => {
+    const s = quiet();
+    s.families.cornelii.demand = { kind: 'denarii', denarii: 40, issuedRound: s.round, dueRound: s.round + 2 };
+    expect(lit(s)).toEqual(['family']);
+    s.families.cornelii.demand = null;
+    s.families.valerii.sourRounds = 1;
+    expect(lit(s)).toEqual(['family']);
+    s.families.valerii.sourRounds = 0;
+    s.families.claudii.departedRound = s.round - config.secession.maxAwayRounds;
+    expect(lit(s)).toEqual(['family']);
+    s.families.claudii.departedRound = s.round - 1;
+    s.families.claudii.attitude = -100;
+    expect(lit(s), 'away but not yet due home').toEqual([]);
+  });
+
+  it('a tribe massing lights Tribe', () => {
+    const s = quiet();
+    Object.values(s.tribes)[0].massingForRound = s.round;
+    expect(lit(s)).toEqual(['tribe']);
+    Object.values(s.tribes)[0].massingForRound = s.round - 1;
+    expect(lit(s)).toEqual([]);
+  });
+
+  it('a vote before the council lights Council; being out of office alone does not', () => {
+    const s = quiet();
+    s.office = Object.values(s.characters).find((c) => !s.families[c.familyId].isPlayer)!.id;
+    expect(playerHoldsOffice(s)).toBe(false);
+    expect(lit(s)).toEqual([]);
+    s.challenge = { callerFamilyId: 'claudii', calledRound: s.round, voteRound: s.round + 1, candidates: {} };
+    expect(lit(s)).toEqual(['council']);
+  });
+
+  it("Rome's letter lights Rome until it is answered", () => {
+    const s = quiet();
+    s.rome.activeRequest = { id: 'r', title: 't', text: '', kind: 'deliver', reward: {}, delivered: {}, fulfilled: false, issuedRound: s.round };
+    expect(lit(s)).toEqual(['rome']);
+    s.rome.activeRequest.fulfilled = true;
+    expect(lit(s)).toEqual([]);
+    // and the nav carries the mark
+    s.rome.activeRequest.fulfilled = false;
+    const nav = renderPanel(new Game(s), 'village', null, 1);
+    expect(nav).toContain('data-tab="rome" class="">Rome<span class="badge">!</span>');
+    expect(nav).not.toContain('Tribe<span class="badge">');
   });
 });
