@@ -27,6 +27,7 @@ import {
 import { roundsUntilIdle } from '../politics/rounds';
 import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
 import { blockedBy, currentAdvice, foundingParagraphs, resolveGoto } from './advisor';
+import { dueItems, idleLine, overflowWords, renderDue, renderReturnStrip } from './due';
 
 export { remainingText, durationText } from './overview';
 
@@ -131,32 +132,24 @@ export function renderNews(news: News, state: GameState, now: number = Date.now(
     if (step) premise += `<p class="counsel-first"><b>${esc(advisor.title)}:</b> ${esc(step.text)}</p>`;
   }
   const leaving = news.kind === 'report' ? leavingCounsel(state, now) : '';
+  // What full stores turned away since the player last looked (DESIGN §4.2):
+  // the loss stated, and nothing else. The counter resets with Continue.
+  const turnedAway = news.kind === 'opening' ? [] : overflowWords(state.overflowSinceSeen ?? {});
+  const overflow = turnedAway.length ? `<p class="overflow" data-overflow>${turnedAway.map(esc).join(' ')}</p>` : '';
   return `<div class="news-card${state.round === 0 ? ' opening' : ''}"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
-    ${premise}<ul>${items}</ul>${leaving}${foot}</div>`;
+    ${premise}<ul>${items}</ul>${overflow}${leaving}${foot}</div>`;
 }
 
 /**
- * "Before you go" (DESIGN §12's last verb). What is coming, from state already
- * in hand and each stated once in rounded words (§3.1 as amended): the jobs
- * under way, a tribe massing and its price, a demand and its due round, and
- * the hours until the council meets without you. Nothing here counts down.
+ * "Before you go" (DESIGN §12's last verb). What is coming, from the one
+ * collector the Village tab's Due block reads (render/due.ts), each stated
+ * once in rounded words (§3.1 as amended), and the hours until the council
+ * meets without you. Nothing here counts down.
  */
 export function leavingCounsel(s: GameState, now: number): string {
-  const items: string[] = [];
-  for (const c of s.constructions) items.push(`${esc(building(c.buildingId).name)} ${ROMAN[c.toTier]}: ${esc(remainingText(c.finishAt - now))}.`);
-  for (const p of s.research.active) items.push(`${esc(researchNode(p.id).name)} under study: ${esc(remainingText(p.finishAt - now))}.`);
-  for (const t of Object.values(s.tribes)) {
-    if (t.massingForRound < s.round) continue;
-    items.push(`${esc(tribeDef(t.id).name)} are massing; the raid lands on round ${t.massingForRound}. ${appeasePrice(s, t.id)} denarii turns them back.`);
-  }
-  for (const f of Object.values(s.families)) {
-    if (!f.demand) continue;
-    const d = f.demand;
-    const what = d.kind === 'post' ? `the post of ${esc(postDefs.find((p) => p.id === d.postId)?.name ?? d.postId!)}` : `${d.denarii} denarii`;
-    items.push(`The ${esc(f.name)} ask for ${what}; an answer is expected by round ${d.dueRound}.`);
-  }
-  const h = Math.ceil(roundsUntilIdle(s, now) / 3_600_000);
-  items.push(`If you stay away, the council meets without you in about ${h} hour${h === 1 ? '' : 's'}.`);
+  const d = dueItems(s, now);
+  const items = [...d.village, ...d.nextRound, ...d.later].map((i) => esc(i.text));
+  items.push(esc(idleLine(d.idleHours)));
   return `<div class="leaving"><h3>Before you go</h3><ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul></div>`;
 }
 
@@ -224,6 +217,8 @@ export function renderCounsel(s: GameState): string {
  */
 function renderVillage(s: GameState, selected: string | null, now: number): string {
   let out = `<h2>Village</h2>`;
+  out += renderReturnStrip();
+  out += renderDue(s, now, openMenus.has('due'));
   if (!selected) {
     out += `<p class="muted">One building and one field may be under construction at a time. Cellars hide ${hiddenPerResource(s)} of each resource from raiders.</p>`;
     return out + renderOverview(s, now);
@@ -492,11 +487,12 @@ function renderGuards(s: GameState, id: string, isPlayer: boolean): string {
 }
 
 /**
- * Which houses' menus the player has opened. The panel is rebuilt as a string
+ * Which menus the player has open: the houses' intrigue menus, and the Village
+ * tab's Due block, which starts open. The panel is rebuilt as a string
  * whenever anything moves, so without this every round would slam the menu shut
  * under the player's hand.
  */
-const openMenus = new Set<string>();
+const openMenus = new Set<string>(['due']);
 
 /**
  * The full intrigue menu (DESIGN §9.6). Each of these is a move against another
@@ -742,7 +738,7 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
   // `toggle` does not bubble, so it is caught on the way down instead.
   panel.addEventListener('toggle', (ev) => {
     const d = (ev.target as HTMLElement).closest('details') as HTMLDetailsElement | null;
-    const id = d?.dataset.intrigue;
+    const id = d?.dataset.intrigue ?? d?.dataset.menu;
     if (!id) return;
     if (d!.open) openMenus.add(id);
     else openMenus.delete(id);

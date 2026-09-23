@@ -120,6 +120,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     pendingChoice: null,
     awayRounds: 0,
     stats: emptyStats(),
+    overflowSinceSeen: {},
   };
   log(state, 'system', `${config.townName} is founded. ${playerLeader.name} holds the office of ${config.topOffice.title}.`);
   return state;
@@ -218,6 +219,7 @@ export function migrate(state: GameState): GameState {
     if (f.departedRound === undefined) f.departedRound = null;
     if (f.sourRounds === undefined) f.sourRounds = 0;
   }
+  if (!state.overflowSinceSeen) state.overflowSinceSeen = {};
   state.version = config.saveVersion;
   return state;
 }

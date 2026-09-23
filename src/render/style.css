@@ -294,3 +294,24 @@ header .res .neg b { color: #e0885a; }
 .news-card .leaving li { border-left-color: var(--gold); font-size: 13px; }
 #village .slot.counsel .tile, #village .slot.built.counsel .tile { fill: rgba(201,162,74,0.22); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: none; }
 #village .slot.built.counsel .tile { fill: rgba(201,162,74,0.16); }
+
+/* The town-and-loop surfaces (unit: town). The Due block at the top of the
+   Village tab, the summary card under it, and the strip a returning player
+   finds: each a list of plain lines, none of them a clock. */
+#panel details.due { margin: 6px 0 8px; border: 1px solid var(--shadow); border-left: 4px solid var(--gold); padding: 6px 8px; background: rgba(255,255,255,0.35); border-radius: 2px; }
+#panel details.due summary { cursor: pointer; font-variant: small-caps; letter-spacing: 0.04em; }
+#panel details.due h4 { font-size: 12px; margin: 6px 0 2px; opacity: 0.65; font-weight: normal; font-variant: small-caps; letter-spacing: 0.04em; }
+#panel details.due ul { list-style: none; margin: 0; padding: 0; }
+#panel details.due li { padding: 2px 0; font-size: 13px; }
+#panel details.due li button.link { color: var(--ink); text-align: left; }
+#panel details.due li button.link:hover { color: var(--terracotta); }
+#panel details.due .idle { margin: 6px 0 0; }
+#panel .card.summary { font-size: 13px; }
+#panel .card.summary .row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-top: 1px solid rgba(42, 33, 24, 0.12); }
+#panel .card.summary .row:first-of-type { border-top: 0; }
+#panel .card.summary .row span:last-child { text-align: right; }
+#panel .card.summary .stalled { color: var(--terracotta); }
+#panel .card.away { border-left: 4px solid var(--river); background: rgba(77,107,120,0.10); }
+#panel .card.away ul { margin: 4px 0 0; padding-left: 18px; }
+#panel .card.away li { margin: 2px 0; font-size: 13px; }
+.news-card .overflow { border-left: 3px solid var(--river); padding-left: 10px; margin: 6px 0; font-size: 13px; }

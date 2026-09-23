@@ -368,7 +368,7 @@ describe('before you go', () => {
     s.tribes[tribeId].massingForRound = s.round + 1;
     s.families.cornelii.demand = { kind: 'denarii', denarii: 40, issuedRound: s.round, dueRound: s.round + 2 };
     const html = leavingCounsel(s, 2000);
-    expect(html).toMatch(/are massing; the raid lands on round \d+\. \d+ denarii turns them back\./);
+    expect(html).toMatch(/are massing, about \d+ against your \d+; the raid lands on round \d+\. \d+ denarii turns them back\./);
     expect(html).toContain(`The Cornelii ask for 40 denarii; an answer is expected by round ${s.round + 2}.`);
     // each once
     expect(html.match(/Before you go/g)).toHaveLength(1);
