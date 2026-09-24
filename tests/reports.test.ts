@@ -15,7 +15,7 @@ import { callChallenge, resolveChallenge } from '../src/politics/challenge';
 import { checkCollapse, decline, deliver, romeTurn } from '../src/rome/requests';
 import { bindPanel, pendingNews, renderNews, renderPanel, type PanelHandlers } from '../src/render/panel';
 import { FILTERS, filterOfReport, renderReport, reportFilter, resetReportsView, reportsUnread, setReportFilter } from '../src/render/reports';
-import { n } from '../src/render/overview';
+import { n, rewardWords } from '../src/render/overview';
 import type { GameState, Report, ReportKind } from '../src/state/types';
 
 const TRIBE_ID = 'chatti';
@@ -368,13 +368,31 @@ describe("Rome's reports (DESIGN §6)", () => {
     expect(html).toContain('Rome pays for');
     expect(html).toContain(`+${config.rome.completeFavour}`);
   });
-  it('a declined request carries the favour it cost', () => {
+  it('a declined request names what was forgone and whose regard fell, and shows no favour (DESIGN §6)', () => {
     const s = withRequest();
+    const favour = s.rome.favour;
+    const promised = s.rome.activeRequest!.reward;
     decline(s);
     const r = s.reports.filter((x) => x.kind === 'rome').at(-1) as Extract<Report, { kind: 'rome' }>;
     expect(r.data.phase).toBe('declined');
-    expect(r.data.favourDelta).toBe(config.rome.declineFavour);
-    expect(renderReport(r, s)).toContain('unanswered');
+    expect(s.rome.favour).toBe(favour);
+    expect(r.data.favourDelta).toBeUndefined();
+    expect(r.data.loyalistId).toBe('cornelii');
+    const html = renderReport(r, s);
+    expect(html).toContain('unanswered');
+    expect(html).toContain(`You forgo ${rewardWords(promised)}.`);
+    expect(rewardWords(promised)).not.toBe('');
+    expect(html).toContain(`The Cornelii's regard for you</td><td class="neg">−${Math.abs(config.rome.declineLoyalistAttitude)}<`);
+    expect(html).not.toMatch(/favour/i);
+  });
+  it('a declined record from before 2026-09-24 still renders, without its favour row', () => {
+    const s = withRequest();
+    decline(s);
+    const r = s.reports.filter((x) => x.kind === 'rome').at(-1) as Extract<Report, { kind: 'rome' }>;
+    const old = { ...r, data: { ...r.data, favourDelta: -5, loyalistId: undefined } } as typeof r;
+    const html = renderReport(old, s);
+    expect(html).toContain("The loyalist house's regard");
+    expect(html).not.toMatch(/favour/i);
   });
   it('a withheld gift is named with the favour it waits on', () => {
     const s = createInitialState(0, 1);
