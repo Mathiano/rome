@@ -83,8 +83,8 @@ which one waits, if one does.
   "progress and rush price, no countdowns". That is the text his own
   2026-09-20 amendment replaced after the playtest ("you should be able
   to see the minutes remaining here"); §3.1 today says a job shows its
-  progress, *the time left in rounded words*, and the rush price. Waiting
-  on his confirmation before reversing it.
+  progress, *the time left in rounded words*, and the rush price.
+  **Settled: time left stays** ✅ — Mathias, "my mistake on §3.1".
 - **§6 says regard, not standing** ✅ — §9.1 defines standing as summed
   gravitas; declining moves attitude. Fixed on `claude/rome-decline-forgone`.
 - **The wood clash stays** ✅ — the first letter's 80 wood against the
@@ -107,4 +107,14 @@ which one waits, if one does.
 | `claude/rome-decline-forgone` | decline, §3.1, §6 regard, §14, CLAUDE.md | 396 |
 | `claude/rome-writes-at-founding` | founding letter, quiet card, wood clash kept | 403 |
 
-Pull requests still wait on #8.
+## Landed
+
+All of it is on `main`: #8 (the patch, which closed #3–#7 with it),
+#9 (the rulings) and #10 (the founding letter and the quiet card), each
+merged with CI green. 404 tests on `main`.
+
+## Next
+
+Art. Thirteen tier-1 stills into `assets/src/` on a branch — the twelve
+v0 buildings still unpainted, plus the Library — named as the manifest
+does (`iron-mine-t1.jpg`), one structure on white on a 2:1 plate.
