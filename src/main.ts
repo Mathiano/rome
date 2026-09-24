@@ -6,11 +6,12 @@ import { createVillageView } from './render/village';
 import { progress as progressOf } from './village/construction';
 import { roundsUntilIdle } from './politics/rounds';
 import { createMapView } from './render/mapview';
-import { bindPanel, pendingNews, renderHeader, renderNews, renderPanel, type Tab } from './render/panel';
+import { bindPanel, renderHeader, renderPanel, type Tab } from './render/panel';
 import { currentAdvice } from './render/advisor';
 import { awayReport, isQuiet, takeSnapshot } from './village/away';
 import { awayLines, setReturnStrip } from './render/due';
 import { resetReportsView } from './render/reports';
+import { acknowledgeNews, createNewsOverlay } from './render/newsOverlay';
 
 const dev = createDevClock(isDevRequested(location.search), () => Date.now(), (() => { try { return globalThis.localStorage ?? null; } catch { return null; } })());
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
@@ -71,39 +72,21 @@ function persist(): void {
   if (!saveToLocalStorage(game.state, saveKey)) toast('Could not save to this browser. Export your game.');
 }
 
-let newsEl: HTMLDivElement | null = null;
+const newsOverlay = createNewsOverlay(villageEl, {
+  onChoice: (id) => guard(() => game.choose(id, dev.now())),
+  onTab: (t) => { tab = t as Tab; render(true); },
+  onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; render(true); },
+  onContinue: () => {
+    acknowledgeNews(game.state);
+    // Leaving the founding card lands on the colony overview with nothing
+    // selected; the counsel card above it says where to go, and the plot it
+    // names is already marked on the village.
+    persist();
+    render(true);
+  },
+});
 function renderNewsOverlay(): void {
-  const news = pendingNews(game.state);
-  if (!news) {
-    newsEl?.remove();
-    newsEl = null;
-    return;
-  }
-  if (!newsEl) {
-    newsEl = document.createElement('div');
-    newsEl.className = 'news';
-    newsEl.addEventListener('click', (ev) => {
-      const btn = (ev.target as HTMLElement).closest('button') as HTMLButtonElement | null;
-      if (!btn || btn.disabled) return;
-      if (btn.dataset.choice) return guard(() => game.choose(btn.dataset.choice!, dev.now()));
-      // A report card's way onward (the houses, the hex to claim) moves the panel; the card stays.
-      if (btn.dataset.tab) { tab = btn.dataset.tab as Tab; return render(true); }
-      if (btn.dataset.selectHex) { selectedHex = btn.dataset.selectHex; tab = 'map'; return render(true); }
-      if (!btn.hasAttribute('data-news-ok')) return;
-      game.state.seenLogId = game.state.logSeq;
-      game.state.awayRounds = 0;
-      game.state.seenOpening = true;
-      // The card said what full stores turned away; the count starts again.
-      game.state.overflowSinceSeen = {};
-      // Leaving the founding card lands on the colony overview with nothing
-      // selected; the counsel card above it says where to go, and the plot it
-      // names is already marked on the village.
-      persist();
-      render(true);
-    });
-    villageEl.appendChild(newsEl);
-  }
-  newsEl.innerHTML = renderNews(news, game.state, dev.now());
+  newsOverlay.update(game.state, dev.now());
 }
 
 /**
