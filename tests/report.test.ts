@@ -8,6 +8,7 @@ import { bribe, seekRomeBacking } from '../src/politics/intrigue';
 import { config, post } from '../src/data';
 import { runRound } from '../src/politics/rounds';
 import { renderReports } from '../src/render/reports';
+import { esc, n } from '../src/render/overview';
 
 const H = 3_600_000;
 
@@ -198,7 +199,7 @@ describe('the round ledger and the history (reports unit)', () => {
       expect(html).not.toContain(String(at));
     }
   });
-  it('the away digest stacks one ledger a round with a tally line on top', () => {
+  it('the away digest is one summary: a tally, one ledger across the absence, and the lines as one list', () => {
     const g = new Game(createInitialState(0, 11));
     g.state.seenLogId = g.state.logSeq;
     g.state.seenOpening = true;
@@ -207,16 +208,25 @@ describe('the round ledger and the history (reports unit)', () => {
     const news = pendingNews(g.state)!;
     expect(news.kind).toBe('away');
     const html = renderNews(news, g.state, config.calendarFloorHours * H * 3);
-    expect(html.match(/class="ledger-round"/g)).toHaveLength(3);
     expect(html.match(/class="tally-line"/g)).toHaveLength(1);
     expect(html).toMatch(/raids?|no raids/);
-    const rounds = [...html.matchAll(/<summary>Round (\d+)<\/summary>/g)].map((m) => Number(m[1]));
-    expect(rounds).toEqual([3, 2, 1]);
-    // every line that reached the digest is inside a round, the idle markers
-    // included, so the loose list under the last folder is empty
-    const tail = html.slice(html.lastIndexOf('</details>'));
-    expect(tail).toContain('</details><ul></ul>');
-    expect(tail).not.toContain('council meets without you');
+    // one ledger, from before the first idle round to after the last — not one a round
+    expect(html.match(/class="ledger-round"/g)).toHaveLength(1);
+    const [first, , last] = g.state.history.slice(-3);
+    expect(html).toContain(`data-round="${last.round}"`);
+    expect(html).toContain('rounds 1–3 took and gave, together');
+    const cell = (label: string) => html.match(new RegExp(`<tr><td>${label}</td><td>([^<]*)</td><td>([^<]*)</td>`))!;
+    expect(cell('grain')[1]).toBe(n(first.before!.resources.grain));
+    expect(cell('grain')[2]).toBe(n(last.resources.grain));
+    // no folder per round, and no report card stacked per round
+    expect(html).not.toContain('<details class="round"');
+    expect(html).not.toContain('data-report=');
+    // the idle markers are counted in the subtitle, not listed
+    expect(html).not.toContain('council meets without you');
+    // every other line of the absence is in the one list
+    const listed = [...html.matchAll(/<li class="k-[a-z]+">([^<]*)<\/li>/g)].map((m) => m[1]);
+    const expected = news.lines.filter((e) => !/council meets without you/.test(e.text)).map((e) => esc(e.text));
+    expect(listed).toEqual(expected);
   });
 });
 

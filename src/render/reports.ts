@@ -295,16 +295,16 @@ export function renderNewsRecord(state: GameState, news: News): { html: string; 
     }
     return { html, covered };
   }
-  if (news.kind === 'away') return renderAwayDigest(state, news, covered);
+  if (news.kind === 'away') return renderAwayDigest(state, covered);
   return { html: '', covered };
 }
 
 /**
- * The digest (DESIGN §3.3): one line of tally, then each round that ran
- * without the player with its ledger, its reports and its lines, instead of
- * one pile of up to seven rounds' prose.
+ * The digest (DESIGN §3.3): one summary of the whole absence — a line of
+ * tally, one ledger across every idle round, and the rounds' lines as one list
+ * under it (renderNews prints them). Up to seven rounds, never a stack of them.
  */
-function renderAwayDigest(state: GameState, news: News, covered: Set<number>): { html: string; covered: Set<number> } {
+function renderAwayDigest(state: GameState, covered: Set<number>): { html: string; covered: Set<number> } {
   const rounds = state.history.slice(-state.awayRounds).filter((r) => r.idle);
   if (!rounds.length) return { html: '', covered };
   const raids = state.reports.filter((r) => rounds.some((h) => h.round === r.round) && (r.kind === 'raid' || r.kind === 'site_raid'));
@@ -316,17 +316,21 @@ function renderAwayDigest(state: GameState, news: News, covered: Set<number>): {
   if (state.challenge) tally.push('a vote pending');
   if (state.rome.activeRequest && !state.rome.activeRequest.fulfilled) tally.push(`Rome asks for ${esc(state.rome.activeRequest.title)}`);
   let html = `<p class="tally-line">${tally.join(' · ')}.</p>`;
-  for (const r of [...rounds].reverse()) {
-    const lines = linesOfRound(state, r).filter((e) => news.lines.includes(e));
-    const reps = state.reports.filter((x) => x.round === r.round);
-    for (const rep of reps) covered.add(rep.logId);
-    // Everything the round wrote is inside its folder, the idle marker included,
-    // so nothing of it is read again in the loose list below.
+  // One summary for the whole absence (Mathias, 2026-09-24), not a folder and a
+  // ledger per round stacked one above the other: one ledger from before the
+  // first idle round to after the last, then the rounds' lines as one list.
+  // Each round, with its report cards, stays under Reports.
+  const first = rounds[0];
+  const last = rounds[rounds.length - 1];
+  if (first.before) {
+    const span = first.round === last.round ? `Round ${last.round}` : `Rounds ${first.round}–${last.round}`;
+    html += renderRoundLedger({ ...last, before: first.before })
+      + `<p class="muted">What ${esc(span.toLowerCase())} took and gave, together. Each round is under Reports.</p>`;
+  }
+  // The idle markers say only that a round ran; the subtitle already counts them.
+  for (const r of rounds) {
     const { from, to } = rangeOfRound(state, r);
-    for (const e of state.log) if (e.id > from && e.id <= to) covered.add(e.id);
-    html += `<details class="round" open><summary>Round ${r.round}</summary>${renderRoundLedger(r)}`
-      + reps.map((x) => renderReport(x, state)).join('')
-      + `<ul>${lines.filter((e) => !reps.some((x) => x.logId === e.id)).map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('')}</ul></details>`;
+    for (const e of state.log) if (e.id > from && e.id <= to && /^Round \d+: the council meets without you\.$/.test(e.text)) covered.add(e.id);
   }
   return { html, covered };
 }

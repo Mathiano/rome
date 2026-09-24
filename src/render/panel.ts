@@ -87,6 +87,10 @@ export function pendingNews(state: GameState): News | null {
   const unread = state.log.filter((e) => e.id > state.seenLogId);
   const isMarker = (e: LogEntry) => /^Round \d+\.$/.test(e.text);
   const lines = unread.filter((e) => !isMarker(e));
+  // An absence is told once, as one summary, before anything else (Mathias,
+  // 2026-09-24). A choice an idle round raised is answered on that card, not on
+  // a Round card of its own stacked in front of it.
+  if (state.awayRounds > 0 && lines.length) return awayNews(state, lines);
   if (state.pendingChoice) return report(state, lines);
   // A round the player called that brought no news still gets a card (Mathias,
   // 2026-09-24): pressing the one button that advances the world and getting
@@ -99,14 +103,6 @@ export function pendingNews(state: GameState): News | null {
   }
   // Nothing unread is nothing to say, whatever else is true of the colony.
   if (!lines.length) return null;
-  if (state.awayRounds > 0) {
-    return {
-      kind: 'away',
-      title: 'While you were away',
-      subtitle: `${state.awayRounds} round${state.awayRounds === 1 ? '' : 's'} ran without you. The council does not wait.`,
-      lines,
-    };
-  }
   if (state.round === 0 && !state.seenOpening) {
     return { kind: 'opening', title: esc(config.townName), subtitle: advisor.founding.subtitle, lines };
   }
@@ -115,6 +111,15 @@ export function pendingNews(state: GameState): News | null {
   // the opening card back over the village.
   if (!lines.some((e) => e.kind !== 'village')) return null;
   return report(state, lines);
+}
+
+function awayNews(state: GameState, lines: LogEntry[]): News {
+  return {
+    kind: 'away',
+    title: 'While you were away',
+    subtitle: `${state.awayRounds} round${state.awayRounds === 1 ? '' : 's'} ran without you. The council does not wait.`,
+    lines,
+  };
 }
 
 function report(state: GameState, lines: LogEntry[]): News | null {
