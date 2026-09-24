@@ -118,3 +118,22 @@ merged with CI green. 404 tests on `main`.
 Art. Thirteen tier-1 stills into `assets/src/` on a branch — the twelve
 v0 buildings still unpainted, plus the Library — named as the manifest
 does (`iron-mine-t1.jpg`), one structure on white on a 2:1 plate.
+
+## Evening: coming back after days away (PR #11)
+
+Mathias returned to prod after several days and saw a stack of round
+cards. Reproduced 4 out of 4 times in Chromium:
+
+- **The pile:** an event choice fired during the idle rounds, and
+  `pendingNews` checked for a choice before an absence. A "Round 8" card
+  carrying every line of the absence came first. Then the digest, with
+  seven expanded rounds, each with its own ledger.
+- **Fixed:** the absence comes first, on one summary card. It holds the
+  tally, one ledger across the absence, and the rounds' lines as one
+  list, with any choice asked on it. Each round stays under Reports.
+- **The cap had held.** Round 8 was a round-1 save plus 7 idle rounds.
+  It is now tested for a week, 10 days and a month away. A week at a
+  24-hour floor is exactly 7, so only the longer gaps can catch a
+  missing cap. Mutation-checked.
+- ✅ 408 tests, CI green on #11, Chromium: one card, choice in place,
+  scrolls, real click reaches Continue. Waiting on Mathias to merge.
