@@ -8,10 +8,11 @@ import type { GameState, ClaimedSite } from '../state/types';
 import type { Cost, ResourceId } from '../data';
 import { config, tribeDef } from '../data';
 import { log } from '../state/store';
+import { report } from '../state/reports';
 import { chance, nextRandom } from '../state/rng';
 import { key as hexKey, parseKey, ring } from './grid';
 import { generate, mapConfig, site } from './world';
-import { requireOffice } from '../politics/challenge';
+import { playerHoldsOffice, requireOffice } from '../politics/challenge';
 
 export function world(state: GameState) {
   return generate(state.map.seed);
@@ -51,6 +52,25 @@ export function dispatchScout(state: GameState, k: string): void {
   log(state, 'map', `Scouts set out toward ${k}.`);
 }
 
+/**
+ * The closest mark on the map nobody has been to: a hex that holds a site and
+ * is not yet scouted, nearest by ring, ties broken in the map's reading order
+ * (north to south, west to east). Null once every mark has been seen. The
+ * opening counsel points its scouts here; the rule is here so it is named.
+ */
+export function nearestUnknown(state: GameState): string | null {
+  const w = world(state);
+  let best: string | null = null;
+  let bestRing = Infinity;
+  for (const h of w.hexes) {
+    const k = hexKey(h);
+    if (!w.sites[k] || isScouted(state, k)) continue;
+    const r = ring(h);
+    if (r < bestRing) { best = k; bestRing = r; }
+  }
+  return best;
+}
+
 /** Resolves at the tribe's step of the next round, like an envoy. */
 export function resolveScout(state: GameState): void {
   const k = state.map.pendingScout;
@@ -59,26 +79,36 @@ export function resolveScout(state: GameState): void {
   if (!state.map.scouted.includes(k)) state.map.scouted.push(k);
 
   const id = siteAt(state, k);
+  // The scout report (reports unit): what stood there and what it cost, with
+  // the prose line written by the same call.
+  const popBefore = state.population;
+  const base = { hex: k, ring: ringOf(k), siteId: id, hostile: false, casualties: 0, denarii: 0, fearShift: 0, scrolls: 0, claimable: false };
   if (!id) {
-    log(state, 'map', `The scouts find nothing worth the walk at ${k}.`);
+    report(state, 'scout', { ...base, population: { before: popBefore, after: state.population } }, `The scouts find nothing worth the walk at ${k}.`, 'map');
     return;
   }
   const def = site(id);
   if (def.hostile) {
     const sc = mapConfig.scout;
+    const coin = state.resources.denarii;
     state.population = Math.max(1, state.population - sc.campCasualties);
     state.resources.denarii = Math.max(0, state.resources.denarii + sc.campDenarii);
     for (const t of Object.values(state.tribes)) t.fear = Math.max(0, Math.min(100, t.fear + sc.campFear));
     state.stats.scoutsLost += 1;
-    log(state, 'map', `${def.name} at ${k}: the scouts are ambushed. ${sc.campCasualties} men do not come back.`);
+    report(state, 'scout', {
+      ...base, hostile: true, casualties: popBefore - state.population, denarii: state.resources.denarii - coin, fearShift: sc.campFear,
+      population: { before: popBefore, after: state.population },
+    }, `${def.name} at ${k}: the scouts are ambushed. ${sc.campCasualties} men do not come back.`, 'map');
     return;
   }
+  const claimable = playerHoldsOffice(state);
   if (def.reward?.scrolls) {
     state.rome.scrolls += def.reward.scrolls;
-    log(state, 'map', `${def.name} at ${k}: the scouts bring back ${def.reward.scrolls} research scroll(s).`);
+    report(state, 'scout', { ...base, scrolls: def.reward.scrolls, claimable, population: { before: popBefore, after: state.population } },
+      `${def.name} at ${k}: the scouts bring back ${def.reward.scrolls} research scroll(s).`, 'map');
     return;
   }
-  log(state, 'map', `${def.name} at ${k}. ${def.description}`);
+  report(state, 'scout', { ...base, claimable, population: { before: popBefore, after: state.population } }, `${def.name} at ${k}. ${def.description}`, 'map');
 }
 
 // ------------------------------------------------------------------ claiming
@@ -201,15 +231,22 @@ export function mapTurn(state: GameState): void {
     const def = siteDefence(c);
     const attack = tribeStrength * (0.75 + nextRandom(state) * 0.5);
     const name = site(c.siteId).name;
-    if (def >= attack) {
-      log(state, 'raid', `${tribeDef(aggressor.id).name} test the garrison at ${name} and are driven off.`);
+    const fearBefore = aggressor.fear;
+    const held = def >= attack;
+    let text: string;
+    if (held) {
       aggressor.fear = Math.min(100, aggressor.fear + config.raid.fearGainOnRepulse / 2);
       state.stats.siteRaidsRepelled += 1;
+      text = `${tribeDef(aggressor.id).name} test the garrison at ${name} and are driven off.`;
     } else {
       state.map.claimed = state.map.claimed.filter((x) => x.key !== c.key);
       state.stats.sitesLost += 1;
-      log(state, 'raid', `${tribeDef(aggressor.id).name} overrun ${name} at ${c.key}. ${c.garrison} men are lost and the holding with them.`);
+      text = `${tribeDef(aggressor.id).name} overrun ${name} at ${c.key}. ${c.garrison} men are lost and the holding with them.`;
     }
+    report(state, 'site_raid', {
+      tribeId: aggressor.id, siteId: c.siteId, hex: c.key, garrison: c.garrison, defence: def, attack, held,
+      menLost: held ? 0 : c.garrison, fear: { before: fearBefore, after: aggressor.fear },
+    }, text, 'raid');
   }
   void hexKey;
 }

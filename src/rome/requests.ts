@@ -1,6 +1,7 @@
 import { config, requestProgression, requestFiller, unlocks, type ResourceId } from '../data';
 import type { GameState, ActiveRequest } from '../state/types';
 import { log } from '../state/store';
+import { report } from '../state/reports';
 import { pick } from '../state/rng';
 import { buildingTier, forumTier, sumEffect } from '../village/storage';
 import { canAfford, pay } from '../village/economy';
@@ -67,7 +68,8 @@ export function issueNext(state: GameState): void {
   }
   r.activeRequest = req;
   r.activeRequestId = req.id;
-  log(state, 'rome', `Rome asks: ${req.title}. ${req.text}`);
+  report(state, 'rome', { phase: 'issued', requestId: req.id, title: req.title, kind: req.kind, reward: req.reward, issuedRound: req.issuedRound },
+    `Rome asks: ${req.title}. ${req.text}`, 'rome');
 }
 
 /**
@@ -95,20 +97,27 @@ export function releaseWithheld(state: GameState): void {
 }
 
 function grantReward(state: GameState, a: ActiveRequest): void {
-  const mult = (1 + sumEffect(state, 'romeRewardMultiplier')) * favourRewardMultiplier(state);
+  const research = sumEffect(state, 'romeRewardMultiplier');
+  const favourMult = favourRewardMultiplier(state);
+  const mult = (1 + research) * favourMult;
   const parts: string[] = [];
+  const paid = { denarii: 0, scrolls: 0, gravitas: 0, unlock: null as string | null };
+  let withheld: { unlock: string; minFavour: number } | null = null;
   if (a.reward.denarii) {
     const d = Math.round(a.reward.denarii * mult);
     state.resources.denarii += d;
+    paid.denarii = d;
     parts.push(`${d} denarii`);
   }
   if (a.reward.scrolls) {
     state.rome.scrolls += a.reward.scrolls;
+    paid.scrolls = a.reward.scrolls;
     parts.push(`${a.reward.scrolls} research scroll${a.reward.scrolls > 1 ? 's' : ''}`);
   }
   const leader = leaderOf(state, playerFamily(state).id);
   if (a.reward.gravitas && leader) {
     gainGravitas(leader, a.reward.gravitas);
+    paid.gravitas += a.reward.gravitas;
     parts.push(`${a.reward.gravitas} gravitas`);
   }
   if (a.reward.unlock) {
@@ -116,19 +125,29 @@ function grantReward(state: GameState, a: ActiveRequest): void {
     if (u && !state.rome.unlocks.includes(a.reward.unlock)) {
       if (state.rome.favour < config.rome.unlockMinFavour) {
         if (!state.rome.withheldUnlocks.includes(a.reward.unlock)) state.rome.withheldUnlocks.push(a.reward.unlock);
+        withheld = { unlock: a.reward.unlock, minFavour: config.rome.unlockMinFavour };
         log(state, 'rome', `Rome withholds ${u.name} until the colony stands better in its favour (${config.rome.unlockMinFavour} needed).`);
       } else {
         state.rome.unlocks.push(a.reward.unlock);
-        if (u.gravitas && leader) gainGravitas(leader, u.gravitas);
+        paid.unlock = a.reward.unlock;
+        if (u.gravitas && leader) {
+          gainGravitas(leader, u.gravitas);
+          paid.gravitas += u.gravitas;
+        }
         parts.push(u.name);
       }
     }
   }
-  state.rome.favour += 5;
+  const c = config.rome;
+  state.rome.favour += c.completeFavour;
   state.stats.romeRequestsCompleted += 1;
   const loy = loyalist(state);
-  if (loy) loy.attitude = clampAtt(loy.attitude + 3);
-  log(state, 'rome', `Rome is pleased with "${a.title}" and sends ${parts.join(', ') || 'its thanks'}.`);
+  if (loy) loy.attitude = clampAtt(loy.attitude + c.completeLoyalistAttitude);
+  report(state, 'rome', {
+    phase: 'rewarded', requestId: a.id, title: a.title, kind: a.kind, reward: a.reward, issuedRound: a.issuedRound,
+    multiplier: { research, favour: favourMult }, paid, withheld,
+    favourDelta: c.completeFavour, loyalistAttitudeDelta: loy ? c.completeLoyalistAttitude : 0,
+  }, `Rome is pleased with "${a.title}" and sends ${parts.join(', ') || 'its thanks'}.`, 'rome');
 }
 
 /** Player delivers what is owed. Real-time: resources leave now; Rome rewards on its turn. */
@@ -181,7 +200,10 @@ export function decline(state: GameState): void {
   state.rome.favour += config.rome.declineFavour;
   const loy = loyalist(state);
   if (loy) loy.attitude = clampAtt(loy.attitude + config.rome.declineLoyalistAttitude);
-  log(state, 'rome', `You let "${a.title}" go unanswered. Rome says nothing; the ${loy?.name ?? 'loyalists'} notice.`);
+  report(state, 'rome', {
+    phase: 'declined', requestId: a.id, title: a.title, kind: a.kind, reward: a.reward, issuedRound: a.issuedRound,
+    favourDelta: config.rome.declineFavour, loyalistAttitudeDelta: loy ? config.rome.declineLoyalistAttitude : 0,
+  }, `You let "${a.title}" go unanswered. Rome says nothing; the ${loy?.name ?? 'loyalists'} notice.`, 'rome');
 }
 
 /** Rome steps in when the colony collapses (DESIGN §1, §6). A soft reset, never a loss. */
@@ -189,6 +211,8 @@ export function checkCollapse(state: GameState): boolean {
   const c = config.collapse;
   if (state.rome.administeringUntilRound > state.round) return false;
   if (state.population > c.populationFloor && state.corruption < c.corruptionCeiling) return false;
+  const trigger = state.population <= c.populationFloor ? 'population' : 'corruption';
+  const at = { population: state.population, corruption: state.corruption };
   state.rome.administeringUntilRound = state.round + c.administrationRounds;
   state.corruption = 0;
   for (const k of Object.keys(c.grant) as ResourceId[]) state.resources[k] += c.grant[k as keyof typeof c.grant];
@@ -198,6 +222,9 @@ export function checkCollapse(state: GameState): boolean {
     state.posts[pid] = null;
   }
   state.population = Math.max(state.population, c.populationFloor * 2);
-  log(state, 'rome', `The colony has collapsed. A procurator from Rome administers ${config.townName} for ${c.administrationRounds} rounds and clears the council. Research and your house survive.`);
+  report(state, 'collapse', {
+    trigger, population: at.population, corruption: at.corruption, grant: { ...c.grant }, rounds: c.administrationRounds,
+    untilRound: state.rome.administeringUntilRound,
+  }, `The colony has collapsed. A procurator from Rome administers ${config.townName} for ${c.administrationRounds} rounds and clears the council. Research and your house survive.`, 'rome');
   return true;
 }

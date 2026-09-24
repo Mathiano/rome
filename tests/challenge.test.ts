@@ -6,7 +6,7 @@ import { config } from '../src/data';
 import type { GameState } from '../src/state/types';
 import {
   callChallenge, candidates, considerChallenge, officeFamilyId, playerCallChallenge,
-  playerHoldsOffice, resolveChallenge, tally, wouldWin,
+  playerHoldsOffice, resolveChallenge, tally, tallyByHouse, wouldWin,
 } from '../src/politics/challenge';
 import { kill, leaderOf, livingMembers, playerFamily } from '../src/politics/characters';
 import {
@@ -332,10 +332,13 @@ function handlers(): { h: PanelHandlers; acts: Political[]; guards: [string, num
   const guards: [string, number][] = [];
   const h: PanelHandlers = {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
+    onSelectSlot: () => {},
+    onAdoptNewMan: () => {},
     onPolitical: (a) => acts.push(a), onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {},
     onGuards: (id, men) => guards.push([id, men]),
     onExport: () => {}, onImport: () => {}, onReset: () => {},
+    onSelectHex: () => {}, onDismissAdvisor: () => {},
   };
   return { h, acts, guards };
 }
@@ -435,5 +438,38 @@ describe('the challenge and intrigue panels', () => {
     btn.click();
     expect(acts).toEqual([{ type: 'appease', tribeId: 'chatti' }]);
     el.remove();
+  });
+});
+
+describe('the count by house (reports unit)', () => {
+  it('sums to the tally per candidate, and every living voter is counted once', () => {
+    for (const seed of [1, 5, 9]) {
+      const s = createInitialState(0, seed);
+      s.families.valerii.attitude = -60;
+      const cand = candidates(s, 'cornelii');
+      const ch = { callerFamilyId: 'cornelii', calledRound: 0, voteRound: 1, candidates: cand };
+      const votes = tally(s, ch);
+      const byHouse = tallyByHouse(s, ch);
+      expect(Object.keys(byHouse).sort()).toEqual(Object.keys(s.families).sort());
+      for (const cid of Object.keys(votes)) {
+        const sum = Object.values(byHouse).reduce((a, h) => a + (h[cid] ?? 0), 0);
+        expect(sum, `${seed}:${cid}`).toBe(votes[cid]);
+      }
+      for (const fid of Object.keys(s.families)) {
+        const cast = Object.values(byHouse[fid]).reduce((a, b) => a + b, 0);
+        expect(cast).toBe(livingMembers(s, fid).filter((m) => !m.exiled).length);
+      }
+      // a house with a man standing votes for him and nobody else
+      for (const [fid, cid] of Object.entries(cand)) expect(Object.keys(byHouse[fid])).toEqual([cid]);
+    }
+  });
+  it('a resolved challenge leaves one resolved report naming the winner', () => {
+    const g = new Game(createInitialState(0, 5));
+    callChallenge(g.state, 'cornelii');
+    g.state.round = g.state.challenge!.voteRound;
+    resolveChallenge(g.state);
+    const resolved = g.state.reports.filter((r) => r.kind === 'challenge' && r.data.phase === 'resolved');
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0].kind === 'challenge' && resolved[0].data.winnerId).toBe(g.state.office);
   });
 });

@@ -146,7 +146,10 @@
     "fearGainOnRepulse": 10,
     "fearLossOnSuccess": 5,
     "graceRounds": 8,
-    "baseDefence": 10
+    "baseDefence": 10,
+    "_holderDeath": "DESIGN \u00a79.2 lists raids among the causes of death. When a raid gets through, the garrison prefect is the one man the fiction puts on the wall: this is his chance of dying there, eased by his discipline and by nothing else \u2014 guards stand over a man in his house, not on the rampart. First-pass defaults 2026-09-23.",
+    "holderDeathChance": 0.08,
+    "holderDeathDisciplineRelief": 0.06
   },
   "tribe": {
     "tributeFearThreshold": 60,
@@ -187,7 +190,10 @@
     "rewardFavourFloor": -0.3,
     "rewardFavourCeiling": 0.5,
     "unlockMinFavour": 25,
-    "backingMinFavour": 10
+    "backingMinFavour": 10,
+    "_complete": "What a completed request earns beyond its reward. These lived in src/rome/requests.ts as literals until 2026-09-23; the values are unchanged.",
+    "completeFavour": 5,
+    "completeLoyalistAttitude": 3
   },
   "collapse": {
     "populationFloor": 5,
@@ -204,6 +210,15 @@
   },
   "log": {
     "max": 200
+  },
+  "reports": {
+    "_comment": "Reports unit, first-pass default 2026-09-23: how many structured reports the save keeps, oldest trimmed first. About twenty rounds at three a round, well past the 7-round away cap of DESIGN \u00a73.3.",
+    "max": 60
+  },
+  "history": {
+    "_comment": "Reports unit, first-pass defaults 2026-09-23: how many rounds' before/after ledgers the save keeps, and the stride of the Save tab's round table.",
+    "max": 100,
+    "tableEvery": 10
   },
   "levelling": {
     "_comment": "DESIGN \u00a79.2: characters level by holding posts and by events.",
@@ -241,6 +256,30 @@
       "denarii": 150
     },
     "playerCallMinRank": 2
+  },
+  "adoption": {
+    "_comment": "Heirs by adoption (DESIGN \u00a79.2): an adult, from the new men or from another house. Roman practice \u2014 Caesar adopted Octavian, Augustus Tiberius. Raising a new man is household business and runs no round; taking a man from another house moves that house and does. First-pass defaults 2026-09-23, flagged for a balance pass.",
+    "minRank": 1,
+    "newManCost": 150,
+    "newManCostPerMember": 0.25,
+    "houseCost": 200,
+    "houseConsentAttitude": 30,
+    "houseMinSizeAfter": 2,
+    "houseAttitude": 12,
+    "houseGrievanceRelief": 1,
+    "rivalMinSize": 3,
+    "rivalChancePerRound": 0.35
+  },
+  "secession": {
+    "_comment": "A failure state (DESIGN \u00a79.7): a house that has been slighted enough, and loathes you enough, for long enough, leaves the colony and takes a share of the citizens with it. Never while it holds the office \u2014 a house in power has no reason to go. It hears terms again after awayRounds if its regard has been mended (a bribe still reaches it), and comes home regardless by maxAwayRounds (Pillar 7). First-pass defaults 2026-09-23, flagged for tuning.",
+    "grievances": 4,
+    "attitude": -40,
+    "rounds": 3,
+    "populationShare": 0.1,
+    "romeFavour": -8,
+    "awayRounds": 6,
+    "returnAttitude": -20,
+    "maxAwayRounds": 12
   },
   "bodyguard": {
     "_comment": "The militia pool's third sink (DESIGN \u00a78.1, \u00a79.2). Guarding one man leaves another exposed.",

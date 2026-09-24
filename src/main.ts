@@ -4,8 +4,13 @@ import { createInitialState, deserialise, loadFromLocalStorage, saveToLocalStora
 import { createDevClock, isDevRequested, DEV_SAVE_KEY, DEV_MULTIPLIERS } from './dev';
 import { createVillageView } from './render/village';
 import { progress as progressOf } from './village/construction';
+import { roundsUntilIdle } from './politics/rounds';
 import { createMapView } from './render/mapview';
 import { bindPanel, pendingNews, renderHeader, renderNews, renderPanel, type Tab } from './render/panel';
+import { currentAdvice } from './render/advisor';
+import { awayReport, isQuiet, takeSnapshot } from './village/away';
+import { awayLines, setReturnStrip } from './render/due';
+import { resetReportsView } from './render/reports';
 
 const dev = createDevClock(isDevRequested(location.search), () => Date.now(), (() => { try { return globalThis.localStorage ?? null; } catch { return null; } })());
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
@@ -51,6 +56,8 @@ function toast(msg: string): void {
 }
 
 function guard(fn: () => void): void {
+  // The first action puts the return strip away.
+  setReturnStrip([]);
   try {
     fn();
   } catch (e) {
@@ -79,16 +86,24 @@ function renderNewsOverlay(): void {
       const btn = (ev.target as HTMLElement).closest('button') as HTMLButtonElement | null;
       if (!btn || btn.disabled) return;
       if (btn.dataset.choice) return guard(() => game.choose(btn.dataset.choice!, dev.now()));
+      // A report card's way onward (the houses, the hex to claim) moves the panel; the card stays.
+      if (btn.dataset.tab) { tab = btn.dataset.tab as Tab; return render(true); }
+      if (btn.dataset.selectHex) { selectedHex = btn.dataset.selectHex; tab = 'map'; return render(true); }
       if (!btn.hasAttribute('data-news-ok')) return;
       game.state.seenLogId = game.state.logSeq;
       game.state.awayRounds = 0;
       game.state.seenOpening = true;
+      // The card said what full stores turned away; the count starts again.
+      game.state.overflowSinceSeen = {};
+      // Leaving the founding card lands on the colony overview with nothing
+      // selected; the counsel card above it says where to go, and the plot it
+      // names is already marked on the village.
       persist();
       render(true);
     });
     villageEl.appendChild(newsEl);
   }
-  newsEl.innerHTML = renderNews(news, game.state);
+  newsEl.innerHTML = renderNews(news, game.state, dev.now());
 }
 
 /**
@@ -112,7 +127,14 @@ function panelKey(now: number): string {
     Math.round(st.corruption), st.map.claimed.length, st.map.scouted.length, st.map.pendingScout,
     Object.values(st.tribes).map((t) => `${t.pendingEnvoy}${t.massingForRound}${Math.round(t.trust)}${Math.round(t.fear)}`).join(''),
     st.rome.activeRequestId, st.office, st.challenge?.voteRound ?? '',
+    currentAdvice(st)?.id ?? '',
     Object.values(st.characters).map((c) => c.bodyguards).join(''),
+    st.reports.length,
+    // The Due block (render/due.ts): the idle-round hour and every named round it prints.
+    Math.ceil(roundsUntilIdle(st, now) / 3_600_000),
+    Object.values(st.families).map((f) => `${f.demand?.dueRound ?? ''}:${f.sourRounds}`).join(','),
+    st.rome.hostingUntilRound, st.rome.administeringUntilRound, st.rome.activeRequest?.fulfilled ?? '',
+    Object.values(st.tribes).map((t) => `${t.hostagesUntilRound}:${t.leakedUntilRound}`).join(','),
   ].join('|');
 }
 
@@ -154,8 +176,12 @@ function render(force = false): void {
 }
 
 bindPanel(panelEl, {
-  onTab: (t) => { tab = t; render(true); },
+  onTab: (t) => { tab = t; setReturnStrip([]); render(true); },
+  onSelectSlot: (id) => { selected = id; tab = 'village'; render(true); },
+  onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; render(true); },
+  onDismissAdvisor: () => guard(() => game.dismissAdvisor()),
   onChoice: (id) => guard(() => game.choose(id, dev.now())),
+  onAdoptNewMan: () => guard(() => game.adoptNewMan(dev.now())),
   onScout: (hex) => guard(() => game.scout(hex, dev.now())),
   onBuild: (slot, b) => guard(() => game.build(slot, b, dev.now())),
   onRush: (slot) => guard(() => game.rush(slot, dev.now())),
@@ -177,6 +203,8 @@ bindPanel(panelEl, {
   onImport: (json) => guard(() => {
     game = new Game(deserialise(json));
     game.tick(dev.now());
+    // Another colony's rounds: the folders it shut and the filter it chose do not carry over.
+    resetReportsView();
     toast('Save imported.');
   }),
   onReset: () => {
@@ -184,6 +212,7 @@ bindPanel(panelEl, {
     clearLocalStorage(saveKey);
     game = new Game(createInitialState(dev.now()));
     selected = null;
+    resetReportsView();
     guard(() => {});
   },
 });
@@ -209,7 +238,12 @@ function renderDevBar(now: number): void {
   devBar.innerHTML = `<b>DEV</b> separate save slot · clock ${mults} · skip <button data-skip="1">1h</button><button data-skip="6">6h</button><button data-skip="24">24h</button><button data-skip="168">7d</button> · virtual ${new Date(now).toISOString().slice(0, 16).replace('T', ' ')}`;
 }
 
+// What the village clock did while the game was closed, told once as amounts
+// on the Village tab (village/away.ts). Snapshot before the first tick.
+const before = takeSnapshot(game.state);
 game.tick(dev.now());
+const gap = awayReport(before, takeSnapshot(game.state));
+if (!isQuiet(gap)) setReturnStrip(awayLines(gap));
 persist();
 render(true);
 setInterval(() => {

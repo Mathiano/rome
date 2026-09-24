@@ -36,6 +36,8 @@ export interface Character {
   bodyguards: number;
   spouseId?: string;
   exiled?: boolean;
+  /** Gone with his house when it left the colony (DESIGN §9.7). Alive, but not here. */
+  departed?: boolean;
   causeOfDeath?: string;
 }
 
@@ -61,6 +63,10 @@ export interface Family {
   grievances: number;
   demand: Demand | null;
   denounced: boolean;
+  /** The round the house left the colony (DESIGN §9.7), or null while it is here. */
+  departedRound: number | null;
+  /** Consecutive rounds the house has met the terms for leaving. */
+  sourRounds: number;
 }
 
 export interface TribeState {
@@ -126,7 +132,139 @@ export interface RoundReport {
   population: number;
   corruption: number;
   resources: Resources;
+  /**
+   * The ledger (reports unit): the colony as it stood when the round began, so
+   * the card can show before → after. A round runs in one synchronous call, so
+   * the two are exact. Absent on a report saved before the ledger existed.
+   */
+  before?: { resources: Resources; population: number; corruption: number };
+  /** The last log id the round wrote; lines above it belong to the next round. */
+  toLogId?: number;
+  /** Cheap derivations at round end, for the history table on the Save tab. */
+  standing?: number;
+  forumTier?: number;
+  buildingsRaised?: number;
+  claimed?: number;
 }
+
+// ---------------------------------------------------------------- reports
+/**
+ * A report is the record of something another actor did to the colony, with
+ * the numbers the prose line was made from (reports unit). Each report is
+ * written by the same call as its log line and points at it by `logId`, so
+ * the two never drift and `seenLogId` is the one cursor for both.
+ */
+export type ReportKind = 'raid' | 'site_raid' | 'scout' | 'envoy' | 'challenge' | 'rome' | 'collapse';
+
+/** The named terms of DESIGN §8.2, each with its multiplier already folded in. */
+export interface DefenceBreakdown {
+  ditch: number;
+  wall: number;
+  militia: number;
+  garrison: number;
+  engines: number;
+  lesser: number;
+  total: number;
+  men: { home: number; garrisons: number; bodyguards: number };
+  prefectId: string | null;
+  obstructed: boolean;
+}
+
+export interface GoodsLine { stored: number; hidden: number; exposed: number; lost: number }
+
+export interface RaidReportData {
+  tribeId: string;
+  raid: number;
+  defence: DefenceBreakdown;
+  fraction: number;
+  goods: Partial<Record<ResourceId, GoodsLine>>;
+  fear: { before: number; after: number };
+  fellId: string | null;
+}
+
+export interface SiteRaidReportData {
+  tribeId: string;
+  siteId: string;
+  hex: string;
+  garrison: number;
+  defence: number;
+  attack: number;
+  held: boolean;
+  menLost: number;
+  fear: { before: number; after: number };
+}
+
+export interface ScoutReportData {
+  hex: string;
+  ring: number;
+  siteId: string | null;
+  hostile: boolean;
+  casualties: number;
+  denarii: number;
+  fearShift: number;
+  scrolls: number;
+  population: { before: number; after: number };
+  claimable: boolean;
+}
+
+export interface EnvoyReportData {
+  tribeId: string;
+  envoyId: string;
+  /** A refusal names the axis that fell short: too little fear, too much of it (an alliance), too little trust. */
+  outcome: 'accepted' | 'refused_fear' | 'refused_feared' | 'refused_trust' | 'no_market';
+  fear: { before: number; after: number };
+  trust: { before: number; after: number };
+  /** What the like/hate web did to the other tribes, as deltas. */
+  web: Record<string, { trust: number; fear: number }>;
+}
+
+export interface ChallengeReportData {
+  phase: 'called' | 'resolved';
+  callerFamilyId: string;
+  voteRound: number;
+  candidates: Record<string, string>;
+  tally: Record<string, number>;
+  byHouse: Record<string, Record<string, number>>;
+  winnerId?: string;
+  held?: boolean;
+  winnerGravitas?: number;
+  loserAttitude?: number;
+}
+
+export interface RomeReportData {
+  phase: 'issued' | 'rewarded' | 'declined';
+  requestId: string;
+  title: string;
+  kind: ActiveRequest['kind'];
+  reward: ActiveRequest['reward'];
+  issuedRound: number;
+  multiplier?: { research: number; favour: number };
+  paid?: { denarii: number; scrolls: number; gravitas: number; unlock: string | null };
+  withheld?: { unlock: string; minFavour: number } | null;
+  favourDelta?: number;
+  loyalistAttitudeDelta?: number;
+}
+
+export interface CollapseReportData {
+  trigger: 'population' | 'corruption';
+  population: number;
+  corruption: number;
+  grant: Partial<Resources>;
+  rounds: number;
+  untilRound: number;
+}
+
+export interface ReportDataByKind {
+  raid: RaidReportData;
+  site_raid: SiteRaidReportData;
+  scout: ScoutReportData;
+  envoy: EnvoyReportData;
+  challenge: ChallengeReportData;
+  rome: RomeReportData;
+  collapse: CollapseReportData;
+}
+
+export type Report = { [K in ReportKind]: { id: number; round: number; at: number; kind: K; logId: number; data: ReportDataByKind[K] } }[ReportKind];
 
 /** Counters a playtester can quote back without keeping notes. */
 export interface PlaytestStats {
@@ -150,6 +288,8 @@ export interface PlaytestStats {
   assassinationsSucceeded: number;
   marriages: number;
   exiles: number;
+  adoptions: number;
+  secessions: number;
   sitesClaimed: number;
   sitesLost: number;
   siteRaidsRepelled: number;
@@ -230,11 +370,23 @@ export interface GameState {
   seenLogId: number;
   /** The founding card is shown once, not again after every village action. */
   seenOpening: boolean;
+  /** "Enough counsel": the opening line has been put away for this save. */
+  advisorDismissed: boolean;
   lastReport: RoundReport | null;
+  /** Every round's report, oldest first, capped by config.history.max (reports unit). */
+  history: RoundReport[];
+  /** The record behind the log lines, oldest first, capped by config.reports.max. */
+  reports: Report[];
+  reportSeq: number;
   /** An event waiting on the player's answer. Nothing else is blocked by it. */
   pendingChoice: { eventId: string; title: string; text: string } | null;
   /** Rounds that ran while the player was away, pending a digest. */
   awayRounds: number;
   /** Local playtest record. Never read by the game; written for the Save tab. */
   stats: PlaytestStats;
+  /**
+   * What full stores turned away since the player last acknowledged the news
+   * (DESIGN §4.2: overflow is lost). A counter per resource, never a time.
+   */
+  overflowSinceSeen: Partial<Resources>;
 }

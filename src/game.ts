@@ -8,6 +8,7 @@ import { startBuild, rush } from './village/construction';
 import { rushResearch, startResearch } from './village/research';
 import { appoint, appointLesser, dismiss, dismissLesser } from './politics/posts';
 import { assassinate, bribe, denounce, exile, expose, marry, marryTribe, seekRomeBacking, setBodyguards } from './politics/intrigue';
+import { adoptFromHouse, adoptNewMan } from './politics/adoption';
 import { playerCallChallenge } from './politics/challenge';
 import { runRound } from './politics/rounds';
 import { dispatchEnvoy, trade } from './tribes/envoys';
@@ -42,6 +43,7 @@ export type Political =
   | { type: 'marry'; aId: string; bId: string }
   | { type: 'marry_tribe'; characterId: string; tribeId: string }
   | { type: 'assassinate'; targetId: string }
+  | { type: 'adopt'; characterId: string }
   | { type: 'convene' };
 
 export class Game {
@@ -98,6 +100,15 @@ export class Game {
     this.tick(now);
     setBodyguards(this.state, characterId, men, spareMilitia(this.state));
   }
+  /** Raising a new man into the house is the same kind of business: no round (DESIGN §9.2). */
+  adoptNewMan(now = Date.now()): void {
+    this.tick(now);
+    adoptNewMan(this.state);
+  }
+  /** "Enough counsel": household business, no round. Nothing is lost by it (Pillar 7). */
+  dismissAdvisor(): void {
+    this.state.advisorDismissed = true;
+  }
   // --- politics (each runs a round) ---
   act(a: Political, now = Date.now()): void {
     this.tick(now);
@@ -126,6 +137,7 @@ export class Game {
       case 'marry': marry(s, a.aId, a.bId); break;
       case 'marry_tribe': marryTribe(s, a.characterId, a.tribeId); break;
       case 'assassinate': assassinate(s, a.targetId); break;
+      case 'adopt': adoptFromHouse(s, a.characterId); break;
       case 'convene': break;
     }
     runRound(s, now);

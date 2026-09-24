@@ -1,4 +1,4 @@
-import { activeTribes, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
+import { activeTribes, advisor, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS } from '../data';
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, eligibleBuildings, progress, rushPrice, slotById } from '../village/construction';
@@ -15,6 +15,8 @@ import { site as siteDef } from '../map/world';
 import { spareMilitia } from '../combat/militia';
 import { assassinationChance, backingCost, marriageCandidates, totalBodyguards } from '../politics/intrigue';
 import { officeHolder, playerHoldsOffice, tally } from '../politics/challenge';
+import { adoptionCandidates, houseConsent, newManCost } from '../politics/adoption';
+import { mayReturn } from '../politics/secession';
 import { favourRewardMultiplier } from '../rome/requests';
 import { appeasePrice } from '../tribes/turn';
 import { pendingChoices } from '../politics/events';
@@ -23,6 +25,13 @@ import {
   researchRushPrice, researchSpeed, resourcesOf,
 } from '../village/research';
 import { roundsUntilIdle } from '../politics/rounds';
+import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
+import { blockedBy, currentAdvice, foundingParagraphs, resolveGoto } from './advisor';
+import { rememberOpen, renderHistoryTable, renderNewsRecord, renderReports, reportsUnread, setReportFilter } from './reports';
+import { dueItems, idleLine, overflowWords, renderDue, renderReturnStrip } from './due';
+import { colonyLine, renderSummary } from './summary';
+
+export { remainingText, durationText } from './overview';
 
 export type Tab = 'village' | 'map' | 'library' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save';
 const TABS: { id: Tab; name: string }[] = [
@@ -33,7 +42,7 @@ const TABS: { id: Tab; name: string }[] = [
   { id: 'family', name: 'Houses' },
   { id: 'tribe', name: 'Tribe' },
   { id: 'rome', name: 'Rome' },
-  { id: 'log', name: 'Log' },
+  { id: 'log', name: 'Reports' },
   { id: 'save', name: 'Save' },
 ];
 
@@ -42,6 +51,11 @@ export interface PanelHandlers {
   onChoice(id: string): void;
   onScout(hex: string): void;
   onBuild(slotId: string, buildingId: string): void;
+  onSelectSlot(slotId: string): void;
+  /** Land on a hex of the map, the way onSelectSlot lands on a plot. */
+  onSelectHex(hex: string): void;
+  /** "Enough counsel": put the opening line away. Household business, no round. */
+  onDismissAdvisor(): void;
   onRush(slotId: string): void;
   onPolitical(a: Political): void;
   onEnvoy(tribeId: string, envoyId: string): void;
@@ -49,17 +63,16 @@ export interface PanelHandlers {
   onResearch(id: string): void;
   onRushResearch(id: string): void;
   onGuards(characterId: string, men: number): void;
+  /** Raise a new man into the house: household business, no round (DESIGN §9.2). */
+  onAdoptNewMan(): void;
   onExport(): void;
   onImport(json: string): void;
   onReset(): void;
 }
 
-const esc = (s: string) => s.replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]!);
-const n = (v: number) => (Math.abs(v) >= 100 ? Math.round(v).toString() : (Math.round(v * 10) / 10).toString());
-const ROMAN = ['', 'I', 'II', 'III'];
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-export interface News { title: string; subtitle: string; lines: LogEntry[] }
+export interface News { kind: 'opening' | 'away' | 'report'; title: string; subtitle: string; lines: LogEntry[] }
 
 /**
  * Everything that has happened since the player last acknowledged the news:
@@ -73,13 +86,14 @@ export function pendingNews(state: GameState): News | null {
   if (!lines.length) return null;
   if (state.awayRounds > 0) {
     return {
+      kind: 'away',
       title: 'While you were away',
       subtitle: `${state.awayRounds} round${state.awayRounds === 1 ? '' : 's'} ran without you. The council does not wait.`,
       lines,
     };
   }
   if (state.round === 0 && !state.seenOpening) {
-    return { title: esc(config.townName), subtitle: 'A colonia in Germania, beyond the Rhine. Rome expects it to stand.', lines };
+    return { kind: 'opening', title: esc(config.townName), subtitle: advisor.founding.subtitle, lines };
   }
   // Village work is not news. Laying a foundation writes a log line, and while
   // any unseen line raised the overlay, starting a build at the founding put
@@ -92,14 +106,18 @@ function report(state: GameState, lines: LogEntry[]): News | null {
   if (!lines.length && !state.pendingChoice) return null;
   const r = state.lastReport;
   return {
+    kind: 'report',
     title: `Round ${state.round}`,
     subtitle: r ? `Population ${Math.floor(state.population)} · corruption ${n(state.corruption)}` : '',
     lines,
   };
 }
 
-export function renderNews(news: News, state: GameState): string {
-  const items = news.lines.map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('');
+export function renderNews(news: News, state: GameState, now: number = Date.now()): string {
+  // The record (reports unit): the round's ledger and its report cards above
+  // the lines; a line a card already carries is not read twice.
+  const record = renderNewsRecord(state, news);
+  const items = news.lines.filter((e) => !record.covered.has(e.id)).map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('');
   const choices = pendingChoices(state);
   let foot: string;
   if (state.pendingChoice && choices.length) {
@@ -110,8 +128,34 @@ export function renderNews(news: News, state: GameState): string {
   } else {
     foot = `<button class="act" data-news-ok>Continue</button>`;
   }
+  // The founding says who you are (DESIGN §1) before the log says what happened,
+  // and ends on the first counsel so the colony opens with somewhere to go.
+  let premise = '';
+  if (news.kind === 'opening') {
+    premise = foundingParagraphs(state, config.townName).map((p) => `<p>${esc(p)}</p>`).join('');
+    const step = currentAdvice(state);
+    if (step) premise += `<p class="counsel-first"><b>${esc(advisor.title)}:</b> ${esc(step.text)}</p>`;
+  }
+  const leaving = news.kind === 'report' ? leavingCounsel(state, now) : '';
+  // What full stores turned away since the player last looked (DESIGN §4.2):
+  // the loss stated, and nothing else. The counter resets with Continue.
+  const turnedAway = news.kind === 'opening' ? [] : overflowWords(state.overflowSinceSeen ?? {});
+  const overflow = turnedAway.length ? `<p class="overflow" data-overflow>${turnedAway.map(esc).join(' ')}</p>` : '';
   return `<div class="news-card${state.round === 0 ? ' opening' : ''}"><h2>${news.title}</h2><p class="muted">${esc(news.subtitle)}</p>
-    <ul>${items}</ul>${foot}</div>`;
+    ${premise}${record.html}<ul>${items}</ul>${overflow}${leaving}${foot}</div>`;
+}
+
+/**
+ * "Before you go" (DESIGN §12's last verb). What is coming, from the one
+ * collector the Village tab's Due block reads (render/due.ts), each stated
+ * once in rounded words (§3.1 as amended), and the hours until the council
+ * meets without you. Nothing here counts down.
+ */
+export function leavingCounsel(s: GameState, now: number): string {
+  const d = dueItems(s, now);
+  const items = [...d.village, ...d.nextRound, ...d.later].map((i) => esc(i.text));
+  items.push(esc(idleLine(d.idleHours)));
+  return `<div class="leaving"><h3>Before you go</h3><ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul></div>`;
 }
 
 export function renderHeader(state: GameState): string {
@@ -123,15 +167,35 @@ export function renderHeader(state: GameState): string {
     return `<span class="${rate < 0 ? 'neg' : ''}"><b>${n(state.resources[id])}${capTxt}</b><small>${id} ${rate >= 0 ? '+' : ''}${n(rate)}/h</small></span>`;
   }).join('');
   const admin = state.rome.administeringUntilRound > state.round ? ' · <em>Rome administers</em>' : '';
-  return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${admin}</span><div class="res">${res}</div>`;
+  return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${colonyLine(state)}${admin}</span><div class="res">${res}</div>`;
+}
+
+/**
+ * A mark on a tab that is asking the player for an answer: a duty, never a
+ * spend (a build, a study or a scout is a choice, so the Village, Library and
+ * Map carry none). One condition per line, in order, so a unit can add one.
+ * The Council lights for a vote before it, not for being out of office: that
+ * would stay lit until the office was won back and read as a nag (§9.5).
+ */
+const BADGES: ((s: GameState, t: Tab) => boolean)[] = [
+  (s, t) => t === 'rome' && !!s.rome.activeRequest && !s.rome.activeRequest.fulfilled,
+  (s, t) => t === 'family' && Object.values(s.families).some((f) => !f.isPlayer && (!!f.demand || f.sourRounds > 0 || (f.departedRound !== null && mayReturn(s, f)))),
+  (s, t) => t === 'tribe' && Object.values(s.tribes).some((x) => x.massingForRound >= s.round),
+  (s, t) => t === 'council' && !!s.challenge,
+  // The tab the opening counsel points at (unit: advisor).
+  (s, t) => currentAdvice(s)?.goto.tab === t,
+];
+
+export function tabBadge(s: GameState, t: Tab): string {
+  // The Reports tab carries its unread count (unit: reports); every other mark is one '!'.
+  const unread = t === 'log' ? reportsUnread(s) : 0;
+  if (unread > 0) return `<span class="badge">${unread}</span>`;
+  return BADGES.some((lit) => lit(s, t)) ? '<span class="badge">!</span>' : '';
 }
 
 export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number, selectedHex: string | null = null): string {
   const s = game.state;
-  const badge = (t: Tab) => {
-    if (t === 'rome' && s.rome.activeRequest && !s.rome.activeRequest.fulfilled) return '<span class="badge">!</span>';
-    return '';
-  };
+  const badge = (t: Tab) => tabBadge(s, t);
   const nav = TABS.map((t) => `<button data-tab="${t.id}" class="${t.id === tab ? 'active' : ''}">${t.name}${badge(t.id)}</button>`).join('');
   let body = '';
   switch (tab) {
@@ -142,24 +206,48 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
     case 'family': body = renderFamilies(s); break;
     case 'tribe': body = renderTribe(s); break;
     case 'rome': body = renderRome(s); break;
-    case 'log': body = renderLog(s); break;
+    case 'log': body = renderReports(s); break;
     case 'save': body = renderSave(s); break;
   }
-  return `<nav>${nav}</nav><section>${body}</section>`;
+  return `<nav>${nav}</nav>${renderCounsel(s)}<section>${body}</section>`;
 }
 
-function costTxt(cost: Partial<Record<ResourceId, number>>, state: GameState): string {
-  return Object.entries(cost)
-    .filter(([, v]) => v)
-    .map(([k, v]) => `<span class="${state.resources[k as ResourceId] < (v ?? 0) ? 'neg' : ''}" style="${state.resources[k as ResourceId] < (v ?? 0) ? 'color:var(--terracotta)' : ''}">${v} ${k}</span>`)
-    .join(', ');
+/**
+ * The counsel card (DESIGN §12): one step at a time, between the tabs and the
+ * tab body so it stays in view whichever tab the step sends the player to.
+ * It points and it says what is short; it never acts (§3.2) and gives nothing.
+ */
+export function renderCounsel(s: GameState): string {
+  const step = currentAdvice(s);
+  if (!step) return '';
+  const g = resolveGoto(s, step);
+  const show = g.slot
+    ? `<button class="act" data-select-slot="${g.slot}">${esc(advisor.showMe)}</button>`
+    : g.hex
+      ? `<button class="act" data-select-hex="${g.hex}">${esc(advisor.showMe)}</button>`
+      : `<button class="act" data-tab="${g.tab}">${esc(advisor.showMe)}</button>`;
+  const blocked = blockedBy(s, step);
+  return `<aside class="counsel card" data-advisor-step="${step.id}"><b>${esc(advisor.title)}</b><p>${esc(step.text)}</p>`
+    + (blocked ? `<p class="muted">Not yet: ${esc(blocked)}.</p>` : '')
+    + `${show} <button class="act secondary" data-advisor-dismiss>${esc(advisor.dismiss)}</button></aside>`;
 }
 
+/**
+ * The Village panel: the colony overview when nothing is selected (the HQ
+ * page — every building, tier, next tier, cost, time and gate on one screen,
+ * see render/overview.ts), or the plot card when a slot is. Placement stays
+ * on the map (DESIGN §4.5): the card is where a new building is chosen.
+ */
 function renderVillage(s: GameState, selected: string | null, now: number): string {
-  const a = s.constructions.filter((c) => c.kind === 'building').length;
-  const f = s.constructions.filter((c) => c.kind === 'field').length;
-  let out = `<h2>Village</h2><p class="muted">One building and one field may be under construction at a time. Building ${a}/${config.concurrency.building}, field ${f}/${config.concurrency.field}. Cellars hide ${hiddenPerResource(s)} of each resource from raiders.</p>`;
-  if (!selected) return out + `<p>Select a plot on the map.</p>`;
+  let out = `<h2>Village</h2>`;
+  out += renderReturnStrip();
+  out += renderDue(s, now, openMenus.has('due'));
+  if (!selected) {
+    out += renderSummary(s);
+    out += `<p class="muted">One building and one field may be under construction at a time. Cellars hide ${hiddenPerResource(s)} of each resource from raiders.</p>`;
+    return out + renderOverview(s, now);
+  }
+  out += `<p><button class="link" data-overview>← back to the colony</button></p>`;
   const slot = slotById(s, selected);
   const c = s.constructions.find((x) => x.slotId === slot.id);
   out += `<h3>${slot.building ? esc(building(slot.building).name) : slot.site ? esc(slot.site.replace('_', ' ')) : 'Empty plot'} ${slot.tier ? ROMAN[slot.tier] : ''}</h3>`;
@@ -179,11 +267,11 @@ function renderVillage(s: GameState, selected: string | null, now: number): stri
       out += `<div class="card"><b>${esc(def.name)}</b> is at its top tier.</div>`;
       continue;
     }
-    const tier = def.tiers[check.toTier - 1];
-    const effects = Object.entries(tier.effects).map(([k, v]) => `${k.replace(/([A-Z])/g, ' $1').toLowerCase()} ${v}`).join(', ');
-    out += `<div class="card"><b>${esc(def.name)} ${ROMAN[check.toTier]}</b><p class="muted">${esc(def.role)}</p><p>${effects}</p><p>Cost: ${costTxt(check.cost, s)}</p>`;
+    // What the tier buys, now → next, and how long it takes: the one choice of
+    // a session (DESIGN §12) is not made blind.
+    out += `<div class="card"><b>${esc(def.name)} ${ROMAN[check.toTier]}</b><p class="muted">${esc(def.role)}</p><p>${esc(effectNowNext(def, slot.tier, check.toTier))}</p><p>Cost: ${costTxt(check.cost, s)} · ${esc(durationText(check.seconds))}</p>`;
     out += `<button class="act" data-build="${slot.id}" data-building="${bid}" ${check.ok ? '' : 'disabled'}>${slot.tier ? 'Upgrade' : 'Build'}</button>`;
-    if (!check.ok && check.reason) out += ` <span class="muted">${esc(check.reason)}</span>`;
+    if (!check.ok) out += ` ${lockWords(check)}`;
     out += `</div>`;
   }
   return out;
@@ -248,48 +336,6 @@ function renderMap(s: GameState, hex: string | null): string {
   return out + `</div>`;
 }
 
-const EFFECT_WORDS: Record<string, (v: number) => string> = {
-  buildSpeed: (v) => `building ${pct(v)} faster`,
-  grainMultiplier: (v) => `${pct(v)} more grain`,
-  materialMultiplier: (v) => `${pct(v)} more wood, clay and iron`,
-  taxMultiplier: (v) => `${pct(v)} more tax`,
-  tradeRate: (v) => `a better rate with the tribes (+${v.toFixed(2)})`,
-  granaryCapacity: (v) => `${v} more grain kept`,
-  warehouseCapacity: (v) => `${v} more of each material kept`,
-  hiddenPerResource: (v) => `${v} more of each resource hidden from raiders`,
-  populationCap: (v) => `room for ${v} more citizens`,
-  militiaBonus: (v) => `${v} more men under arms`,
-  defence: (v) => `${v} to the colony's defence`,
-  gravitasPerRound: (v) => `${v} gravitas a round`,
-  corruptionDrift: (v) => `corruption falls ${Math.abs(v)} a round`,
-  romeRewardMultiplier: (v) => `${pct(v)} more from Rome's rewards`,
-};
-
-function effectWords(effects: Record<string, number>): string {
-  return Object.entries(effects)
-    .map(([k, v]) => (EFFECT_WORDS[k] ? EFFECT_WORDS[k](v) : `${k} ${v}`))
-    .join(', ');
-}
-
-const hours = (sec: number) => (sec >= 3600 ? `${(sec / 3600).toFixed(1)}h` : `${Math.round(sec / 60)} min`);
-
-/**
- * Time left on a job, in the plainest words that are true (DESIGN §3.1, as
- * amended 2026-09-20). Rounded, never ticking down to the second: the village
- * clock is still not a countdown, it just no longer hides how long the wait is.
- */
-export function remainingText(ms: number): string {
-  const sec = Math.max(0, Math.ceil(ms / 1000));
-  if (sec < 60) return 'less than a minute left';
-  const min = Math.round(sec / 60);
-  if (min < 90) return `about ${min} minute${min === 1 ? '' : 's'} left`;
-  const h = sec / 3600;
-  const whole = Math.floor(h);
-  const half = h - whole >= 0.75 ? 1 : h - whole >= 0.25 ? 0.5 : 0;
-  const shown = whole + half;
-  return `about ${shown % 1 ? shown.toFixed(1) : shown} hours left`;
-}
-
 /**
  * The Library (DESIGN §4.6). Research runs on the village clock like a
  * construction, costs denarii and scrolls, and can be finished early at the
@@ -328,7 +374,7 @@ function renderLibrary(s: GameState, now: number): string {
     out += `<div class="card ${locked ? 'lesser' : ''}"><b>${esc(node.name)}</b>
       <p class="muted">${esc(node.description)}</p>
       <p>${esc(effectWords(node.effects))}</p>
-      <p>Cost: ${costTxt(resourcesOf(node.cost), s)}${check.cost.scrolls ? `, <span class="${s.rome.scrolls < check.cost.scrolls ? 'neg' : ''}">${check.cost.scrolls} scroll${check.cost.scrolls === 1 ? '' : 's'}</span>` : ''} · ${hours(check.seconds)}</p>
+      <p>Cost: ${costTxt(resourcesOf(node.cost), s)}${check.cost.scrolls ? `, <span class="${s.rome.scrolls < check.cost.scrolls ? 'neg' : ''}">${check.cost.scrolls} scroll${check.cost.scrolls === 1 ? '' : 's'}</span>` : ''} · ${esc(durationText(check.seconds))}</p>
       <button class="act" data-research="${node.id}" ${check.ok ? '' : 'disabled'}>Take it up</button>`;
     if (!check.ok && check.reason) out += ` <span class="muted">${esc(check.reason)}</span>`;
     out += `</div>`;
@@ -465,18 +511,19 @@ function renderGuards(s: GameState, id: string, isPlayer: boolean): string {
 }
 
 /**
- * Which houses' menus the player has opened. The panel is rebuilt as a string
+ * Which menus the player has open: the houses' intrigue menus, and the Village
+ * tab's Due block, which starts open. The panel is rebuilt as a string
  * whenever anything moves, so without this every round would slam the menu shut
  * under the player's hand.
  */
-const openMenus = new Set<string>();
+const openMenus = new Set<string>(['due']);
 
 /**
  * The full intrigue menu (DESIGN §9.6). Each of these is a move against another
  * house, so each runs a round, and every one of them is remembered: a grievance
  * outlives the attitude it cost.
  */
-function renderIntrigue(s: GameState, familyId: string): string {
+function renderIntrigue(s: GameState, familyId: string, bribeOnly = false): string {
   const f = s.families[familyId];
   const c = config.intrigue;
   const pl = leaderOf(s, playerFamily(s).id);
@@ -490,6 +537,9 @@ function renderIntrigue(s: GameState, familyId: string): string {
   const b = c.bribe;
   out += `<div class="row"><button class="act" data-political="bribe" data-family="${familyId}" ${gate(b.minRank, b.cost) ? '' : 'disabled'}>Bribe</button>
     <span class="muted">${b.cost} denarii, rank ${b.minRank} · their regard for you rises ${b.attitude}, your own standing slips ${b.gravitasLoss}. ${why(b.minRank, b.cost)}</span></div>`;
+
+  // A house away from the colony can be reached with a gift and nothing else.
+  if (bribeOnly) return out + `</details>`;
 
   const e = c.expose;
   out += `<div class="row"><button class="act" data-political="expose" data-family="${familyId}" ${gate(e.minRank, e.cost) ? '' : 'disabled'}>Expose their skimming</button>
@@ -507,6 +557,16 @@ function renderIntrigue(s: GameState, familyId: string): string {
       ? pairs.map((pr) => `<option value="${pr.a}|${pr.b}">${esc(pr.label)}</option>`).join('')
       : '<option>nobody unwed on both sides</option>'}</select>
     <span class="muted">${m.cost} denarii, rank ${m.minRank} · their regard +${m.attitude} and one grievance forgotten. ${why(m.minRank, m.cost)}</span></div>`;
+
+  const ad = config.adoption;
+  const consent = houseConsent(s, familyId);
+  const wards = adoptionCandidates(s, familyId);
+  const adoptOk = consent.ok && gate(ad.minRank, ad.houseCost);
+  out += `<div class="row"><button class="act" data-adopt="${familyId}" ${adoptOk ? '' : 'disabled'}>Adopt one of their men</button>
+    <select data-select-adopt="${familyId}" ${wards.length ? '' : 'disabled'}>${wards.length
+      ? wards.map((w) => `<option value="${w.id}">${esc(w.name)}, age ${w.age}, rank ${gravitasRank(w)}</option>`).join('')
+      : '<option>nobody they could spare</option>'}</select>
+    <span class="muted">${ad.houseCost} denarii, rank ${ad.minRank} · he takes your name and his vote comes with him; their regard +${ad.houseAttitude}. ${consent.ok ? why(ad.minRank, ad.houseCost) : esc(consent.reason ?? '')}</span></div>`;
 
   const living = livingMembers(s, familyId).filter((x) => !x.exiled);
   const x = c.exile;
@@ -531,12 +591,22 @@ function renderFamilies(s: GameState): string {
     const members = f.memberIds.map((id) => s.characters[id]);
     const held = postsHeldBy(s, f.id);
     out += `<div class="card ${f.isPlayer ? 'player' : 'rival'}"><b>${esc(f.gensName)}</b> — standing ${n(standing(s, f.id))}, ${livingMembers(s, f.id).length} living, ${held.length} post${held.length === 1 ? '' : 's'}${f.loyalist ? ', loyal to Rome' : ''}`;
-    if (!f.isPlayer) {
+    if (!f.isPlayer && f.departedRound !== null) {
+      const sc = config.secession;
+      const away = s.round - f.departedRound;
+      out += `<p>Attitude toward you: <b>${n(f.attitude)}</b></p><div class="meter att"><i style="width:${(f.attitude + 100) / 2}%"></i></div>`;
+      out += `<p style="color:var(--terracotta)">They left the colony at round ${f.departedRound} and took a share of the citizens with them.</p>
+        <p class="muted">${mayReturn(s, f) ? 'They are ready to come home.' : away < sc.awayRounds
+          ? `They will hear terms from round ${f.departedRound + sc.awayRounds} if their regard for you reaches ${sc.returnAttitude}`
+          : `They will come home once their regard for you reaches ${sc.returnAttitude}`}${away < sc.maxAwayRounds ? `, and by round ${f.departedRound + sc.maxAwayRounds} regardless.` : '.'} A gift still reaches them.</p>`;
+      out += renderIntrigue(s, f.id, true);
+    } else if (!f.isPlayer) {
       out += `<p>Attitude toward you: <b>${n(f.attitude)}</b></p><div class="meter att"><i style="width:${(f.attitude + 100) / 2}%"></i></div>`;
       if (f.attitude <= config.posts.unhappyThreshold && held.length) out += `<p style="color:var(--terracotta)">Unhappy and in office: expect obstruction, skimming or leaks.</p>`;
       if (held.length === 0) out += `<p class="muted">Without a post their regard for you falls each round.</p>`;
       if (held.length >= config.posts.dangerousPostCount) out += `<p style="color:var(--terracotta)">They hold too many posts. Dangerous.</p>`;
       if (f.grievances > 0) out += `<p class="muted">Grievances remembered: <b>${f.grievances}</b>${f.denounced ? ' · they have written to Rome' : ''}</p>`;
+      if (f.sourRounds > 0) out += `<p style="color:var(--terracotta)">They talk of leaving the colony. ${config.secession.rounds - f.sourRounds} more round${config.secession.rounds - f.sourRounds === 1 ? '' : 's'} like this and they will.</p>`;
       if (f.demand) {
         const d = f.demand;
         const what = d.kind === 'post' ? `the post of ${esc(postDefs.find((p) => p.id === d.postId)?.name ?? d.postId!)}` : `${d.denarii} denarii`;
@@ -547,20 +617,29 @@ function renderFamilies(s: GameState): string {
       }
       out += renderIntrigue(s, f.id);
     }
+    if (f.isPlayer) {
+      const ad = config.adoption;
+      const cost = newManCost(s);
+      const pl = leaderOf(s, f.id);
+      const rank = pl ? gravitasRank(pl) : 0;
+      const ok = rank >= ad.minRank && s.resources.denarii >= cost;
+      out += `<div class="row"><button class="act" data-adopt-new ${ok ? '' : 'disabled'}>Raise a new man into the house</button>
+        <span class="muted">${cost} denarii, rank ${ad.minRank} · a veteran, a freedman or a tribal noble, grown and yours. The price rises with the household. Runs no round. ${rank < ad.minRank ? `rank ${ad.minRank} needed` : s.resources.denarii < cost ? 'not enough denarii' : ''}</span></div>`;
+    }
     out += `<div class="roster">`;
     for (const c of members) {
       const st = c.stats;
       const postName = c.post ? esc(postDefs.find((p) => p.id === c.post)?.name ?? c.post) : '';
       out += `<div class="member${c.alive ? '' : ' dead'}">${portraitSvg(c, f, { dead: !c.alive })}
         <div class="who"><b>${esc(c.name)}</b>${c.isLeader ? ' <span title="head of the house">★</span>' : ''}
-          <div class="muted">${c.alive ? `age ${c.age}` : `† ${esc(c.causeOfDeath ?? '')}`} · gravitas ${n(c.gravitas)}, rank ${gravitasRank(c)}${postName ? ` · ${postName}` : ''}${spouseTxt(s, c)}</div>
+          <div class="muted">${c.alive ? (c.departed ? `age ${c.age} · gone with the house` : `age ${c.age}`) : `† ${esc(c.causeOfDeath ?? '')}`} · gravitas ${n(c.gravitas)}, rank ${gravitasRank(c)}${postName ? ` · ${postName}` : ''}${spouseTxt(s, c)}</div>
           <div class="stats"><span>auth ${st.authority}</span><span>disc ${st.discipline}</span><span>craft ${st.craft}</span><span>conn ${st.connections}</span><span>piety ${st.piety}</span></div>
           ${c.alive ? renderGuards(s, c.id, f.isPlayer) : ''}
         </div></div>`;
     }
     out += `</div></div>`;
   }
-  out += `<p class="muted">A post teaches its trade: its holder's stat grows while he serves. Gravitas rank gates the greater posts. Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Guards are drawn from the same militia pool as the walls and the far holdings: ${spareMilitia(s)} men are uncommitted, and standing ${totalBodyguards(s)} of them over your kin leaves that many fewer behind the ditch. Heirs by birth and adoption wait on DESIGN §15.7.</p>`;
+  out += `<p class="muted">A post teaches its trade: its holder's stat grows while he serves. Gravitas rank gates the greater posts. Age is counted in rounds. Natural death begins after ${config.lifespan.roundsMin} and is certain by ${config.lifespan.roundsMax}. Guards are drawn from the same militia pool as the walls and the far holdings: ${spareMilitia(s)} men are uncommitted, and standing ${totalBodyguards(s)} of them over your kin leaves that many fewer behind the ditch. Heirs by birth wait on DESIGN §15.7; adoption does not, and is Roman practice.</p>`;
   return out;
 }
 
@@ -651,11 +730,6 @@ function renderRome(s: GameState): string {
   return out;
 }
 
-function renderLog(s: GameState): string {
-  const items = [...s.log].reverse().slice(0, 80).map((e) => `<li class="k-${e.kind}"><span class="muted">r${e.round}</span> ${esc(e.text)}</li>`).join('');
-  return `<h2>Log</h2><div class="log"><ul>${items}</ul></div>`;
-}
-
 function renderSave(s: GameState): string {
   const st = s.stats;
   return `<h2>Save</h2><p class="muted">The game saves itself to this browser. Export to carry it to another device; import replaces the current game.</p>
@@ -675,6 +749,7 @@ function renderSave(s: GameState): string {
     <tr><td>Denarii spent on haste</td><td>${Math.round(st.denariiSpentOnHaste)}</td></tr>
     <tr><td>Lesser offices</td><td>corruption ${n(lesserEffect(s, 'corruptionFall'))}/round, build ${Math.round(lesserEffect(s, 'buildSpeed') * 100)}% faster, defence +${n(lesserEffect(s, 'defence'))}</td></tr>
   </table>
+  ${renderHistoryTable(s)}
   <p class="muted">Founded ${new Date(s.createdAt).toLocaleDateString()} · save version ${s.version}</p>`;
 }
 
@@ -683,7 +758,8 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
   // `toggle` does not bubble, so it is caught on the way down instead.
   panel.addEventListener('toggle', (ev) => {
     const d = (ev.target as HTMLElement).closest('details') as HTMLDetailsElement | null;
-    const id = d?.dataset.intrigue;
+    if (d?.dataset.menu) rememberOpen(d.dataset.menu, d.open);
+    const id = d?.dataset.intrigue ?? d?.dataset.menu;
     if (!id) return;
     if (d!.open) openMenus.add(id);
     else openMenus.delete(id);
@@ -693,7 +769,14 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (!t || t.disabled) return;
     const d = t.dataset;
     if (d.tab) return h.onTab(d.tab as Tab);
+    // The Reports folder: panel-module state, re-rendered through the tab.
+    if (d.reportFilter) { setReportFilter(d.reportFilter); return h.onTab('log'); }
     if (d.build && d.building) return h.onBuild(d.build, d.building);
+    if (d.selectSlot) return h.onSelectSlot(d.selectSlot);
+    // The plot card's way back: no slot selected is the overview.
+    if ('overview' in d) return h.onSelectSlot('');
+    if (d.selectHex) return h.onSelectHex(d.selectHex);
+    if ('advisorDismiss' in d) return h.onDismissAdvisor();
     if (d.rush) return h.onRush(d.rush);
     if (d.research) return h.onResearch(d.research);
     if (d.rushResearch) return h.onRushResearch(d.rushResearch);
@@ -717,6 +800,11 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.accept) return h.onPolitical({ type: 'accept_demand', familyId: d.accept });
     if (d.refuse) return h.onPolitical({ type: 'refuse_demand', familyId: d.refuse });
     if (d.guards) return h.onGuards(d.guards, Number(d.men));
+    if ('adoptNew' in d) return h.onAdoptNewMan();
+    if (d.adopt) {
+      const id = panel.querySelector<HTMLSelectElement>(`select[data-select-adopt="${d.adopt}"]`)?.value ?? '';
+      return id ? h.onPolitical({ type: 'adopt', characterId: id }) : undefined;
+    }
     if (d.marry) {
       const sel = panel.querySelector<HTMLSelectElement>(`select[data-select-marry="${d.marry}"]`);
       const [aId, bId] = (sel?.value ?? '').split('|');

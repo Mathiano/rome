@@ -29,6 +29,7 @@ export function appointLesser(state: GameState, id: string, characterId: string)
   requireOffice(state, 'An appointment');
   const c = state.characters[characterId];
   if (!c || !c.alive) throw new Error('No such living character');
+  if (c.departed) throw new Error(`${c.name} has left the colony with his house`);
   const def = lesserDef(id);
   if (c.post) throw new Error(`${c.name} already sits on the council`);
   const prev = lesserHolderOf(state, id);
@@ -62,13 +63,14 @@ export function lesserEffect(state: GameState, effect: string): number {
 export function meetsRank(state: GameState, postId: string, characterId: string): boolean {
   const c = state.characters[characterId];
   const p = postDef(postId);
-  return !!c && c.alive && gravitasRank(c) >= p.minRank;
+  return !!c && c.alive && !c.departed && gravitasRank(c) >= p.minRank;
 }
 
 export function appoint(state: GameState, postId: string, characterId: string): void {
   requireOffice(state, 'An appointment');
   const c = state.characters[characterId];
   if (!c || !c.alive) throw new Error('No such living character');
+  if (c.departed) throw new Error(`${c.name} has left the colony with his house`);
   const def = postDef(postId);
   if (gravitasRank(c) < def.minRank) {
     throw new Error(`${def.name} needs gravitas rank ${def.minRank}; ${c.name} is rank ${gravitasRank(c)}`);
@@ -110,6 +112,9 @@ export function clampAtt(v: number): number {
 export function driftAttitudes(state: GameState): void {
   const herald = lesserEffect(state, 'attitudeDrift');
   for (const f of rivalFamilies(state)) {
+    // A house away from the colony neither sours nor mellows: its regard
+    // moves only by what is sent after it.
+    if (f.departedRound !== null) continue;
     // A lesser office counts as being kept in office: it stops the slide
     // without handing the house anything to obstruct with.
     const n = postsHeldBy(state, f.id).length + lesserPostsHeldBy(state, f.id).length;

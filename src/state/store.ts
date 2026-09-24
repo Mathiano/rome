@@ -31,6 +31,8 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       grievances: 0,
       demand: null,
       denounced: false,
+      departedRound: null,
+      sourRounds: 0,
     };
     for (const m of f.members) {
       characters[m.id] = {
@@ -71,6 +73,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     lesserPosts: Object.fromEntries(lesserPosts.map((p) => [p.id, null])),
     office: playerLeader.id,
     seenOpening: false,
+    advisorDismissed: false,
     research: { active: [], completed: [] },
     challenge: null,
     lastChallengeRound: -999,
@@ -114,9 +117,13 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     logSeq: 0,
     seenLogId: 0,
     lastReport: null,
+    history: [],
+    reports: [],
+    reportSeq: 0,
     pendingChoice: null,
     awayRounds: 0,
     stats: emptyStats(),
+    overflowSinceSeen: {},
   };
   log(state, 'system', `${config.townName} is founded. ${playerLeader.name} holds the office of ${config.topOffice.title}.`);
   return state;
@@ -128,7 +135,7 @@ export function emptyStats() {
     demandsGranted: 0, demandsRefused: 0, choicesAnswered: 0, romeRequestsCompleted: 0,
     romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
     challengesFaced: 0, challengesWon: 0, roundsOutOfOffice: 0, assassinationsOrdered: 0,
-    assassinationsSucceeded: 0, marriages: 0, exiles: 0,
+    assassinationsSucceeded: 0, marriages: 0, exiles: 0, adoptions: 0, secessions: 0,
     sitesClaimed: 0, sitesLost: 0, siteRaidsRepelled: 0, scoutsLost: 0, researchCompleted: 0,
   };
 }
@@ -192,6 +199,8 @@ export function migrate(state: GameState): GameState {
   if (!state.research) state.research = { active: [], completed: [] };
   // A save made before the founding card was shown once keeps its place.
   if (state.seenOpening === undefined) state.seenOpening = state.round > 0 || state.seenLogId > 0;
+  // A colony that has already met its council has no use for the opening counsel.
+  if (state.advisorDismissed === undefined) state.advisorDismissed = state.round > 0;
   // Slots added to the layout after a save was made appear as empty ground.
   for (const def of layout.slots) {
     if (state.slots.some((s) => s.id === def.id)) continue;
@@ -210,7 +219,13 @@ export function migrate(state: GameState): GameState {
     if (f.grievances === undefined) f.grievances = 0;
     if (f.demand === undefined) f.demand = null;
     if (f.denounced === undefined) f.denounced = false;
+    if (f.departedRound === undefined) f.departedRound = null;
+    if (f.sourRounds === undefined) f.sourRounds = 0;
   }
+  // Saves from before the reports archive keep their prose; the record starts here.
+  if (!state.reports) { state.reports = []; state.reportSeq = 0; }
+  if (!state.history) state.history = [];
+  if (!state.overflowSinceSeen) state.overflowSinceSeen = {};
   state.version = config.saveVersion;
   return state;
 }

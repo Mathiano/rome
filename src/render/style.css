@@ -44,10 +44,13 @@ header .res .neg b { color: #e0885a; }
 #village .slot .tile { fill: rgba(132,104,89,0.14); stroke: rgba(30,7,2,0.5); stroke-width: 1.2; stroke-dasharray: 6 5; }
 #village .slot.built .tile { fill: none; stroke: none; }
 /* The wall has no plate and no sprite of its own: its circuit is drawn by
-   src/render/environment.ts. Its 'tile' is only the gate's span, so it is a
-   faint outline to aim at rather than a plot to fill. */
-#village .slot.ring-perimeter .tile { fill: rgba(132,104,89,0.10); stroke: rgba(30,7,2,0.38); stroke-width: 1; stroke-dasharray: 4 6; }
-#village .slot.ring-perimeter.built .tile { fill: rgba(0,0,0,0); stroke: none; }
+   src/render/environment.ts, and with none raised there is nothing to mark.
+   Its 'tile' is only the gate's span — unpainted at rest, so the colony is
+   not spoilt by a box standing in the fields, and lit by the :hover and
+   .selected rules below. `pointer-events: all` is inherited from .slot and
+   catches the pointer regardless of fill, so an unpainted tile is still a
+   target. Kept above those rules: they are equally specific and win on order. */
+#village .slot.ring-perimeter .tile { fill: rgba(0,0,0,0); stroke: none; stroke-dasharray: none; }
 /* Selection was a hard gold rule around a nearly invisible plot; the two
    states now differ by weight rather than by shouting. */
 #village .slot.selected .tile, #village .slot.built.selected .tile { fill: rgba(201,162,74,0.22); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: none; }
@@ -248,3 +251,93 @@ header .res .neg b { color: #e0885a; }
 /* The library (DESIGN §4.6). */
 #panel .known { margin: 4px 0 0 0; padding-left: 18px; }
 #panel .known li { margin: 2px 0; }
+
+/* The colony index: a list that selects, so nothing has to be hunted for on
+   the map. The wall is the reason it exists — it stands at the gate, not on a
+   plot in a ring. */
+#panel ul.index { list-style: none; margin: 0.4rem 0; padding: 0; }
+#panel ul.index li { padding: 0.15rem 0; }
+#panel button.link { background: none; border: none; padding: 0; font: inherit;
+  color: var(--gold); cursor: pointer; text-decoration: underline; text-underline-offset: 2px; }
+#panel button.link:hover { color: var(--ink); }
+
+/* The Headquarters overview (wf/headquarters): the two lanes at the top, the
+   two-line row grid the narrow panel needs in place of a six-column table,
+   and the ledger behind the header's per-hour figures. */
+#panel .lanes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin: 6px 0; }
+#panel .card.lane { margin: 0; font-size: 12px; }
+#panel .card.lane p { margin: 3px 0; }
+#panel .card.lane.free { border-style: dashed; }
+#panel .card.lane.free b { opacity: 0.65; }
+#panel ul.overview li { padding: 0.3rem 0; border-top: 1px solid rgba(42, 33, 24, 0.12); }
+#panel ul.overview li.ring { border-top: 0; padding: 0.55rem 0 0.1rem; font-variant: small-caps; letter-spacing: 0.04em; opacity: 0.65; }
+#panel ul.overview .l1 { display: flex; flex-wrap: wrap; gap: 0.2rem 0.45rem; align-items: baseline; }
+#panel ul.overview .l2 { display: flex; flex-wrap: wrap; gap: 0.15rem 0.55rem; align-items: center; font-size: 12px; margin-top: 2px; }
+#panel ul.overview .l2 .effect { flex-basis: 100%; }
+#panel .gate { color: var(--river); opacity: 0.75; font-size: 12px; }
+#panel .rome-mark { color: var(--gold); font-size: 11px; }
+#panel .rome-mark::before { content: '✦ '; }
+#panel .ledger .res { margin: 4px 0 8px; }
+#panel .ledger .res .l1 { display: flex; justify-content: space-between; border-bottom: 1px solid rgba(42, 33, 24, 0.12); }
+#panel .ledger .line { display: flex; justify-content: space-between; gap: 8px; font-size: 12px; padding-left: 8px; opacity: 0.85; }
+#panel .ledger .neg, #panel ul.overview .neg { color: var(--terracotta); }
+/* The opening counsel (unit: advisor). One card between the tabs and the tab
+   body. The plot a step names wears the selected look — the same gold as a
+   plot the player has clicked — and nothing moves: a pulse would make the
+   colony point at itself. Selecting the plot is finding it. */
+#panel aside.counsel { margin: 8px 12px 0; border-left: 4px solid var(--gold); background: rgba(201,162,74,0.12); }
+#panel aside.counsel p { margin: 4px 0 6px; }
+.news-card .counsel-first { border-left: 3px solid var(--gold); padding-left: 10px; margin: 10px 0 4px; }
+.news-card .leaving { border-top: 1px solid var(--shadow); margin: 6px 0 12px; padding-top: 6px; }
+.news-card .leaving h3 { font-size: 13px; margin: 0 0 4px; font-variant: small-caps; letter-spacing: 0.04em; }
+.news-card .leaving ul { margin: 0; }
+.news-card .leaving li { border-left-color: var(--gold); font-size: 13px; }
+#village .slot.counsel .tile, #village .slot.built.counsel .tile { fill: rgba(201,162,74,0.22); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: none; }
+#village .slot.built.counsel .tile { fill: rgba(201,162,74,0.16); }
+
+/* The reports archive (unit: reports). Round folders newest first, the
+   before → after ledger, one card per report with its terms in a two-column
+   table, and the folder buttons. Nothing here shows a clock. */
+#panel .filters { display: flex; flex-wrap: wrap; gap: 4px; margin: 6px 0 8px; }
+#panel details.round { margin: 6px 0; border-top: 1px solid var(--shadow); padding-top: 4px; }
+#panel details.round > summary { cursor: pointer; font-variant: small-caps; letter-spacing: 0.04em; font-size: 14px; }
+#panel details.log { margin: 4px 0 2px; }
+#panel details.log > summary { cursor: pointer; font-size: 12px; opacity: 0.7; }
+#panel details.log ul, .news-card details.round ul { list-style: none; padding: 0 0 0 8px; margin: 4px 0; }
+#panel details.log li, .news-card details.round li { font-size: 12px; padding: 1px 0; border-left: 2px solid var(--shadow); padding-left: 6px; margin: 2px 0; }
+.card.report { font-size: 12px; }
+.card.report > b { font-size: 13px; }
+.card.report p { margin: 4px 0; }
+.card.report .fell { color: var(--terracotta); }
+table.terms, table.goods, table.ledger-round, table.history { border-collapse: collapse; margin: 4px 0; font-size: 12px; width: 100%; }
+table.terms td, table.goods td, table.goods th, table.ledger-round td, table.ledger-round th, table.history td, table.history th { padding: 1px 6px 1px 0; text-align: left; }
+table.terms td:last-child, table.goods td:not(:first-child), table.goods th:not(:first-child),
+table.ledger-round td:not(:first-child), table.ledger-round th:not(:first-child), table.history td:not(:first-child), table.history th:not(:first-child) { text-align: right; }
+table.terms tr.total td { border-top: 1px solid var(--shadow); font-weight: 600; }
+table.goods th, table.ledger-round th, table.history th { font-weight: normal; opacity: 0.65; }
+.pos { color: var(--moss); }
+table .neg, .card.report .neg { color: var(--terracotta); }
+.news-card .ledger-round { margin-top: 8px; }
+.news-card .tally-line { font-weight: 600; margin: 8px 0 4px; }
+.news-card details.round { border-top: 1px solid var(--shadow); margin: 6px 0; padding-top: 4px; }
+.news-card details.round > summary { cursor: pointer; font-variant: small-caps; letter-spacing: 0.04em; }
+/* The town-and-loop surfaces (unit: town). The Due block at the top of the
+   Village tab, the summary card under it, and the strip a returning player
+   finds: each a list of plain lines, none of them a clock. */
+#panel details.due { margin: 6px 0 8px; border: 1px solid var(--shadow); border-left: 4px solid var(--gold); padding: 6px 8px; background: rgba(255,255,255,0.35); border-radius: 2px; }
+#panel details.due summary { cursor: pointer; font-variant: small-caps; letter-spacing: 0.04em; }
+#panel details.due h4 { font-size: 12px; margin: 6px 0 2px; opacity: 0.65; font-weight: normal; font-variant: small-caps; letter-spacing: 0.04em; }
+#panel details.due ul { list-style: none; margin: 0; padding: 0; }
+#panel details.due li { padding: 2px 0; font-size: 13px; }
+#panel details.due li button.link { color: var(--ink); text-align: left; }
+#panel details.due li button.link:hover { color: var(--terracotta); }
+#panel details.due .idle { margin: 6px 0 0; }
+#panel .card.summary { font-size: 13px; }
+#panel .card.summary .row { display: flex; justify-content: space-between; gap: 8px; padding: 2px 0; border-top: 1px solid rgba(42, 33, 24, 0.12); }
+#panel .card.summary .row:first-of-type { border-top: 0; }
+#panel .card.summary .row span:last-child { text-align: right; }
+#panel .card.summary .stalled { color: var(--terracotta); }
+#panel .card.away { border-left: 4px solid var(--river); background: rgba(77,107,120,0.10); }
+#panel .card.away ul { margin: 4px 0 0; padding-left: 18px; }
+#panel .card.away li { margin: 2px 0; font-size: 13px; }
+.news-card .overflow { border-left: 3px solid var(--river); padding-left: 10px; margin: 6px 0; font-size: 13px; }

@@ -51,7 +51,7 @@ export function rollEvent(state: GameState): void {
   if (state.pendingChoice) return; // one decision at a time
   if (!chance(state, config.events.chancePerRound)) return;
   const ev = weighted(state, eventDefs);
-  const living = Object.values(state.characters).filter((c) => c.alive);
+  const living = Object.values(state.characters).filter((c) => c.alive && !c.departed);
   const target = pick(state, living);
   const text = fill(ev.text, state, target?.name ?? 'someone');
 

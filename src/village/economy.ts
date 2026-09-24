@@ -1,7 +1,7 @@
 import { building, config, post as postDef, resources as resourceDefs, unlocks, RESOURCE_IDS, type ResourceId } from '../data';
 import { lesserEffect } from '../politics/posts';
 import { claimedProduction } from '../map/sites';
-import type { GameState, Resources } from '../state/types';
+import type { GameState, Resources, Slot } from '../state/types';
 import { capacity, populationCap, researchEffect, sumEffect } from './storage';
 
 /** Bonus multiplier for a domain from the post-holder's relevant stat, e.g. 0.15 = +15%. Obstruction zeroes it and applies a penalty. */
@@ -20,6 +20,29 @@ export function corruptionCostMultiplier(state: GameState): number {
   return 1 + state.corruption * config.corruption.costMultiplierPerPoint;
 }
 
+/**
+ * What lifts a resource's yield over its base: the post-holder's bonus (which
+ * goes negative under obstruction, DESIGN §9.4) and everything the Library has
+ * finished. Grain answers to the granary, the materials to the works.
+ */
+export function yieldMultiplier(state: GameState, id: ResourceId): number {
+  if (id === 'grain') return 1 + postBonus(state, 'granary') + researchEffect(state, 'grainMultiplier');
+  if (id === 'denarii') return 1;
+  return 1 + postBonus(state, 'works') + researchEffect(state, 'materialMultiplier');
+}
+
+/**
+ * One slot's share of the hour, with the same multipliers the header applies,
+ * so the rows of an overview sum to it. `tier` and `buildingId` may be given to
+ * ask what a plot would yield once raised: "30 wood/h now, 80/h at II".
+ */
+export function slotProductionPerHour(state: GameState, slot: Slot, tier = slot.tier, buildingId = slot.building): number {
+  if (!buildingId || tier <= 0) return 0;
+  const def = building(buildingId);
+  if (!def.produces || tier > def.tiers.length) return 0;
+  return (def.tiers[tier - 1].effects.productionPerHour ?? 0) * yieldMultiplier(state, def.produces);
+}
+
 export function productionPerHour(state: GameState): Resources {
   const out: Resources = { wood: 0, clay: 0, iron: 0, grain: 0, denarii: 0 };
   for (const s of state.slots) {
@@ -32,9 +55,7 @@ export function productionPerHour(state: GameState): Resources {
   for (const [res, v] of Object.entries(claimedProduction(state))) {
     out[res as ResourceId] += v ?? 0;
   }
-  out.grain *= 1 + postBonus(state, 'granary') + researchEffect(state, 'grainMultiplier');
-  const works = postBonus(state, 'works') + researchEffect(state, 'materialMultiplier');
-  for (const id of ['wood', 'clay', 'iron'] as ResourceId[]) out[id] *= 1 + works;
+  for (const id of RESOURCE_IDS) out[id] *= yieldMultiplier(state, id);
   return out;
 }
 
@@ -82,14 +103,23 @@ export function buildTimeMultiplier(state: GameState): number {
   return Math.max(0.2, m);
 }
 
-/** Advance the village economy by `ms` of wall-clock time. Accrual is capped by storage (DESIGN §3.1, §4.2). */
+/**
+ * Advance the village economy by `ms` of wall-clock time. Accrual is capped by
+ * storage (DESIGN §3.1, §4.2), and what the cap turns away is counted in
+ * `overflowSinceSeen` so the player can be told what a full store cost. Only
+ * production that found no room counts: a store already over its cap (a grant
+ * landed on it) loses the excess to `clampToCapacity`, not to this.
+ */
 export function accrue(state: GameState, ms: number): void {
   if (ms <= 0) return;
   const hours = ms / 3_600_000;
   const net = netPerHour(state);
+  const overflow = (state.overflowSinceSeen ??= {});
   for (const id of RESOURCE_IDS) {
     const cap = capacity(state, id);
     const next = state.resources[id] + net[id] * hours;
+    const lost = next - Math.max(cap, state.resources[id]);
+    if (cap !== Infinity && lost > 0) overflow[id] = (overflow[id] ?? 0) + lost;
     state.resources[id] = Math.max(0, Math.min(cap, next));
   }
   // Population grows toward cap while there is grain; it never dies of hunger (Pillar 6) but stalls.
