@@ -1,5 +1,6 @@
 import { config, families as familyDefs, layout, startResources, posts, lesserPosts, activeTribes, RESOURCE_IDS } from '../data';
 import type { GameState, Family, Character, Slot, LogEntry, TribeState } from './types';
+import { issueNext } from '../rome/requests';
 
 export function createInitialState(now: number = Date.now(), seed: number = (now ^ 0x9e3779b9) | 0): GameState {
   const slots: Slot[] = layout.slots.map((s) => ({
@@ -126,6 +127,10 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     overflowSinceSeen: {},
   };
   log(state, 'system', `${config.townName} is founded. ${playerLeader.name} holds the office of ${config.topOffice.title}.`);
+  // Rome's first letter is part of the founding (DESIGN §6, ruled 2026-09-24):
+  // it stands before any round runs, issued at round 0. Every later letter
+  // comes at Rome's step of a round (§3.2).
+  issueNext(state);
   return state;
 }
 

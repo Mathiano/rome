@@ -62,7 +62,8 @@ describe('the condition vocabulary', () => {
     expect(t({ envoyOut: true })).toBe(false);
     expect(t({ scoutOut: true })).toBe(false);
     expect(t({ scoutedAtLeast: 1 })).toBe(false);
-    expect(t({ romeRequestOpen: true })).toBe(false);
+    // Rome's first letter stands at the founding (DESIGN §6, 2026-09-24)
+    expect(t({ romeRequestOpen: true })).toBe(true);
     expect(t({ romeAnswered: true })).toBe(false);
     expect(t({ storeAtCap: { resource: 'wood' } })).toBe(false);
     expect(t({ researchStarted: true })).toBe(false);
@@ -350,6 +351,10 @@ describe('before you go', () => {
     g.state.seenLogId = g.state.logSeq;
     g.state.seenOpening = true;
     g.build('o5', 'iron_mine', 1000);
+    // Rome's founding letter is already open, so clear it: Rome writes its next
+    // letter at this round, and the round has news to raise a card with.
+    g.state.rome.activeRequest = null;
+    g.state.rome.activeRequestId = null;
     g.act({ type: 'convene' }, 2000);
     const news = pendingNews(g.state)!;
     expect(news.kind).toBe('report');

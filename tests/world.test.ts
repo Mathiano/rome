@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createInitialState } from '../src/state/store';
+import { createInitialState, deserialise, serialise } from '../src/state/store';
 import { Game } from '../src/game';
 import { lossFraction, resolveRaid, defenceStrength, raidChance } from '../src/combat/raids';
 import { militiaPool } from '../src/combat/militia';
@@ -8,6 +8,7 @@ import { romeTurn, deliver, decline, checkCollapse } from '../src/rome/requests'
 import { config, requestProgression, activeTribe } from '../src/data';
 import { appoint } from '../src/politics/posts';
 import type { GameState } from '../src/state/types';
+import { pendingNews, renderNews } from '../src/render/panel';
 /** v0.1 woke the other two tribes; these tests speak to the raider. */
 const TRIBE_ID = 'chatti';
 const TRIBE = (s: GameState) => s.tribes[TRIBE_ID];
@@ -142,5 +143,47 @@ describe('Rome', () => {
     expect(s.rome.scrolls).toBe(3);
     expect(s.rome.administeringUntilRound).toBe(config.collapse.administrationRounds);
     expect(checkCollapse(s)).toBe(false);
+  });
+});
+
+/** Rome's first letter is part of the founding (DESIGN §6, ruled 2026-09-24). */
+describe("Rome's letter at the founding", () => {
+  it('a fresh colony already holds the first letter of the progression, issued at round 0', () => {
+    const s = createInitialState(0, 1);
+    expect(s.round).toBe(0);
+    expect(s.rome.activeRequest?.id).toBe(requestProgression[0].id);
+    expect(s.rome.activeRequest?.issuedRound).toBe(0);
+    expect(s.rome.progressionIndex).toBe(1);
+    // the founding line first, then Rome's
+    expect(s.log.map((l) => l.kind)).toEqual(['system', 'rome']);
+    expect(s.log[1].text).toBe(`Rome asks: ${requestProgression[0].title}. ${requestProgression[0].text}`);
+    const r = s.reports.find((x) => x.kind === 'rome');
+    expect(r && r.kind === 'rome' && r.data.phase).toBe('issued');
+    expect(r!.round).toBe(0);
+  });
+
+  it('the first round does not write a second letter over it', () => {
+    const g = new Game(createInitialState(0, 1));
+    g.act({ type: 'convene' }, 1000);
+    expect(g.state.rome.activeRequest?.id).toBe(requestProgression[0].id);
+    expect(g.state.rome.progressionIndex).toBe(1);
+    expect(g.state.reports.filter((x) => x.kind === 'rome')).toHaveLength(1);
+  });
+
+  it('the founding card carries the letter', () => {
+    const s = createInitialState(0, 1);
+    const news = pendingNews(s)!;
+    expect(news.kind).toBe('opening');
+    expect(renderNews(news, s, 0)).toContain(`Rome asks: ${requestProgression[0].title}.`);
+  });
+
+  it('an older save founded without a letter is loaded as it was, not given one', () => {
+    const s = createInitialState(0, 1);
+    s.rome.activeRequest = null;
+    s.rome.activeRequestId = null;
+    s.rome.progressionIndex = 0;
+    const back = deserialise(serialise(s));
+    expect(back.rome.activeRequest).toBeNull();
+    expect(back.rome.progressionIndex).toBe(0);
   });
 });
