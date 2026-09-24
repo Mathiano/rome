@@ -186,7 +186,7 @@
   },
   "rome": {
     "startFavour": 20,
-    "declineFavour": -5,
+    "_decline": "Letting a request go (DESIGN §6): no punishment from Rome, so favour does not move; only the loyalist house's regard falls. declineFavour (-5) removed 2026-09-24 on Mathias's ruling.",
     "declineLoyalistAttitude": -8,
     "fillerEveryRounds": 2,
     "hostOfficialRounds": 2,

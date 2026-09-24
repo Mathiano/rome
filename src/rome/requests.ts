@@ -197,12 +197,13 @@ export function decline(state: GameState): void {
   state.rome.activeRequest = null;
   state.rome.activeRequestId = null;
   state.rome.hostingUntilRound = 0;
-  state.rome.favour += config.rome.declineFavour;
+  // No punishment from Rome (DESIGN §6): favour does not move. What the player
+  // loses is the aid itself, and the loyalist house's regard.
   const loy = loyalist(state);
   if (loy) loy.attitude = clampAtt(loy.attitude + config.rome.declineLoyalistAttitude);
   report(state, 'rome', {
     phase: 'declined', requestId: a.id, title: a.title, kind: a.kind, reward: a.reward, issuedRound: a.issuedRound,
-    favourDelta: config.rome.declineFavour, loyalistAttitudeDelta: loy ? config.rome.declineLoyalistAttitude : 0,
+    loyalistId: loy?.id, loyalistAttitudeDelta: loy ? config.rome.declineLoyalistAttitude : 0,
   }, `You let "${a.title}" go unanswered. Rome says nothing; the ${loy?.name ?? 'loyalists'} notice.`, 'rome');
 }
 

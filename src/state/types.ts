@@ -242,6 +242,8 @@ export interface RomeReportData {
   paid?: { denarii: number; scrolls: number; gravitas: number; unlock: string | null };
   withheld?: { unlock: string; minFavour: number } | null;
   favourDelta?: number;
+  /** The loyalist house whose regard moved; absent on records from before 2026-09-24. */
+  loyalistId?: string;
   loyalistAttitudeDelta?: number;
 }
 

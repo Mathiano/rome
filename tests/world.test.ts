@@ -107,14 +107,14 @@ describe('Rome', () => {
     expect(s.rome.completedIds).toEqual([requestProgression[0].id]);
     expect(s.resources.denarii).toBeGreaterThan(d);
   });
-  it('declining costs favour and loyalist regard, nothing else', () => {
+  it('declining costs the loyalist house\'s regard and nothing else — no favour (DESIGN §6)', () => {
     const s = createInitialState(0, 1);
     romeTurn(s);
     const fav = s.rome.favour;
     const att = s.families.cornelii.attitude;
     const res = { ...s.resources };
     decline(s);
-    expect(s.rome.favour).toBe(fav + config.rome.declineFavour);
+    expect(s.rome.favour).toBe(fav);
     expect(s.families.cornelii.attitude).toBe(att + config.rome.declineLoyalistAttitude);
     expect(s.resources).toEqual(res);
   });

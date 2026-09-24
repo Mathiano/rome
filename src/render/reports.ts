@@ -212,9 +212,14 @@ export function renderRomeReport(r: Extract<Report, { kind: 'rome' }>, state: Ga
     return card(r, `Rome asks: ${esc(d.title)}`, body);
   }
   if (d.phase === 'declined') {
-    body += `<table class="terms"><tr><td>Rome's favour</td><td class="${cls(d.favourDelta ?? 0)}">${signed(d.favourDelta ?? 0)}</td></tr>`;
-    if (d.loyalistAttitudeDelta) body += `<tr><td>The loyalist house's regard</td><td class="${cls(d.loyalistAttitudeDelta)}">${signed(d.loyalistAttitudeDelta)}</td></tr>`;
-    body += `</table>`;
+    // DESIGN §6: Rome does not punish. The card says what the colony gave up
+    // and whose regard fell; favour is not on it because favour did not move.
+    const forgone = rewardWords(d.reward);
+    body += `<p data-forgone>You forgo ${esc(forgone || "Rome's thanks")}.</p>`;
+    if (d.loyalistAttitudeDelta) {
+      const house = d.loyalistId ? state.families[d.loyalistId]?.name : undefined;
+      body += `<table class="terms"><tr><td>${house ? `The ${esc(house)}'s regard for you` : "The loyalist house's regard"}</td><td class="${cls(d.loyalistAttitudeDelta)}">${signed(d.loyalistAttitudeDelta)}</td></tr></table>`;
+    }
     return card(r, `Rome unanswered: ${esc(d.title)}`, body);
   }
   const m = d.multiplier ?? { research: 0, favour: 1 };
