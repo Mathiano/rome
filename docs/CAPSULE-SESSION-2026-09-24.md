@@ -73,3 +73,38 @@ white, on a 2:1 ground-plate diamond, named as the manifest does
 sprite (the wall is drawn in code) and `lumber-camp-t1.jpg` is already
 there, so **thirteen** tier-1 stills remain, not twelve — worth saying
 which one waits, if one does.
+
+## Second rulings, later the same morning
+
+- **A job's own length before it starts stays** ✅ — a property of the job
+  and an input to the decision to build. §3.1 marked settled.
+- **"Time left" on a job under way: queried, not changed.** Mathias asked
+  for the number to go and the progress bar to stay, reading §3.1 as
+  "progress and rush price, no countdowns". That is the text his own
+  2026-09-20 amendment replaced after the playtest ("you should be able
+  to see the minutes remaining here"); §3.1 today says a job shows its
+  progress, *the time left in rounded words*, and the rush price. Waiting
+  on his confirmation before reversing it.
+- **§6 says regard, not standing** ✅ — §9.1 defines standing as summed
+  gravitas; declining moves attitude. Fixed on `claude/rome-decline-forgone`.
+- **The wood clash stays** ✅ — the first letter's 80 wood against the
+  castellum's is an opening decision, and declining is free, so it cannot
+  soft-lock. Recorded in §6 so it is not tuned away. Watch in playtest.
+- **A quiet convene answers** ✅ — built on `claude/rome-writes-at-founding`:
+  a round the player calls that brings no news raises a short card, "The
+  council met, and nothing was decided." (text in `data/config.json`
+  `quietRound`), with Before you go and no ledger. Idle rounds while away
+  stay silent. Tests 403; checked in Chromium.
+- **The fourteenth sprite is the Library.** The §4.4 table has thirteen
+  buildings beside the wall; the Library is listed under it, built
+  2026-09-20 (v0.2.0, §4.6), and already has three drawn tiers. So v0's
+  thirteen minus the painted lumber camp is the twelve Mathias counted,
+  and the Library makes it thirteen stills. Not v0.2 arriving early: it
+  arrived on 20 September.
+
+| Branch | Head | Tests |
+|---|---|---|
+| `claude/rome-decline-forgone` | decline, §3.1, §6 regard, §14, CLAUDE.md | 396 |
+| `claude/rome-writes-at-founding` | founding letter, quiet card, wood clash kept | 403 |
+
+Pull requests still wait on #8.
