@@ -72,7 +72,11 @@ export interface PanelHandlers {
 
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
-export interface News { kind: 'opening' | 'away' | 'report'; title: string; subtitle: string; lines: LogEntry[] }
+export interface News {
+  kind: 'opening' | 'away' | 'report'; title: string; subtitle: string; lines: LogEntry[];
+  /** A round the player called that brought no news: the card says so and nothing more. */
+  quiet?: boolean;
+}
 
 /**
  * Everything that has happened since the player last acknowledged the news:
@@ -80,8 +84,19 @@ export interface News { kind: 'opening' | 'away' | 'report'; title: string; subt
  * rounds that ran while the game was closed.
  */
 export function pendingNews(state: GameState): News | null {
-  const lines = state.log.filter((e) => e.id > state.seenLogId && !/^Round \d+\.$/.test(e.text));
+  const unread = state.log.filter((e) => e.id > state.seenLogId);
+  const isMarker = (e: LogEntry) => /^Round \d+\.$/.test(e.text);
+  const lines = unread.filter((e) => !isMarker(e));
   if (state.pendingChoice) return report(state, lines);
+  // A round the player called that brought no news still gets a card (Mathias,
+  // 2026-09-24): pressing the one button that advances the world and getting
+  // nothing back reads as a bug. Idle rounds run while away stay silent.
+  if (state.awayRounds === 0 && unread.some(isMarker) && !lines.some((e) => e.kind !== 'village')) {
+    return {
+      kind: 'report', quiet: true, title: `Round ${state.round}`,
+      subtitle: `Population ${Math.floor(state.population)} · corruption ${n(state.corruption)}`, lines,
+    };
+  }
   // Nothing unread is nothing to say, whatever else is true of the colony.
   if (!lines.length) return null;
   if (state.awayRounds > 0) {
@@ -116,7 +131,9 @@ function report(state: GameState, lines: LogEntry[]): News | null {
 export function renderNews(news: News, state: GameState, now: number = Date.now()): string {
   // The record (reports unit): the round's ledger and its report cards above
   // the lines; a line a card already carries is not read twice.
-  const record = renderNewsRecord(state, news);
+  // A quiet round has no record to show: no report was written, and a ledger of
+  // a round that moved nothing is a table of unchanged numbers.
+  const record = news.quiet ? { html: '', covered: new Set<number>() } : renderNewsRecord(state, news);
   const items = news.lines.filter((e) => !record.covered.has(e.id)).map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('');
   const choices = pendingChoices(state);
   let foot: string;
@@ -130,7 +147,7 @@ export function renderNews(news: News, state: GameState, now: number = Date.now(
   }
   // The founding says who you are (DESIGN §1) before the log says what happened,
   // and ends on the first counsel so the colony opens with somewhere to go.
-  let premise = '';
+  let premise = news.quiet ? `<p class="quiet" data-quiet>${esc(config.quietRound.text)}</p>` : '';
   if (news.kind === 'opening') {
     premise = foundingParagraphs(state, config.townName).map((p) => `<p>${esc(p)}</p>`).join('');
     const step = currentAdvice(state);

@@ -252,3 +252,58 @@ describe('the overflow line on the round card', () => {
     expect(deserialise(JSON.stringify(old)).overflowSinceSeen).toEqual({});
   });
 });
+
+/** A round the player calls always answers (Mathias, 2026-09-24). */
+describe('the quiet round card', () => {
+  function readColony(seed = 5) {
+    const g = new Game(createInitialState(0, seed));
+    g.state.seenLogId = g.state.logSeq;
+    g.state.seenOpening = true;
+    return g;
+  }
+
+  it('a convene that brings no news raises a short card saying the council met', () => {
+    const g = readColony();
+    g.act({ type: 'convene' }, 1000);
+    const news = pendingNews(g.state)!;
+    expect(news).not.toBeNull();
+    expect(news.kind).toBe('report');
+    expect(news.quiet).toBe(true);
+    expect(news.title).toBe(`Round ${g.state.round}`);
+    const html = renderNews(news, g.state, 1000);
+    expect(html).toContain(config.quietRound.text);
+    expect(html).toContain('Before you go');
+    expect(html).toContain('Continue');
+    // short: no ledger of a round that moved nothing, no report cards
+    expect(html).not.toContain('ledger-round');
+    expect(html).not.toContain('data-report=');
+    // Continue reads it
+    g.state.seenLogId = g.state.logSeq;
+    expect(pendingNews(g.state)).toBeNull();
+  });
+
+  it('a round with news is an ordinary card, not a quiet one', () => {
+    const g = readColony();
+    g.state.rome.activeRequest = null; // Rome writes at this round
+    g.state.rome.activeRequestId = null;
+    g.act({ type: 'convene' }, 1000);
+    const news = pendingNews(g.state)!;
+    expect(news.quiet).toBeFalsy();
+    expect(renderNews(news, g.state, 1000)).not.toContain(config.quietRound.text);
+  });
+
+  it('idle rounds that ran while away stay silent unless they brought news', () => {
+    const g = readColony();
+    g.tick(config.calendarFloorHours * H + 1000);
+    expect(g.state.awayRounds).toBe(1);
+    const news = pendingNews(g.state);
+    expect(news?.quiet).toBeFalsy();
+    if (news) expect(news.kind).toBe('away');
+  });
+
+  it('the founding card is never the quiet card', () => {
+    const s = createInitialState(0, 5);
+    expect(pendingNews(s)!.kind).toBe('opening');
+    expect(pendingNews(s)!.quiet).toBeFalsy();
+  });
+});
