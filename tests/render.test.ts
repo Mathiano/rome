@@ -162,14 +162,20 @@ describe('tab badges', () => {
     const g = new Game(createInitialState(0, 1));
     g.state.advisorDismissed = true;
     g.state.round = 6;
+    // the founding card read, and Rome's founding letter answered
+    g.state.seenLogId = g.state.logSeq;
+    g.state.rome.activeRequest = null;
+    g.state.rome.activeRequestId = null;
     return g.state;
   }
 
-  it("a fresh colony lights nothing but the counsel's tab", () => {
+  it("a fresh colony lights the counsel's tab, Rome's founding letter, and its unread report", () => {
     const g = new Game(createInitialState(0, 1));
-    expect(lit(g.state)).toEqual(['village']);
+    expect(lit(g.state)).toEqual(['village', 'rome', 'log']);
+    g.state.seenLogId = g.state.logSeq; // the founding card read
+    expect(lit(g.state)).toEqual(['village', 'rome']);
     g.state.advisorDismissed = true;
-    expect(lit(g.state)).toEqual([]);
+    expect(lit(g.state)).toEqual(['rome']);
   });
 
   it('a demand, a house talking of leaving, or a house ready to return lights Houses', () => {

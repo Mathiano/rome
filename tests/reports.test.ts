@@ -47,24 +47,26 @@ function noHandlers(): PanelHandlers {
 describe('the report writer', () => {
   it('writes the line and the record by one call, pointing at each other', () => {
     const s = createInitialState(0, 1);
+    const founding = [...s.reports]; // Rome's first letter
     const r = report(s, 'collapse', { trigger: 'population', population: 3, corruption: 0, grant: {}, rounds: 4, untilRound: 4 }, 'Rome steps in.', 'rome');
     expect(s.log.at(-1)!.id).toBe(r.logId);
     expect(s.log.at(-1)!.text).toBe('Rome steps in.');
     expect(s.log.at(-1)!.kind).toBe('rome');
     expect(r.kind).toBe('collapse');
     expect(r.data.trigger).toBe('population');
-    expect(s.reports).toEqual([r]);
+    expect(s.reports).toEqual([...founding, r]);
     expect(r.round).toBe(s.round);
-    expect(reportsOfRound(s, s.round)).toEqual([r]);
+    expect(reportsOfRound(s, s.round)).toEqual([...founding, r]);
   });
   it('trims the oldest past config.reports.max', () => {
     const s = createInitialState(0, 1);
+    const seq0 = s.reportSeq;
     for (let i = 0; i < config.reports.max + 5; i++) {
       report(s, 'collapse', { trigger: 'population', population: i, corruption: 0, grant: {}, rounds: 4, untilRound: 4 }, `n${i}`, 'rome');
     }
     expect(s.reports).toHaveLength(config.reports.max);
     expect(s.reports[0].kind === 'collapse' && s.reports[0].data.population).toBe(5);
-    expect(s.reports.at(-1)!.id).toBe(config.reports.max + 5);
+    expect(s.reports.at(-1)!.id).toBe(seq0 + config.reports.max + 5);
   });
   it('is unread until the log cursor passes it: no second cursor', () => {
     const s = createInitialState(0, 1);
@@ -169,7 +171,7 @@ describe('the raid report (DESIGN §8.2, trimmed form)', () => {
     s.tribes[TRIBE_ID].strength = 0;
     s.seenLogId = s.logSeq;
     resolveRaid(s, s.tribes[TRIBE_ID]);
-    const r = s.reports[0] as Extract<Report, { kind: 'raid' }>;
+    const r = s.reports.find((x) => x.kind === 'raid') as Extract<Report, { kind: 'raid' }>;
     expect(r.data.fraction).toBe(0);
     const html = renderReport(r, s);
     expect(html).toContain('thrown back');
@@ -409,13 +411,13 @@ describe("Rome's reports (DESIGN §6)", () => {
     const c = createInitialState(0, 1);
     c.corruption = config.collapse.corruptionCeiling;
     checkCollapse(c);
-    expect((c.reports[0] as Extract<Report, { kind: 'collapse' }>).data.trigger).toBe('corruption');
+    expect((c.reports.find((x) => x.kind === 'collapse') as Extract<Report, { kind: 'collapse' }>).data.trigger).toBe('corruption');
   });
 });
 
 describe('every kind renders, and the folders cover every kind', () => {
   it('renderReport returns a card for every kind that reaches the log', () => {
-    const g = new Game(createInitialState(0, 5));
+    const g = new Game(createInitialState(7_654_000, 5));
     g.state.resources.denarii = 5000;
     g.state.tribes.chatti.strength = 100_000;
     g.state.tribes.chatti.massingForRound = 1;
@@ -560,6 +562,10 @@ describe('the round card carries the record', () => {
     const g = new Game(createInitialState(0, 5));
     g.state.seenLogId = g.state.logSeq;
     g.state.seenOpening = true;
+    // Rome's founding letter is already open, so clear it: Rome writes its next
+    // letter at this round, and the round has news to raise a card with.
+    g.state.rome.activeRequest = null;
+    g.state.rome.activeRequestId = null;
     g.act({ type: 'convene' }, 1000);
     expect(renderNews(pendingNews(g.state)!, g.state, 1000)).toContain('ledger-round');
     g.state.seenLogId = g.state.logSeq; // Continue

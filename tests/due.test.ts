@@ -200,6 +200,10 @@ describe('before you go, from the same collector', () => {
     g.state.seenLogId = g.state.logSeq;
     g.state.seenOpening = true;
     g.build('o5', 'iron_mine', 1000);
+    // Rome's founding letter is already open, so clear it: Rome writes its next
+    // letter at this round, and the round has news to raise a card with.
+    g.state.rome.activeRequest = null;
+    g.state.rome.activeRequestId = null;
     g.act({ type: 'convene' }, 2000);
     const html = renderNews(pendingNews(g.state)!, g.state, 2000);
     expect(html).toContain('Before you go');
