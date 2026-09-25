@@ -61,22 +61,25 @@ describe('the news card holds still', () => {
   });
 
   it('news that changes while a card is up changes it in place, without a second entrance', () => {
-    // find a colony whose first week away raises a choice
-    const seed = [1, 2, 3, 4, 5, 6, 7, 8].find((s) => {
-      const g = new Game(createInitialState(T0, s));
-      acknowledgeNews(g.state);
-      g.tick(T0 + 7 * 24 * H);
-      return !!g.state.pendingChoice;
-    })!;
-    const g = new Game(createInitialState(T0, seed));
-    acknowledgeNews(g.state);
-    g.tick(T0 + 7 * 24 * H);
+    // convene until a round raises a choice: the player's own rounds, one after another
+    function untilChoice(seed: number): Game | null {
+      const g = new Game(createInitialState(T0, seed));
+      for (let i = 1; i <= 12; i++) {
+        acknowledgeNews(g.state);
+        g.act({ type: 'convene' }, T0 + i * 1000);
+        if (g.state.pendingChoice) return g;
+      }
+      return null;
+    }
+    const g = [1, 2, 3, 4, 5, 6, 7, 8].map(untilChoice).find(Boolean)!;
+    expect(g).toBeTruthy();
+    const now = T0 + 20_000;
     const { host, overlay } = mount(g);
-    overlay.update(g.state, T0 + 7 * 24 * H);
+    overlay.update(g.state, now);
     expect(host.querySelector('[data-choice]')).not.toBeNull();
     const c = pendingChoices(g.state)[0];
-    g.choose(c.id, T0 + 7 * 24 * H);
-    overlay.update(g.state, T0 + 7 * 24 * H);
+    g.choose(c.id, now);
+    overlay.update(g.state, now);
     expect(host.querySelector('[data-news-ok]')).not.toBeNull();
     expect(host.querySelectorAll('.news-card')).toHaveLength(1);
     expect(overlay.element()!.classList.contains('settled')).toBe(true);
@@ -112,13 +115,14 @@ describe('a dismissed founding card stays dismissed', () => {
     expect(pendingNews(g2.state)).toBeNull();
   });
 
-  it('across an idle-round catch-up: the return is the away card, never the founding again', () => {
+  it('across a catch-up: a week of the village clock run on load raises nothing, least of all the founding', () => {
     const g = dismissed();
     const g2 = new Game(deserialise(serialise(g.state)));
+    const woodBefore = g2.state.resources.wood;
     g2.tick(T0 + 7 * 24 * H);
-    expect(g2.state.awayRounds).toBeGreaterThan(0);
-    expect(pendingNews(g2.state)!.kind).toBe('away');
-    acknowledgeNews(g2.state);
+    expect(g2.state.resources.wood).toBeGreaterThan(woodBefore); // the catch-up happened
+    expect(g2.state.round).toBe(0); // and it was the village's alone
+    expect(pendingNews(g2.state)).toBeNull();
     g2.tick(T0 + 7 * 24 * H + config.tickMs);
     expect(pendingNews(g2.state)).toBeNull();
     expect(g2.state.seenOpening).toBe(true);

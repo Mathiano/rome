@@ -4,7 +4,6 @@ import { createInitialState, deserialise, loadFromLocalStorage, saveToLocalStora
 import { createDevClock, isDevRequested, DEV_SAVE_KEY, DEV_MULTIPLIERS } from './dev';
 import { createVillageView } from './render/village';
 import { progress as progressOf } from './village/construction';
-import { roundsUntilIdle } from './politics/rounds';
 import { createMapView } from './render/mapview';
 import { bindPanel, renderHeader, renderPanel, type Tab } from './render/panel';
 import { currentAdvice } from './render/advisor';
@@ -12,6 +11,7 @@ import { awayReport, isQuiet, takeSnapshot } from './village/away';
 import { awayLines, setReturnStrip } from './render/due';
 import { resetReportsView } from './render/reports';
 import { acknowledgeNews, createNewsOverlay } from './render/newsOverlay';
+import { patchHtml } from './render/patch';
 
 const dev = createDevClock(isDevRequested(location.search), () => Date.now(), (() => { try { return globalThis.localStorage ?? null; } catch { return null; } })());
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
@@ -113,17 +113,29 @@ function panelKey(now: number): string {
     currentAdvice(st)?.id ?? '',
     Object.values(st.characters).map((c) => c.bodyguards).join(''),
     st.reports.length,
-    // The Due block (render/due.ts): the idle-round hour and every named round it prints.
-    Math.ceil(roundsUntilIdle(st, now) / 3_600_000),
+    // The Due block (render/due.ts): every named round it prints.
     Object.values(st.families).map((f) => `${f.demand?.dueRound ?? ''}:${f.sourRounds}`).join(','),
     st.rome.hostingUntilRound, st.rome.administeringUntilRound, st.rome.activeRequest?.fulfilled ?? '',
     Object.values(st.tribes).map((t) => `${t.hostagesUntilRound}:${t.leakedUntilRound}`).join(','),
   ].join('|');
 }
 
+let lastHeaderHtml = '';
+/**
+ * Draw what changed. Called by the player's actions (force) and by the village
+ * tick. Nothing here rewrites a node that did not change: the header, the dev
+ * bar and the panel are patched in place (render/patch.ts), and the news card
+ * redraws only when its news does (render/newsOverlay.ts). A tick moves the
+ * numbers; it never replaces the element under the pointer, the button being
+ * clicked, or the section being scrolled (Mathias, 2026-09-25).
+ */
 function render(force = false): void {
   const now = dev.now();
-  header.innerHTML = renderHeader(game.state);
+  const headerHtml = renderHeader(game.state);
+  if (headerHtml !== lastHeaderHtml) {
+    patchHtml(header, headerHtml);
+    lastHeaderHtml = headerHtml;
+  }
   renderNewsOverlay();
   if (dev.enabled) renderDevBar(now);
 
@@ -149,11 +161,14 @@ function render(force = false): void {
     // Never clobber a select or textarea the player is using mid-interaction.
     const active = document.activeElement;
     if (!force && active && panelEl.contains(active) && (active.tagName === 'SELECT' || active.tagName === 'TEXTAREA')) return;
-    panelEl.innerHTML = html;
     lastPanelHtml = html;
     if (tab !== lastTab) {
+      // A new tab is a new page: drawn whole, with its entrance.
+      panelEl.innerHTML = html;
       lastTab = tab;
       panelEl.querySelector('section')?.classList.add('swap');
+    } else {
+      patchHtml(panelEl, html);
     }
   }
 }
@@ -218,7 +233,7 @@ function renderDevBar(now: number): void {
     });
   }
   const mults = DEV_MULTIPLIERS.map((m) => `<button data-mult="${m}" class="${m === dev.multiplier ? 'on' : ''}">${m}×</button>`).join('');
-  devBar.innerHTML = `<b>DEV</b> separate save slot · clock ${mults} · skip <button data-skip="1">1h</button><button data-skip="6">6h</button><button data-skip="24">24h</button><button data-skip="168">7d</button> · virtual ${new Date(now).toISOString().slice(0, 16).replace('T', ' ')}`;
+  patchHtml(devBar, `<b>DEV</b> separate save slot · clock ${mults} · skip <button data-skip="1">1h</button><button data-skip="6">6h</button><button data-skip="24">24h</button><button data-skip="168">7d</button> · virtual ${new Date(now).toISOString().slice(0, 16).replace('T', ' ')}`);
 }
 
 // What the village clock did while the game was closed, told once as amounts
@@ -229,6 +244,8 @@ const gap = awayReport(before, takeSnapshot(game.state));
 if (!isQuiet(gap)) setReturnStrip(awayLines(gap));
 persist();
 render(true);
+// The village tick: the economy advances (never a round, §3.3), then only
+// what changed is drawn. It never forces a redraw of what the player is using.
 setInterval(() => {
   game.tick(dev.now());
   render();

@@ -4,11 +4,10 @@ import { createInitialState } from '../src/state/store';
 import { Game } from '../src/game';
 import { building, config, envoys, posts, researchNode, tribeDef } from '../src/data';
 import { startBuild } from '../src/village/construction';
-import { dueItems, idleHoursOf, idleLine, renderDue } from '../src/render/due';
+import { dueItems, renderDue } from '../src/render/due';
 import { bindPanel, pendingNews, renderNews, renderPanel, type PanelHandlers } from '../src/render/panel';
 import type { GameState } from '../src/state/types';
 
-const H = 3_600_000;
 const PLENTY = { wood: 9999, clay: 9999, iron: 9999, grain: 9999, denarii: 9999 };
 const strip = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
@@ -27,21 +26,17 @@ function noHandlers(): PanelHandlers {
 function settled(): GameState {
   const s = createInitialState(0, 5);
   s.round = 6;
-  s.lastRoundAt = 0;
   return s;
 }
 
 describe('the due collector', () => {
-  it('a fresh colony has nothing due, and a full floor until the idle round', () => {
+  it('a fresh colony has nothing due, and no round is ever due without the player', () => {
     const s = createInitialState(0, 5);
     const d = dueItems(s, 0);
     expect(d.village).toEqual([]);
     expect(d.nextRound).toEqual([]);
     expect(d.later).toEqual([]);
-    expect(d.idleHours).toBe(config.calendarFloorHours);
-    // whole hours, rounded up, as the Council tab prints them
-    expect(idleHoursOf(s, 1.5 * H)).toBe(config.calendarFloorHours - 1);
-    expect(idleLine(1)).toBe('If you stay away, the council meets without you in about 1 hour.');
+    expect(Object.keys(d).sort()).toEqual(['later', 'nextRound', 'village']);
   });
 
   it('a construction is a village item carrying its slot; a study points at the library', () => {
@@ -129,7 +124,7 @@ describe('the Due block on the Village tab', () => {
     const block = html.slice(start, html.indexOf('</details>', start));
     expect(block).toContain('data-menu="due" open');
     expect(block).toContain('Nothing under way.');
-    expect(block).toContain(`in about ${config.calendarFloorHours} hours.`);
+    expect(block).not.toContain('without you');
     expect(block).not.toMatch(/\d{1,2}:\d{2}/);
     expect(block).not.toMatch(/second/);
     // above the overview's lanes, and on the plot card too
@@ -152,7 +147,7 @@ describe('the Due block on the Village tab', () => {
     expect(html).toMatch(/<button class="link" data-tab="tribe">The \w+ are massing/);
     expect(html).toContain(`<button class="link" data-tab="rome">Rome's guest leaves at round ${g.state.round + 3}.`);
     expect(html).not.toContain('Nothing under way');
-    expect(html.match(/council meets without you/g)).toHaveLength(1);
+    expect(html).not.toContain("without you"); // no round runs while you are away (§3.3)
     expect(strip(html).match(/Warehouse I/g)).toHaveLength(1);
     expect(renderDue(g.state, 0, false)).not.toContain(' open>');
   });

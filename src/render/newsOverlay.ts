@@ -1,9 +1,9 @@
 import type { GameState } from '../state/types';
 import { pendingNews, renderNews, type News } from './panel';
+import { patchHtml } from './patch';
 
 /**
- * The news card over the village: the founding, a round's report, the return
- * after an absence.
+ * The news card over the village: the founding, or a round's report.
  *
  * It is drawn once per piece of news and then left alone. The game renders on
  * every village tick, and the card used to be rewritten each time: the node
@@ -19,16 +19,14 @@ export interface NewsOverlayHandlers {
   onContinue(): void;
 }
 
-/** What makes one card different from another: new lines, a choice, an absence, reading it. */
+/** What makes one card different from another: new lines, a choice, reading it. */
 export function newsKey(state: GameState, news: News): string {
-  return [news.kind, news.title, news.quiet ? 'q' : '', state.logSeq, state.seenLogId, state.awayRounds,
-    state.pendingChoice?.eventId ?? ''].join('|');
+  return [news.kind, news.title, news.quiet ? 'q' : '', state.logSeq, state.seenLogId, state.pendingChoice?.eventId ?? ''].join('|');
 }
 
-/** Continue: the news is read, an absence acknowledged, the founding seen, and the waste count restarts. */
+/** Continue: the news is read, the founding seen, and the waste count restarts. The flags are saved. */
 export function acknowledgeNews(state: GameState): void {
   state.seenLogId = state.logSeq;
-  state.awayRounds = 0;
   state.seenOpening = true;
   state.overflowSinceSeen = {};
 }
@@ -59,12 +57,14 @@ export function createNewsOverlay(host: HTMLElement, h: NewsOverlayHandlers) {
         if (btn.hasAttribute('data-news-ok')) h.onContinue();
       });
       host.appendChild(el);
+      el.innerHTML = renderNews(news, state, now);
     } else {
       // New news on a card already up (a choice answered, a line arrived): it
-      // has arrived once, so it does not make its entrance again.
+      // has arrived once, so it does not make its entrance again, and what did
+      // not change on it stays put.
       el.classList.add('settled');
+      patchHtml(el, renderNews(news, state, now));
     }
-    el.innerHTML = renderNews(news, state, now);
     key = k;
   }
   return { update, element: () => el };

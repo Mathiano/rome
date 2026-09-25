@@ -114,15 +114,13 @@ describe('clock', () => {
     tick(s, 500);
     expect(s.lastTick).toBe(500);
   });
-  it('runs idle rounds after the calendar floor, capped', () => {
+  it('never runs a political round, however long the gap (DESIGN §3.3, 2026-09-25)', () => {
     const s = createInitialState(0, 1);
-    const floor = config.calendarFloorHours * H;
-    tick(s, floor - 1);
-    expect(s.round).toBe(0);
-    tick(s, floor);
-    expect(s.round).toBe(1);
-    tick(s, floor * 100);
-    expect(s.round).toBe(1 + config.idleRoundsMaxCatchUp);
+    for (const t of [H, 24 * H, 7 * 24 * H, 365 * 24 * H]) {
+      tick(s, t);
+      expect(s.round).toBe(0);
+    }
+    expect(s.history).toEqual([]);
   });
 });
 
