@@ -42,11 +42,13 @@ Two clocks. The player sees only one.
 
 ### 3.1 The village clock — real time, invisible ✅
 
-Resource accrual, construction timers, site yields and research progress run on wall-clock time, including while the game is closed. Offline accrual is capped by storage capacity (§4.2), not by a time cap. A job under way shows its progress, the time left in rounded words, and the rush price; the council tab shows hours until the idle round. There is still no ticking clock and no second-by-second countdown, and the village clock itself is never displayed. ✅
+Resource accrual, construction timers, site yields and research progress run on wall-clock time, including while the game is closed. Offline accrual is capped by storage capacity (§4.2), not by a time cap. A job under way shows its progress, the time left in rounded words, and the rush price. There is still no ticking clock and no second-by-second countdown, and the village clock itself is never displayed. ✅
 
 *Amended 2026-09-20*, after the first playtest. This read "No countdowns. Construction shows progress and the rush price… No other time is displayed" and was ✅ from 2026-09-15. The playtest overturned it — *"you should be able to see the minutes remaining here"* — on the grounds that hiding the wait did not make the colony feel calm, it left the player unable to plan around it. What survives is the intent: time is stated once, in words, rounded to what a player can act on ("about 40 minutes left", "about 2.5 hours left"), and never counted down.
 
-*Ruled 2026-09-24:* **no time estimates, anywhere, ever.** The game never projects when something will happen at the colony's rate — when a cost will be met, a store will fill, a population or a tier will be reached. The times it states are the ones above: a job under way, and the idle round. ✅ A job's own length stated before it starts (the plot card, the colony overview, the Library) is a property of the job and an input to the decision to build, not a projection, and stays. ✅ *Mathias, 2026-09-24.*
+*Ruled 2026-09-25:* the "Since you were last here" strip on the Village tab (what the village clock did while the player was gone, as amounts) is anchored to when the player last saw the colony: `lastSeen` is stamped when the strip is put away and while the player is in the game with no strip up, and the next strip counts from that stamp. It shows only when the gap exceeds `returnStrip.minGapMinutes` (`data/config.json`, 30, a tuning default), so a reload a minute later shows nothing. ✅
+
+*Ruled 2026-09-24:* **no time estimates, anywhere, ever.** The game never projects when something will happen at the colony's rate — when a cost will be met, a store will fill, a population or a tier will be reached. The time it states is the one above: a job under way. ✅ A job's own length stated before it starts (the plot card, the colony overview, the Library) is a property of the job and an input to the decision to build, not a projection, and stays. ✅ *Mathias, 2026-09-24.*
 
 ### 3.2 The political clock — rounds ✅
 
@@ -60,13 +62,18 @@ A **round** is triggered when the player makes a political move. Sequence within
 
 Rome's first letter is the one thing another actor does outside a round: it is part of the founding, standing at round 0 before any round has run (§6). Every later letter comes at step 4. ✅ *2026-09-24.*
 
-A round the player calls always answers: when it brings no news, a short card says the council met and nothing was decided (`data/config.json` `quietRound`), so the one button that advances the world never appears to do nothing. Idle rounds run while away stay silent unless they bring news. ✅ *2026-09-24.*
+A round the player calls always answers: when it brings no news, a short card says the council met and nothing was decided (`data/config.json` `quietRound`), so the one button that advances the world never appears to do nothing. ✅ *2026-09-24.*
 
 Any number of rounds may run per day. Political actions can be **prepared** at any time (queue an intrigue, dispatch an envoy, send scouts) and **resolve** at the next round. Preparation fills a session; resolution stays turn-based.
 
-### 3.3 Calendar floor ✅
+### 3.3 No round runs unattended ✅
 
-If no round has run in N real hours, an **idle round** runs automatically: opponents act, the player does not. This closes the exploit where a player never opens the council and therefore never ages, is never raided and never faces a challenge. ✅ N = 24 hours (`data/config.json` `calendarFloorHours`). ✅ After a long absence at most 7 idle rounds run (`idleRoundsMaxCatchUp`), so a month away is not thirty raids.
+*Ruled 2026-09-25 by Mathias, reversing the calendar floor.* A political round runs only when the player acts (§3.2). Nothing advances the council on its own: not real time, not a closed tab, not the dev clock's multiplier or its skip buttons. While the player is away, no one ages, no rival moves, no tribe raids and Rome does not write; the village clock alone runs (§3.1), and a save loaded after any absence is at the round it was left at. The dev multiplier scales the village clock only.
+
+This read, from 2026-09-15: *"If no round has run in N real hours, an idle round runs automatically: opponents act, the player does not."* It ran up to 7 such rounds on load (`calendarFloorHours` 24, `idleRoundsMaxCatchUp` 7). It existed to close what was called an exploit: a player who never convenes never ages, is never raided and never faces a challenge. ✅ *Mathias, 2026-09-25:* it is not an exploit. This is single-player; a player who never convenes gains no advantage over anyone — they are not playing. Both config values, the round-runner and every surface that spoke of the idle round are removed. Old saves drop its bookkeeping on load, and rounds that already ran without the player keep their mark in Reports.
+
+**Why it is gone, so it is not restored:** the absence pillar, §2.11 (✅ Mathias, 2026-09-25), is the reason — not a tuning choice. No idle round, calendar floor, catch-up or other mechanic that advances the council without the player replaces it. Any such proposal needs Mathias's sign-off before it is built. §2.11's full text lands with `docs/DESIGN-patch-2026-09-25-holdings.md`; CLAUDE.md carries its short form.
+
 
 ### 3.4 Tuning
 
@@ -343,7 +350,7 @@ Processed goods beyond the first drop · citizen tiers · mobile layout · Latin
 ## 15. Open questions ❓
 
 1. ~~Town name.~~ ✅ Resolved 2026-09-16: Arctown.
-2. ~~Calendar floor interval N (§3.3) and the age-per-round lifespan (§3.4).~~ ✅ Resolved 2026-09-15: N = 24 hours; lifespan 120 → 200 rounds.
+2. ~~Calendar floor interval N (§3.3) and the age-per-round lifespan (§3.4).~~ ✅ Resolved 2026-09-15: N = 24 hours; lifespan 120 → 200 rounds. The calendar floor itself was removed 2026-09-25 (§3.3).
 3. Whether a flavour calendar is displayed and what it counts.
 4. Final resource list beyond v0 and the two-step chains.
 5. ~~Which five council posts are in v0.~~ ✅ Resolved 2026-09-15: treasury, garrison, works, granary, market.
@@ -378,3 +385,5 @@ v0.2.12 — 2026-09-23 — §3.2, §3.3, §8.2, §11 built as UX: the reports ar
 v0.2.13 — 2026-09-23 — §12, §3.1, §4.2, §4.4, §4.5 as UX: the town-and-loop surfaces. The Village tab opens on a Due block — every job under way with its time left, everything landing at the next round, everything at a named round, and the hours to the idle round, each once in rounded words and each a link — from one collector the round card's "Before you go" footer shares. A summary card under it: the Forum's tier as the colony's, the wall, plots raised of eighteen (the wall named, not counted, per §4.5), population from its founding number, holdings with their yield, sites seen, the four houses' standing with the player's marked, Rome, the Library, and the walls against the strongest tribe; no tier total and no chart. The header's muted line gains the wall, the plots and the holdings. A player who returns finds a strip of what the village clock did — amounts, a tier that now stands, a study known, citizens gained — and what full stores turned away, counted in `overflowSinceSeen` and stated on the round card until Continue resets it; no elapsed duration is printed. Tab badges mark a duty and never a spend: Houses (a demand, a house talking of leaving, one ready to return), Tribe (massing), Council (a vote pending; 🟡 not merely out of office), Rome (a letter unanswered).
 v0.2.14 — 2026-09-24 — rulings on the Tribal Wars patch. §6: declining a request moves no favour (it had cost 5, against "no punishment"); the report names the aid forgone and the loyalist house's regard. §3.1: no time estimates, ever — horizon times are refused, not banked. §14: counsel beyond the opening and milestones banked. §6 says the loyalist house's regard falls, not its standing (§9.1). §3.1: a job's own length before it starts stays.
 v0.2.15 — 2026-09-24 — §6, §3.2: Rome's first letter stands at the founding, issued at round 0; the first round no longer brings it. The one act by another actor outside a round, as part of the founding. Its 80 wood against the castellum's is kept as an opening decision. A round the player calls that brings no news raises a short card saying the council met and nothing was decided.
+v0.2.16 — 2026-09-25 — §3.3 reversed: no round runs unattended. The idle round, its two config values and every surface that spoke of it are gone; a save loaded after any absence is at the round it was left at, and the dev multiplier scales the village clock only. The UI no longer redraws on the village tick: header, panel, dev bar and news card are patched in place, so the tick never replaces the element under the pointer, the button being clicked or the section being scrolled.
+v0.2.17 — 2026-09-26 — §3.3: the absence pillar (§2.11) recorded as the reason the idle round is gone; the 'exploit' ruled not an exploit; no replacement mechanic without Mathias's sign-off. §3.1: the "Since you were last here" strip is anchored to when the player last saw the colony (`lastSeen`) and shows only after `returnStrip.minGapMinutes` (30, a tuning default).

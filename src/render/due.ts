@@ -5,8 +5,8 @@
  * the top of the Village tab and the round card's "Before you go" footer.
  *
  * Time is stated the way §3.1 (as amended) allows and no other way: a job's
- * time left in rounded words, and the hours until the idle round. A round is
- * player-triggered (§3.2), so it is named — "at round 14" — never timed. The
+ * time left in rounded words. A round runs only when the player acts (§3.2,
+ * §3.3), so it is named — "at round 14" — never timed. The
  * village clock itself is not shown, and nothing here counts down.
  *
  * The return strip lives here too: what the village clock did while the game
@@ -14,7 +14,6 @@
  */
 import { building, config, envoys, posts as postDefs, researchNode, tribeDef, type ResourceId } from '../data';
 import type { GameState, Resources } from '../state/types';
-import { roundsUntilIdle } from '../politics/rounds';
 import { mayReturn } from '../politics/secession';
 import { defenceStrength, raidStrength } from '../combat/raids';
 import { appeasePrice } from '../tribes/turn';
@@ -36,15 +35,9 @@ export interface Due {
   nextRound: DueItem[];
   /** At a named round further out. */
   later: DueItem[];
-  /** Whole hours until the council meets without you (§3.3). */
-  idleHours: number;
 }
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? '' : 's'}`;
-
-export function idleHoursOf(state: GameState, now: number): number {
-  return Math.ceil(roundsUntilIdle(state, now) / 3_600_000);
-}
 
 export function dueItems(s: GameState, now: number): Due {
   const village: DueItem[] = [];
@@ -103,12 +96,7 @@ export function dueItems(s: GameState, now: number): Due {
   }
   if (s.challenge) at(s.challenge.voteRound, `The houses vote on the office of ${config.topOffice.title}`, { tab: 'council' });
 
-  return { village, nextRound, later, idleHours: idleHoursOf(s, now) };
-}
-
-/** The one line §3.1 allows about political time, worded as the Council tab words it. */
-export function idleLine(hours: number): string {
-  return `If you stay away, the council meets without you in about ${plural(hours, 'hour')}.`;
+  return { village, nextRound, later };
 }
 
 function dueLine(i: DueItem): string {
@@ -131,7 +119,6 @@ export function renderDue(s: GameState, now: number, open: boolean): string {
   const empty = !d.village.length && !d.nextRound.length && !d.later.length;
   let body = empty ? `<p class="muted">Nothing under way.</p>` : '';
   body += dueGroup('Under way', d.village) + dueGroup('At the next round', d.nextRound) + dueGroup('Later', d.later);
-  body += `<p class="muted idle">${esc(idleLine(d.idleHours))}</p>`;
   return `<details class="due" data-menu="due" ${open ? 'open' : ''}><summary>Due</summary>${body}</details>`;
 }
 
@@ -169,10 +156,15 @@ export function awayLines(r: AwayReport): string[] {
 }
 
 /**
- * Held here rather than in the save: the strip is for the session that finds
- * the colony changed, and is put away by the first action or tab change.
+ * The lines on screen are held here; when the player last saw the colony is in
+ * the save (`lastSeen`, village/away.ts). The strip is put away by the first
+ * action or tab change, which stamps `lastSeen`.
  */
 let returnStrip: string[] = [];
+
+export function returnStripShowing(): boolean {
+  return returnStrip.length > 0;
+}
 
 export function setReturnStrip(lines: string[]): void {
   returnStrip = lines;

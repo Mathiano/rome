@@ -59,14 +59,14 @@ describe('news', () => {
     if (news) expect(renderNews(news, g.state)).not.toContain('opening');
   });
 
-  it('digests the rounds that ran while the game was closed', () => {
+  it('time alone runs no round and raises no card: a week closed is a week of village work only', () => {
     const g = new Game(createInitialState(0, 11));
     g.state.seenLogId = g.state.logSeq;
-    g.tick(config.calendarFloorHours * H * 4);
-    expect(g.state.awayRounds).toBe(4);
-    const news = pendingNews(g.state)!;
-    expect(news.title).toBe('While you were away');
-    expect(news.subtitle).toContain('4 rounds');
+    g.state.seenOpening = true;
+    g.tick(7 * 24 * H);
+    expect(g.state.round).toBe(0);
+    expect(g.state.history).toEqual([]);
+    expect(pendingNews(g.state)).toBeNull();
   });
 
   it('a round report records the state it left behind', () => {
@@ -74,7 +74,7 @@ describe('news', () => {
     g.act({ type: 'convene' }, 1000);
     const r = g.state.lastReport!;
     expect(r.round).toBe(1);
-    expect(r.idle).toBe(false);
+    expect(r.idle).toBeUndefined(); // no round is written as one that ran without the player
     expect(r.resources.wood).toBe(g.state.resources.wood);
   });
 
@@ -145,15 +145,13 @@ describe('the round ledger and the history (reports unit)', () => {
     expect(r.buildingsRaised).toBe(g.state.slots.filter((s) => s.tier > 0).length);
     expect(r.claimed).toBe(0);
   });
-  it('the history grows one a round, idle rounds included, and trims past config.history.max', () => {
+  it('the history grows one a round the player calls, never with time alone, and trims past config.history.max', () => {
     const g = new Game(createInitialState(0, 11));
     g.state.seenLogId = g.state.logSeq;
     g.act({ type: 'convene' }, 1000);
     expect(g.state.history).toHaveLength(1);
-    g.tick(config.calendarFloorHours * H * 3 + 1000);
-    expect(g.state.awayRounds).toBe(3);
-    expect(g.state.history).toHaveLength(4);
-    expect(g.state.history.map((r) => r.idle)).toEqual([false, true, true, true]);
+    g.tick(3 * 24 * H + 1000);
+    expect(g.state.history).toHaveLength(1);
     expect(g.state.history.at(-1)).toBe(g.state.lastReport);
     const was = config.history.max;
     config.history.max = 5;
@@ -198,25 +196,24 @@ describe('the round ledger and the history (reports unit)', () => {
       expect(html).not.toContain(String(at));
     }
   });
-  it('the away digest stacks one ledger a round with a tally line on top', () => {
+  it('an old save with idle rounds unread is read as one round report, not a digest', () => {
+    // a save from before 2026-09-25: three rounds ran without the player and wait unread
     const g = new Game(createInitialState(0, 11));
     g.state.seenLogId = g.state.logSeq;
     g.state.seenOpening = true;
-    g.tick(config.calendarFloorHours * H * 3);
-    expect(g.state.awayRounds).toBe(3);
-    const news = pendingNews(g.state)!;
-    expect(news.kind).toBe('away');
-    const html = renderNews(news, g.state, config.calendarFloorHours * H * 3);
-    expect(html.match(/class="ledger-round"/g)).toHaveLength(3);
-    expect(html.match(/class="tally-line"/g)).toHaveLength(1);
-    expect(html).toMatch(/raids?|no raids/);
-    const rounds = [...html.matchAll(/<summary>Round (\d+)<\/summary>/g)].map((m) => Number(m[1]));
-    expect(rounds).toEqual([3, 2, 1]);
-    // every line that reached the digest is inside a round, the idle markers
-    // included, so the loose list under the last folder is empty
-    const tail = html.slice(html.lastIndexOf('</details>'));
-    expect(tail).toContain('</details><ul></ul>');
-    expect(tail).not.toContain('council meets without you');
+    for (let i = 0; i < 3; i++) g.act({ type: 'convene' }, 1000 + i);
+    const old = JSON.parse(serialise(g.state)) as Record<string, unknown> & { log: { text: string }[]; stats: Record<string, unknown> };
+    for (const e of old.log) e.text = e.text.replace(/^Round (\d+)\.$/, 'Round $1: the council meets without you.');
+    old.awayRounds = 3;
+    old.lastRoundAt = 0;
+    old.stats.idleRounds = 3;
+    const back = deserialise(JSON.stringify(old));
+    expect('awayRounds' in back).toBe(false);
+    expect('lastRoundAt' in back).toBe(false);
+    expect('idleRounds' in back.stats).toBe(false);
+    const news = pendingNews(back)!;
+    expect(news.kind).toBe('report');
+    expect(renderNews(news, back, 2000).match(/class="news-card/g)).toHaveLength(1);
   });
 });
 
@@ -272,7 +269,7 @@ describe('the quiet round card', () => {
     expect(news.title).toBe(`Round ${g.state.round}`);
     const html = renderNews(news, g.state, 1000);
     expect(html).toContain(config.quietRound.text);
-    expect(html).toContain('Before you go');
+    expect(html).not.toContain('without you');
     expect(html).toContain('Continue');
     // short: no ledger of a round that moved nothing, no report cards
     expect(html).not.toContain('ledger-round');
@@ -292,13 +289,11 @@ describe('the quiet round card', () => {
     expect(renderNews(news, g.state, 1000)).not.toContain(config.quietRound.text);
   });
 
-  it('idle rounds that ran while away stay silent unless they brought news', () => {
+  it('time away raises no card at all, quiet or otherwise: no round ran', () => {
     const g = readColony();
-    g.tick(config.calendarFloorHours * H + 1000);
-    expect(g.state.awayRounds).toBe(1);
-    const news = pendingNews(g.state);
-    expect(news?.quiet).toBeFalsy();
-    if (news) expect(news.kind).toBe('away');
+    g.tick(7 * 24 * H);
+    expect(g.state.round).toBe(0);
+    expect(pendingNews(g.state)).toBeNull();
   });
 
   it('the founding card is never the quiet card', () => {
