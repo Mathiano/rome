@@ -1,3 +1,4 @@
+import type { LastSeen } from '../village/away';
 import type { ResourceId, StatId, Ring } from '../data';
 
 export type Resources = Record<ResourceId, number>;
@@ -343,6 +344,8 @@ export interface GameState {
   seed: number;
   createdAt: number;
   lastTick: number;
+  /** When the player last saw the colony, and what it looked like (village/away.ts). */
+  lastSeen: LastSeen;
   round: number;
   resources: Resources;
   slots: Slot[];

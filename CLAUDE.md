@@ -24,6 +24,7 @@ From `docs/DESIGN.md` §2. Short form:
 8. Defer, don't drop — bank in `docs/DESIGN.md` §14.
 9. Keep it real — Roman names, Roman gods, Roman practice.
 10. PC first, landscape.
+11. Absence: no round runs unattended. Rounds advance only when the player acts; while they are away only the village works — no ageing, no rival moves, no raids. A player who never convenes is not playing, not exploiting (§2.11, §3.3).
 
 ## Stack
 
@@ -80,5 +81,6 @@ assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites +
 
 - Add a build queue, a fifth family, citizen tiers, offence, or any feature listed in `docs/DESIGN.md` §14 without being asked.
 - Add Supabase, auth or any network dependency in v0.
+- Restore the idle round, a calendar floor, or any mechanic that runs a round without the player (§2.11, §3.3). A replacement needs Mathias's sign-off first.
 - Introduce a visible village clock. Only the political round is visible time.
 - Hard-code balance numbers.

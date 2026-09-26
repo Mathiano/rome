@@ -10,7 +10,7 @@
  * the player was watching. Words are the renderer's business (render/due.ts).
  */
 import type { GameState, Resources } from '../state/types';
-import { RESOURCE_IDS } from '../data';
+import { config, RESOURCE_IDS } from '../data';
 
 export interface AwaySnapshot {
   resources: Resources;
@@ -68,4 +68,33 @@ export function awayReport(before: AwaySnapshot, after: AwaySnapshot): AwayRepor
 /** Nothing moved: the strip has nothing to say (the threshold is zero). */
 export function isQuiet(r: AwayReport): boolean {
   return !Object.keys(r.resources).length && !Object.keys(r.overflow).length && !r.raised.length && !r.learned.length && r.citizens === 0;
+}
+
+/**
+ * When the player last saw the colony, and what it looked like then (Mathias,
+ * 2026-09-25). Stamped when the strip is put away, and kept current while the
+ * player is in the game with no strip up, so the next strip is anchored to
+ * the last time they looked, not to the last tick or the last reload.
+ */
+export interface LastSeen {
+  at: number;
+  snapshot: AwaySnapshot;
+}
+
+export function markSeen(state: GameState, now: number): void {
+  state.lastSeen = { at: now, snapshot: takeSnapshot(state) };
+}
+
+/**
+ * On load, after the village clock has caught up: what changed since the
+ * player last saw the colony — or nothing, if they looked less than
+ * `config.returnStrip.minGapMinutes` ago. A reload a minute after putting the
+ * strip away shows nothing.
+ */
+export function returnReport(state: GameState, now: number): AwayReport | null {
+  const seen = state.lastSeen;
+  if (!seen) return null;
+  if (now - seen.at < config.returnStrip.minGapMinutes * 60_000) return null;
+  const r = awayReport(seen.snapshot, takeSnapshot(state));
+  return isQuiet(r) ? null : r;
 }

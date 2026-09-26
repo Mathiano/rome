@@ -7,8 +7,8 @@ import { progress as progressOf } from './village/construction';
 import { createMapView } from './render/mapview';
 import { bindPanel, renderHeader, renderPanel, type Tab } from './render/panel';
 import { currentAdvice } from './render/advisor';
-import { awayReport, isQuiet, takeSnapshot } from './village/away';
-import { awayLines, setReturnStrip } from './render/due';
+import { markSeen, returnReport } from './village/away';
+import { awayLines, returnStripShowing, setReturnStrip } from './render/due';
 import { resetReportsView } from './render/reports';
 import { acknowledgeNews, createNewsOverlay } from './render/newsOverlay';
 import { patchHtml } from './render/patch';
@@ -56,9 +56,15 @@ function toast(msg: string): void {
   setTimeout(() => t.remove(), 3500);
 }
 
-function guard(fn: () => void): void {
-  // The first action puts the return strip away.
+/** The first action or tab change puts the return strip away, and the colony has been seen. */
+function putStripAway(): void {
+  if (!returnStripShowing()) return;
   setReturnStrip([]);
+  markSeen(game.state, dev.now());
+}
+
+function guard(fn: () => void): void {
+  putStripAway();
   try {
     fn();
   } catch (e) {
@@ -69,6 +75,9 @@ function guard(fn: () => void): void {
 }
 
 function persist(): void {
+  // While the player is here with no strip up, they are seeing the colony:
+  // the next strip is anchored to now, so a reload a minute later says nothing.
+  if (!returnStripShowing()) markSeen(game.state, dev.now());
   if (!saveToLocalStorage(game.state, saveKey)) toast('Could not save to this browser. Export your game.');
 }
 
@@ -174,7 +183,7 @@ function render(force = false): void {
 }
 
 bindPanel(panelEl, {
-  onTab: (t) => { tab = t; setReturnStrip([]); render(true); },
+  onTab: (t) => { tab = t; putStripAway(); render(true); },
   onSelectSlot: (id) => { selected = id; tab = 'village'; render(true); },
   onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; render(true); },
   onDismissAdvisor: () => guard(() => game.dismissAdvisor()),
@@ -236,12 +245,12 @@ function renderDevBar(now: number): void {
   patchHtml(devBar, `<b>DEV</b> separate save slot · clock ${mults} · skip <button data-skip="1">1h</button><button data-skip="6">6h</button><button data-skip="24">24h</button><button data-skip="168">7d</button> · virtual ${new Date(now).toISOString().slice(0, 16).replace('T', ' ')}`);
 }
 
-// What the village clock did while the game was closed, told once as amounts
-// on the Village tab (village/away.ts). Snapshot before the first tick.
-const before = takeSnapshot(game.state);
+// What the village clock did since the player last saw the colony, told once
+// as amounts on the Village tab (village/away.ts) — only if that was longer
+// ago than config.returnStrip.minGapMinutes.
 game.tick(dev.now());
-const gap = awayReport(before, takeSnapshot(game.state));
-if (!isQuiet(gap)) setReturnStrip(awayLines(gap));
+const sinceSeen = returnReport(game.state, dev.now());
+if (sinceSeen) setReturnStrip(awayLines(sinceSeen));
 persist();
 render(true);
 // The village tick: the economy advances (never a round, §3.3), then only
