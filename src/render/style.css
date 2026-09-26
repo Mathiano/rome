@@ -341,3 +341,7 @@ table .neg, .card.report .neg { color: var(--terracotta); }
 #panel .card.away ul { margin: 4px 0 0; padding-left: 18px; }
 #panel .card.away li { margin: 2px 0; font-size: 13px; }
 .news-card .overflow { border-left: 3px solid var(--river); padding-left: 10px; margin: 6px 0; font-size: 13px; }
+
+/* The news card makes its entrance once (unit: news overlay). New news on a
+   card already up — a choice answered, a line arrived — changes it in place. */
+.news.settled, .news.settled .news-card, .news.settled .news-card h2 { animation: none; }

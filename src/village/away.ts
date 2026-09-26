@@ -2,8 +2,7 @@
  * What the village clock did while the game was closed (DESIGN §3.1: accrual
  * runs offline, capped by storage per §4.2), told as amounts and never as a
  * duration. The gap `tick` already computes from `lastTick` is not printed:
- * §3.1 sanctions the time left on a job and the hours to the idle round, and
- * nothing else about the clock.
+ * §3.1 sanctions the time left on a job and nothing else about the clock.
  *
  * Pure: a snapshot before the first tick and a snapshot after. The overflow
  * counter `accrue` keeps is part of each snapshot, so the report carries only

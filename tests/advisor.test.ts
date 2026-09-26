@@ -361,7 +361,8 @@ describe('before you go', () => {
     const html = renderNews(news, g.state, 2000);
     expect(html).toContain('Before you go');
     expect(html).toContain('Iron mine I: about 2 minutes left.');
-    expect(html).toContain(`council meets without you in about ${config.calendarFloorHours} hours.`);
+    // no round runs while you are away (§3.3, 2026-09-25), so nothing says one will
+    expect(html).not.toContain('without you');
     expect(html).not.toContain('massing');
     expect(html).not.toContain('ask for');
   });
@@ -377,6 +378,6 @@ describe('before you go', () => {
     expect(html).toContain(`The Cornelii ask for 40 denarii; an answer is expected by round ${s.round + 2}.`);
     // each once
     expect(html.match(/Before you go/g)).toHaveLength(1);
-    expect(html.match(/council meets without you/g)).toHaveLength(1);
+    expect(html).not.toContain("without you"); // no round runs while you are away (§3.3)
   });
 });

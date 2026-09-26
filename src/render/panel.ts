@@ -24,11 +24,10 @@ import {
   availableResearch, checkResearch, isResearched, researchProgress, researchRank,
   researchRushPrice, researchSpeed, resourcesOf,
 } from '../village/research';
-import { roundsUntilIdle } from '../politics/rounds';
 import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
 import { blockedBy, currentAdvice, foundingParagraphs, resolveGoto } from './advisor';
 import { rememberOpen, renderHistoryTable, renderNewsRecord, renderReports, reportsUnread, setReportFilter } from './reports';
-import { dueItems, idleLine, overflowWords, renderDue, renderReturnStrip } from './due';
+import { dueItems, overflowWords, renderDue, renderReturnStrip } from './due';
 import { colonyLine, renderSummary } from './summary';
 
 export { remainingText, durationText } from './overview';
@@ -73,7 +72,7 @@ export interface PanelHandlers {
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 
 export interface News {
-  kind: 'opening' | 'away' | 'report'; title: string; subtitle: string; lines: LogEntry[];
+  kind: 'opening' | 'report'; title: string; subtitle: string; lines: LogEntry[];
   /** A round the player called that brought no news: the card says so and nothing more. */
   quiet?: boolean;
 }
@@ -90,8 +89,8 @@ export function pendingNews(state: GameState): News | null {
   if (state.pendingChoice) return report(state, lines);
   // A round the player called that brought no news still gets a card (Mathias,
   // 2026-09-24): pressing the one button that advances the world and getting
-  // nothing back reads as a bug. Idle rounds run while away stay silent.
-  if (state.awayRounds === 0 && unread.some(isMarker) && !lines.some((e) => e.kind !== 'village')) {
+  // nothing back reads as a bug.
+  if (unread.some(isMarker) && !lines.some((e) => e.kind !== 'village')) {
     return {
       kind: 'report', quiet: true, title: `Round ${state.round}`,
       subtitle: `Population ${Math.floor(state.population)} · corruption ${n(state.corruption)}`, lines,
@@ -99,14 +98,6 @@ export function pendingNews(state: GameState): News | null {
   }
   // Nothing unread is nothing to say, whatever else is true of the colony.
   if (!lines.length) return null;
-  if (state.awayRounds > 0) {
-    return {
-      kind: 'away',
-      title: 'While you were away',
-      subtitle: `${state.awayRounds} round${state.awayRounds === 1 ? '' : 's'} ran without you. The council does not wait.`,
-      lines,
-    };
-  }
   if (state.round === 0 && !state.seenOpening) {
     return { kind: 'opening', title: esc(config.townName), subtitle: advisor.founding.subtitle, lines };
   }
@@ -165,13 +156,13 @@ export function renderNews(news: News, state: GameState, now: number = Date.now(
 /**
  * "Before you go" (DESIGN §12's last verb). What is coming, from the one
  * collector the Village tab's Due block reads (render/due.ts), each stated
- * once in rounded words (§3.1 as amended), and the hours until the council
- * meets without you. Nothing here counts down.
+ * once in rounded words (§3.1 as amended). Nothing here counts down, and
+ * nothing happens while you are gone but the village clock (§3.3).
  */
 export function leavingCounsel(s: GameState, now: number): string {
   const d = dueItems(s, now);
   const items = [...d.village, ...d.nextRound, ...d.later].map((i) => esc(i.text));
-  items.push(esc(idleLine(d.idleHours)));
+  if (!items.length) return '';
   return `<div class="leaving"><h3>Before you go</h3><ul>${items.map((i) => `<li>${i}</li>`).join('')}</ul></div>`;
 }
 
@@ -219,7 +210,7 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
     case 'village': body = renderVillage(s, selected, now); break;
     case 'map': body = renderMap(s, selectedHex); break;
     case 'library': body = renderLibrary(s, now); break;
-    case 'council': body = renderCouncil(s, now); break;
+    case 'council': body = renderCouncil(s); break;
     case 'family': body = renderFamilies(s); break;
     case 'tribe': body = renderTribe(s); break;
     case 'rome': body = renderRome(s); break;
@@ -446,7 +437,7 @@ function renderChallenge(s: GameState): string {
   return out;
 }
 
-function renderCouncil(s: GameState, now: number): string {
+function renderCouncil(s: GameState): string {
   const office = officeHolder(s);
   const inPower = playerHoldsOffice(s);
   let out = `<h2>The council</h2>`;
@@ -501,7 +492,7 @@ function renderCouncil(s: GameState, now: number): string {
   const backingOk2 = backingOk && s.rome.favour >= config.rome.backingMinFavour;
   out += `<button class="act" data-political="rome_backing" ${backingOk2 ? '' : 'disabled'}>Seek Rome's backing (${cost} gravitas, rank ${g.romeBackingMinRank}, favour ${config.rome.backingMinFavour})</button> `;
   out += `<button class="act secondary" data-political="convene">Convene the council (pass)</button>`;
-  out += `<p class="muted">Every action here runs a political round: the rival house, the tribe and Rome all act, and everyone ages. If you stay away ${config.calendarFloorHours} hours the council meets without you (${Math.ceil(roundsUntilIdle(s, now) / 3_600_000)}h left).</p>`;
+  out += `<p class="muted">Every action here runs a political round: the rival house, the tribe and Rome all act, and everyone ages. Nothing moves in the council until you act; while you are away only the village works.</p>`;
   return out;
 }
 
@@ -755,7 +746,7 @@ function renderSave(s: GameState): string {
   <h3>Start over</h3><button class="act secondary" data-reset>New colony</button>
   <h3>This colony so far</h3>
   <table>
-    <tr><td>Rounds</td><td>${st.rounds}${st.idleRounds ? ` (${st.idleRounds} without you)` : ''}</td></tr>
+    <tr><td>Rounds</td><td>${st.rounds}</td></tr>
     <tr><td>Raids</td><td>${st.raidsSuffered} suffered, ${st.raidsRepelled} thrown back, ${Math.round(st.goodsLostToRaids)} goods carried off</td></tr>
     <tr><td>Demands</td><td>${st.demandsGranted} granted, ${st.demandsRefused} refused</td></tr>
     <tr><td>Decisions</td><td>${st.choicesAnswered} answered</td></tr>
