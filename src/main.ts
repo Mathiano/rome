@@ -7,7 +7,7 @@ import { progress as progressOf } from './village/construction';
 import { createMapView } from './render/mapview';
 import { bindPanel, renderHeader, renderPanel, type Tab } from './render/panel';
 import { currentAdvice } from './render/advisor';
-import { markSeen, returnReport } from './village/away';
+import { arrive, markSeen } from './village/away';
 import { awayLines, returnStripShowing, setReturnStrip } from './render/due';
 import { resetReportsView } from './render/reports';
 import { acknowledgeNews, createNewsOverlay } from './render/newsOverlay';
@@ -210,6 +210,11 @@ bindPanel(panelEl, {
   onImport: (json) => guard(() => {
     game = new Game(deserialise(json));
     game.tick(dev.now());
+    // An imported colony arrives like a loaded one: its own lastSeen decides
+    // the strip, and a strip it is owed stays up (so the save after this does
+    // not stamp over the imported time).
+    const owed = arrive(game.state, dev.now());
+    setReturnStrip(owed ? awayLines(owed) : []);
     // Another colony's rounds: the folders it shut and the filter it chose do not carry over.
     resetReportsView();
     toast('Save imported.');
@@ -249,7 +254,7 @@ function renderDevBar(now: number): void {
 // as amounts on the Village tab (village/away.ts) — only if that was longer
 // ago than config.returnStrip.minGapMinutes.
 game.tick(dev.now());
-const sinceSeen = returnReport(game.state, dev.now());
+const sinceSeen = arrive(game.state, dev.now());
 if (sinceSeen) setReturnStrip(awayLines(sinceSeen));
 persist();
 render(true);

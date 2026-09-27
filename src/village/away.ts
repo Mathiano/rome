@@ -93,8 +93,30 @@ export function markSeen(state: GameState, now: number): void {
  */
 export function returnReport(state: GameState, now: number): AwayReport | null {
   const seen = state.lastSeen;
-  if (!seen) return null;
+  if (!hasSeen(state) || !seen) return null;
   if (now - seen.at < config.returnStrip.minGapMinutes * 60_000) return null;
   const r = awayReport(seen.snapshot, takeSnapshot(state));
   return isQuiet(r) ? null : r;
+}
+
+/** A stamp the strip can be anchored to: a real time and a snapshot, not zero, not missing. */
+export function hasSeen(state: GameState): boolean {
+  const seen = state.lastSeen;
+  return !!seen && typeof seen.at === 'number' && Number.isFinite(seen.at) && seen.at > 0
+    && !!seen.snapshot && typeof seen.snapshot === 'object' && !!seen.snapshot.resources;
+}
+
+/**
+ * Opening a colony — a load from the browser or an import from a file — after
+ * the village clock has caught up (Mathias, 2026-09-26). A save that carries a
+ * stamp keeps it, so an export and import changes nothing about the strip. A
+ * save without one (older than 2026-09-25, or damaged) is stamped now: it
+ * defaults to the load time, never to zero, so it shows no strip this time.
+ */
+export function arrive(state: GameState, now: number): AwayReport | null {
+  if (!hasSeen(state)) {
+    markSeen(state, now);
+    return null;
+  }
+  return returnReport(state, now);
 }

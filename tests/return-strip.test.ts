@@ -2,7 +2,7 @@ import { describe, it, expect } from 'vitest';
 import { createInitialState, deserialise, serialise } from '../src/state/store';
 import { Game } from '../src/game';
 import { config } from '../src/data';
-import { markSeen, returnReport } from '../src/village/away';
+import { arrive, markSeen, returnReport } from '../src/village/away';
 import { awayLines } from '../src/render/due';
 
 /**
@@ -81,16 +81,58 @@ describe('the return strip', () => {
     expect(returnReport(g.state, T0 + 2 * GAP)).toBeNull();
   });
 
-  it('the stamp is saved, and an older save without one is anchored to when it was last played', () => {
+  it('the stamp survives export and import, and an imported colony is judged by its own stamp', () => {
     const g = new Game(createInitialState(T0, 3));
     markSeen(g.state, T0 + 7 * MIN);
-    expect(deserialise(serialise(g.state)).lastSeen.at).toBe(T0 + 7 * MIN);
-    const old = JSON.parse(serialise(createInitialState(T0, 3)));
+    const exported = serialise(g.state); // what Export writes
+    expect(JSON.parse(exported).lastSeen.at).toBe(T0 + 7 * MIN);
+    const imported = deserialise(exported); // what Import reads
+    expect(imported.lastSeen).toEqual(g.state.lastSeen);
+    // imported two hours on: the strip it is owed is shown, and the stamp is not moved by arriving
+    const g2 = new Game(imported);
+    const at = T0 + 7 * MIN + 2 * 60 * MIN;
+    g2.tick(at);
+    expect(arrive(g2.state, at)).not.toBeNull();
+    expect(g2.state.lastSeen!.at).toBe(T0 + 7 * MIN);
+    // imported a minute on: nothing
+    const g3 = new Game(deserialise(exported));
+    g3.tick(T0 + 8 * MIN);
+    expect(arrive(g3.state, T0 + 8 * MIN)).toBeNull();
+  });
+
+  it('an old save without a stamp defaults to the load time, not zero and not its last play', () => {
+    const played = createInitialState(T0, 3);
+    const old = JSON.parse(serialise(played));
     delete old.lastSeen;
     const back = deserialise(JSON.stringify(old));
-    expect(back.lastSeen.at).toBe(back.lastTick);
-    const g2 = new Game(back);
-    g2.tick(back.lastTick + 2 * GAP);
-    expect(returnReport(g2.state, back.lastTick + 2 * GAP)).not.toBeNull();
+    expect(back.lastSeen).toBeUndefined(); // the migration does not invent a time
+    const load = T0 + 5 * 60 * MIN; // five hours after it was last played
+    const g = new Game(back);
+    g.tick(load);
+    expect(arrive(g.state, load)).toBeNull(); // first load after the update: nothing
+    expect(g.state.lastSeen!.at).toBe(load);
+    expect(g.state.lastSeen!.at).not.toBe(0);
+    expect(g.state.lastSeen!.at).not.toBe(played.lastTick);
+    // from then on it behaves like any save
+    const json = serialise(g.state);
+    const soon = new Game(deserialise(json));
+    soon.tick(load + MIN);
+    expect(arrive(soon.state, load + MIN)).toBeNull();
+    const later = new Game(deserialise(json));
+    later.tick(load + GAP + MIN);
+    expect(arrive(later.state, load + GAP + MIN)).not.toBeNull();
+  });
+
+  it('a damaged stamp is treated as missing and set to the load time', () => {
+    for (const bad of [{ at: 0 }, { at: Number.NaN }, { at: T0 }, { snapshot: {} }, null]) {
+      const raw = JSON.parse(serialise(createInitialState(T0, 3)));
+      raw.lastSeen = bad && 'at' in bad && bad.at === T0 ? { at: T0 } : bad; // { at: T0 } lacks a snapshot
+      const g = new Game(deserialise(JSON.stringify(raw)));
+      const load = T0 + 3 * 60 * MIN;
+      g.tick(load);
+      expect(arrive(g.state, load), JSON.stringify(bad)).toBeNull();
+      expect(g.state.lastSeen!.at).toBe(load);
+      expect(g.state.lastSeen!.snapshot.resources).toBeTruthy();
+    }
   });
 });

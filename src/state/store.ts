@@ -239,9 +239,6 @@ export function migrate(state: GameState): GameState {
   if (!state.reports) { state.reports = []; state.reportSeq = 0; }
   if (!state.history) state.history = [];
   if (!state.overflowSinceSeen) state.overflowSinceSeen = {};
-  // Saves from before 2026-09-25 have no lastSeen: anchor the next strip to
-  // when they were last played, as the strip always had been.
-  if (!state.lastSeen) state.lastSeen = { at: state.lastTick, snapshot: takeSnapshot(state) };
   state.version = config.saveVersion;
   return state;
 }

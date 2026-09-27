@@ -344,8 +344,12 @@ export interface GameState {
   seed: number;
   createdAt: number;
   lastTick: number;
-  /** When the player last saw the colony, and what it looked like (village/away.ts). */
-  lastSeen: LastSeen;
+  /**
+   * When the player last saw the colony, and what it looked like (village/away.ts).
+   * Absent on saves from before 2026-09-25 until they are first loaded or imported,
+   * when it is stamped at load time (`arrive`).
+   */
+  lastSeen?: LastSeen;
   round: number;
   resources: Resources;
   slots: Slot[];
