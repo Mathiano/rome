@@ -137,3 +137,21 @@ cards. Reproduced 4 out of 4 times in Chromium:
   missing cap. Mutation-checked.
 - ✅ 408 tests, CI green on #11, Chromium: one card, choice in place,
   scrolls, real click reaches Continue. Waiting on Mathias to merge.
+
+## Evening: the founding card that would not close (PR #12)
+
+- **Not a lost dismissal.** `seenOpening` is saved and holds. The news
+  overlay rewrote its `innerHTML` on every render, once a second. That
+  replaced the Continue button between press and release and replayed
+  the 620 ms entrance, so the card seemed to be raised again. Measured on
+  `main`: 5 replacements in 5 s. After: 0.
+- **Fix:** `src/render/newsOverlay.ts` redraws the card only when its
+  news changes, and without a second entrance.
+- **Tests:** the card stays one node across 60 ticks; a click lands
+  across a tick; dismissal holds across a tick, a reload and an
+  idle-round catch-up. Mutation-checked.
+- **Link to #11:** the stacking was #11's check-order fault, but the same
+  per-tick rewrite scrolled the tall away card back to its top every
+  second.
+- ✅ #11 and #12 are green and merge cleanly together (415 tests
+  combined). Both wait on Mathias.
