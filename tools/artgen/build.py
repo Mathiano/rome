@@ -198,9 +198,14 @@ def check_slopes(left, right, bottom):
 
 
 # ------------------------------------------------------------------ pipeline
-def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white: int, name: str = None) -> dict:
+def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white: int, name: str = None, crop=None) -> dict:
     name = name or os.path.splitext(os.path.basename(path))[0]
     img = Image.open(path).convert("RGB")
+    if crop:
+        # A defect in the render itself (a stray bar at an edge): trimmed here,
+        # before keying, so the source file is never edited.
+        l, t, r, b = crop
+        img = img.crop((l, t, img.width - r, img.height - b))
     rgb = np.asarray(img)
     alpha = key_background(rgb, white)
 
@@ -242,6 +247,8 @@ def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white:
         "slopes": {"left": round(s_left, 4), "right": round(s_right, 4)},
         "overhangPx": overhang,
     }
+    if crop:
+        entry["crop"] = list(crop)
     return name, entry
 
 
@@ -347,6 +354,17 @@ def selftest() -> int:
             data = json.load(f)
         assert set(data["sprites"]) == {"test-t1", "forum-t1"}, data["sprites"].keys()
         assert data["plateTiles"] == 1.75, "rewriting the manifest dropped plateTiles"
+        # A black bar on the render's edge would ride into the sprite; cropped, it does not.
+        barred = os.path.join(td, "barred.png")
+        Lb, Eb, Sb = synth_plate(barred)
+        img = Image.open(barred)
+        ImageDraw.Draw(img).rectangle([img.width - 15, 0, img.width - 1, 111], fill=(2, 2, 2))
+        img.save(barred)
+        _, e_bar = process(barred, os.path.join(td, "out3"), 64, 4, 8, 232, name="barred")
+        _, e_clean = process(barred, os.path.join(td, "out3"), 64, 4, 8, 232, name="clean", crop=(0, 0, 16, 0))
+        assert e_bar["overhangPx"][1] > 100, e_bar["overhangPx"]
+        assert e_clean["overhangPx"] == [0.0, 0.0] or max(e_clean["overhangPx"]) < 6, e_clean["overhangPx"]
+        assert e_clean["crop"] == [0, 0, 16, 0]
         # A silhouette overhanging its plate (foliage, an eave) must not drag the corner out.
         over = os.path.join(td, "over-t1.jpg")
         Lo, Eo, So = synth_plate(over)
@@ -372,10 +390,13 @@ def main(argv=None) -> int:
     p.add_argument("--pad", type=int, default=8)
     p.add_argument("--white", type=int, default=232, help="min channel value counted as background")
     p.add_argument("--selftest", action="store_true")
+    p.add_argument("--stills", help="a stills list (assets/src/stills.json): place every still that passes, report the rest")
     a = p.parse_args(argv)
     if a.selftest:
         return selftest()
     tile_width = a.tile_width or default_tile_width(a.out)
+    if a.stills:
+        return run_stills(a.stills, a, tile_width)
     inputs = a.inputs or sorted(
         os.path.join(DEFAULT_SRC, f) for f in os.listdir(DEFAULT_SRC) if f.lower().endswith((".jpg", ".jpeg", ".png"))
     ) if os.path.isdir(DEFAULT_SRC) else a.inputs
@@ -399,6 +420,34 @@ def main(argv=None) -> int:
         return 1
     m = write_manifest(a.out, entries, tile_width, a.ppu)
     print(f"wrote {len(entries)} sprite(s) and {os.path.relpath(m, ROOT)}")
+    return 0
+
+
+def run_stills(listing: str, a, tile_width: int) -> int:
+    """Every still that passes becomes its sprite; one that fails is reported with
+    its measured slopes and not written, so its building keeps the sprite it had."""
+    with open(listing) as f:
+        stills = json.load(f)["stills"]
+    base = os.path.dirname(os.path.abspath(listing))
+    entries, failed = {}, []
+    for s in stills:
+        if not s.get("sprite"):
+            print(f"unplaced {s['src']}: {s.get('_note', 'no building')}")
+            continue
+        try:
+            name, e = process(os.path.join(base, s["src"]), a.out, tile_width, a.ppu, a.pad, a.white, name=s["sprite"], crop=s.get("crop"))
+        except PlateError as err:
+            failed.append(s["src"])
+            print(f"FAIL {s['src']}: {err}", file=sys.stderr)
+            continue
+        entries[name] = e
+        print(f"{name} <- {s['src']}: {e['width']}×{e['height']} px, anchor ({e['ax']}, {e['ay']}), slopes {e['slopes']}")
+    if entries:
+        m = write_manifest(a.out, entries, tile_width, a.ppu)
+        print(f"wrote {len(entries)} sprite(s) and {os.path.relpath(m, ROOT)}")
+    if failed:
+        print(f"{len(failed)} still(s) failed the plate assertion and were not placed: {', '.join(failed)}", file=sys.stderr)
+        return 3
     return 0
 
 

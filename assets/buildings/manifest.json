@@ -2,6 +2,84 @@
   "tileWidth": 112,
   "ppu": 4,
   "sprites": {
+    "barracks-t1": {
+      "file": "barracks-t1.png",
+      "width": 452,
+      "height": 278,
+      "ax": 226.22,
+      "ay": 171.35,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "assets/src/barracks_t1.jpg",
+      "trimOffset": [
+        234,
+        0
+      ],
+      "sourceScale": 0.184742,
+      "slopes": {
+        "left": 0.4704,
+        "right": -0.4789
+      },
+      "overhangPx": [
+        4.0,
+        3.0
+      ]
+    },
+    "barracks-t2": {
+      "file": "barracks-t2.png",
+      "width": 455,
+      "height": 240,
+      "ax": 227.5,
+      "ay": 124.57,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmp9gmkaiau/barracks-t2.png",
+      "trimOffset": [
+        119,
+        482
+      ],
+      "sourceScale": 0.437073,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "barracks-t3": {
+      "file": "barracks-t3.png",
+      "width": 455,
+      "height": 266,
+      "ax": 227.5,
+      "ay": 150.35,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmp9gmkaiau/barracks-t3.png",
+      "trimOffset": [
+        119,
+        423
+      ],
+      "sourceScale": 0.437073,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": 3.01,
+          "y": -16.69,
+          "scale": 0.9
+        }
+      ]
+    },
     "castellum-t1": {
       "file": "castellum-t1.png",
       "width": 452,
@@ -996,25 +1074,31 @@
     },
     "warehouse-t1": {
       "file": "warehouse-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 452,
+      "height": 331,
+      "ax": 226.2,
+      "ay": 214.86,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/warehouse-t1.png",
+      "source": "assets/src/warehouse_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        482,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.220147,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.5138,
+        "right": -0.5215
       },
       "overhangPx": [
-        0.0,
+        2.0,
         0.0
+      ],
+      "crop": [
+        0,
+        0,
+        16,
+        0
       ]
     },
     "warehouse-t2": {

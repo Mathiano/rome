@@ -4,6 +4,7 @@ import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { place, type AnimPlacement, type LoopPlacement, type ManifestEntry } from '../src/render/sprites';
 import { animOverlay, loopOverlay } from '../src/render/village';
+import { buildings } from '../src/data';
 
 const OVERLAYS = join(__dirname, '..', 'assets', 'overlays');
 
@@ -32,7 +33,8 @@ describe('tier-3 animation overlays', () => {
         expect(anims.length, `${key} should not animate`).toBe(0);
       }
     }
-    expect(t3).toBe(14);
+    // one per building that has a sprite: every one but the wall, which is drawn in code
+    expect(t3).toBe(buildings.filter((b) => b.zone !== 'wall').length);
   });
 
   it('renders each animation kind as a driven group in scene units', () => {

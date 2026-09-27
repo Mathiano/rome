@@ -17,6 +17,8 @@ describe('sprite manifest (CLAUDE.md conventions)', () => {
     const tiles = (spriteManifest as unknown as { plateTiles?: number }).plateTiles ?? 1;
     expect(tiles).toBeGreaterThan(0);
     expect(spriteManifest.tileWidth).toBe(Math.round(layout.tile.w * tiles));
+    // and a plot of the town grid is one plate across (DESIGN §4.5 C.1)
+    expect(tiles).toBe(layout.cellTiles);
     expect(spriteManifest.ppu).toBeGreaterThan(0);
   });
   for (const [key, e] of Object.entries(spriteManifest.sprites)) {
