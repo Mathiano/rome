@@ -39,3 +39,16 @@ share it.
 
 Apply the holdings patch once it's available: §2.11's text, then its
 integration notes. §B waits for a go-ahead.
+
+## Follow-up: lastSeen through export, import and old saves (#14)
+
+- **Import overwrote the imported stamp.** It runs through the action
+  wrapper, which saves and stamped "now". Import now arrives like a
+  load: the imported `lastSeen` decides the strip, and a strip it is
+  owed stays up, so nothing stamps over it.
+- **Old saves** now default to load time, never zero, rather than to
+  their last play. A missing or damaged stamp is stamped at load time
+  by `arrive()`, and shows no strip that once.
+- ✅ 436 tests, CI green. Headed Chromium through the Save tab's Export
+  and Import buttons and a browser load of an old save.
+- The holdings patch is still not in the repo.
