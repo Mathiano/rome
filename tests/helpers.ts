@@ -1,4 +1,6 @@
 import type { GameState } from '../src/state/types';
+import { createInitialState } from '../src/state/store';
+import { generate } from '../src/map/world';
 import { anchors, nextTownSlotId } from '../src/village/grid';
 
 /**
@@ -20,4 +22,21 @@ export function raise(state: GameState, buildingId: string, tier: number): strin
   const id = have?.id ?? plot(state, buildingId);
   state.slots.find((s) => s.id === id)!.tier = tier;
   return id;
+}
+
+/** A colony whose world holds a site of this kind: the seed is searched, not assumed. */
+export function colonyWith(id: string): GameState {
+  for (let seed = 1; seed < 500; seed++) {
+    const s = createInitialState(0, seed);
+    if (Object.values(generate(s.map.seed).sites).includes(id)) return s;
+  }
+  throw new Error(`no world in 500 seeds holds a ${id}`);
+}
+
+/** The first hex in this colony's world that holds a site of this kind. */
+export function hexOf(s: GameState, id: string): string {
+  const w = generate(s.map.seed);
+  const k = Object.keys(w.sites).find((x) => w.sites[x] === id);
+  if (!k) throw new Error(`no ${id} in this world`);
+  return k;
 }

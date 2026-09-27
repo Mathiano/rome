@@ -1,47 +1,215 @@
 {
-  "_comment": "The world map (DESIGN §5). Terrain and site placement are derived from a stable map seed, so the save stores only what the player has done. Sites whose resources do not exist yet (a quarry needs stone, a salt spring needs salt) wait for their content drop per §4.1 — banked, not dropped.",
-  "_proposed": {
-    "radius": "DESIGN §15.10 — map size is ❓ open. 12 gives 25 hexes across, the doc's proposal."
-  },
-  "radius": 12,
+  "_comment": "The world map: holdings (DESIGN §5). Terrain and site placement are derived from a stable map seed, so the save stores only what the player has done. Every number here is a first-pass default and flagged _tuning unless DESIGN states it.",
+  "_tuning": "Overnight 2026-09-28, Claude's first pass on everything DESIGN §5 does not fix: site weights, yields, tier costs and times, the treasure, the watchtower's reach, the troop field's men. For Mathias to tune.",
+  "radius": 10,
+  "_radius": "DESIGN §5.1 ✅: 21 hexes across, so radius 10.",
   "hexSize": 22,
-  "siteCount": 34,
+  "siteCount": 30,
   "minSiteDistance": 2,
   "terrain": [
-    { "id": "plain", "name": "Open ground", "weight": 30 },
-    { "id": "forest", "name": "Forest", "weight": 27 },
-    { "id": "hills", "name": "Hills", "weight": 16 },
-    { "id": "marsh", "name": "Marsh", "weight": 13 },
-    { "id": "water", "name": "River", "weight": 14 }
+    {
+      "id": "plain",
+      "name": "Open ground",
+      "weight": 30
+    },
+    {
+      "id": "forest",
+      "name": "Forest",
+      "weight": 27
+    },
+    {
+      "id": "hills",
+      "name": "Hills",
+      "weight": 16
+    },
+    {
+      "id": "marsh",
+      "name": "Marsh",
+      "weight": 13
+    },
+    {
+      "id": "water",
+      "name": "River",
+      "weight": 14
+    }
   ],
   "sites": [
-    { "id": "timber", "name": "Timber stand", "weight": 11, "terrain": ["forest"],
-      "produces": { "wood": 16 }, "description": "Standing oak within a day's haul." },
-    { "id": "clay_bank", "name": "Clay bank", "weight": 9, "terrain": ["water", "marsh"],
-      "produces": { "clay": 16 }, "description": "A cut bank of good throwing clay." },
-    { "id": "iron_seam", "name": "Iron seam", "weight": 8, "terrain": ["hills"],
-      "produces": { "iron": 10 }, "description": "Bog ore near the surface." },
-    { "id": "meadow", "name": "River meadow", "weight": 8, "terrain": ["plain", "water"],
-      "produces": { "grain": 18 }, "description": "Flat ground the river floods and feeds." },
-    { "id": "ford", "name": "River ford", "weight": 6, "terrain": ["water"],
-      "effect": { "tradeRate": -0.25 }, "description": "A crossing the traders use. Holding it sharpens your rates." },
-    { "id": "shrine", "name": "Old shrine", "weight": 6, "terrain": ["forest", "hills", "marsh"],
-      "effect": { "gravitasPerRound": 1 }, "description": "A grove the tribes hold sacred. Rome's men are watched here." },
-    { "id": "ruins", "name": "Ruins", "weight": 6, "terrain": ["plain", "forest", "hills"],
-      "reward": { "scrolls": 1 }, "description": "Older than Rome, and someone wrote things down." },
-    { "id": "camp", "name": "Barbarian camp", "weight": 8, "hostile": true,
-      "description": "Warriors, and they saw your scout first." }
+    {
+      "id": "timber",
+      "name": "Forest",
+      "weight": 10,
+      "terrain": [
+        "forest"
+      ],
+      "produces": {
+        "wood": 16
+      },
+      "description": "Standing oak within a day’s haul."
+    },
+    {
+      "id": "clay_bank",
+      "name": "Clay bank",
+      "weight": 8,
+      "terrain": [
+        "water",
+        "marsh"
+      ],
+      "produces": {
+        "clay": 16
+      },
+      "description": "A cut bank of good throwing clay."
+    },
+    {
+      "id": "iron_seam",
+      "name": "Iron seam",
+      "weight": 7,
+      "terrain": [
+        "hills"
+      ],
+      "produces": {
+        "iron": 10
+      },
+      "description": "Bog ore near the surface."
+    },
+    {
+      "id": "meadow",
+      "name": "Farmland",
+      "weight": 8,
+      "terrain": [
+        "plain",
+        "water"
+      ],
+      "produces": {
+        "grain": 18
+      },
+      "description": "Flat ground the river floods and feeds."
+    },
+    {
+      "id": "quarry",
+      "name": "Quarry",
+      "weight": 4,
+      "terrain": [
+        "hills"
+      ],
+      "idle": "stone",
+      "produces": {},
+      "description": "Good building stone. Nothing to cut it for until stone is worked (DESIGN §4.1)."
+    },
+    {
+      "id": "salt_spring",
+      "name": "Salt spring",
+      "weight": 3,
+      "terrain": [
+        "marsh",
+        "plain"
+      ],
+      "idle": "salt",
+      "produces": {},
+      "description": "Brine that dries white. Idle until salt is traded (DESIGN §4.1)."
+    },
+    {
+      "id": "troop_field",
+      "name": "Troop field",
+      "weight": 4,
+      "terrain": [
+        "plain",
+        "hills"
+      ],
+      "militiaPerTier": [
+        3,
+        6,
+        10
+      ],
+      "description": "Veterans and their sons, settled on land in return for service. Adds to the militia without drawing on the colony’s own people."
+    },
+    {
+      "id": "watchtower",
+      "name": "Watchtower",
+      "weight": 4,
+      "terrain": [
+        "hills",
+        "forest",
+        "plain"
+      ],
+      "revealRadius": 2,
+      "description": "A high place with a long view. Holding it shows the country around it, and a raid against anything in sight is seen a round sooner."
+    },
+    {
+      "id": "ford",
+      "name": "Ford",
+      "weight": 5,
+      "terrain": [
+        "water"
+      ],
+      "effect": {
+        "tradeRate": -0.25
+      },
+      "envoyRoundsSaved": 1,
+      "description": "A crossing the traders use. Envoys and trade move faster, and the trade is felt at the forum."
+    },
+    {
+      "id": "shrine",
+      "name": "Shrine",
+      "weight": 4,
+      "terrain": [
+        "forest",
+        "hills",
+        "marsh"
+      ],
+      "effect": {
+        "gravitasPerRound": 1
+      },
+      "description": "A grove the tribes hold sacred. A small standing gravitas to the house that keeps it."
+    },
+    {
+      "id": "ruins",
+      "name": "Ruin",
+      "weight": 4,
+      "terrain": [
+        "plain",
+        "forest",
+        "hills"
+      ],
+      "claimReward": {
+        "scrolls": 2
+      },
+      "description": "Older than Rome, and someone wrote things down. A prize, not an income: the scrolls come once, when it is first held."
+    },
+    {
+      "id": "treasure",
+      "name": "Buried hoard",
+      "weight": 3,
+      "treasure": true,
+      "reward": {
+        "denarii": 60
+      },
+      "description": "Coin in a rotted chest. The scouts bring it home and there is nothing left to hold."
+    },
+    {
+      "id": "camp",
+      "name": "Barbarian camp",
+      "weight": 6,
+      "hostile": true,
+      "description": "Warriors, and they saw your scout first."
+    }
   ],
+  "_sites": "DESIGN §5.2 ✅ kinds. Ids kept from v0.1 where the kind already existed (timber = Forest, meadow = Farmland, ruins = Ruin). A shrine's gravitas goes to the player's house: DESIGN names 'the post of temple', which v0 does not have (❓). Quarry and salt spring are claimable and idle until their content drop (🟡 per §5.2). A ford's envoy speed saves rounds on an envoy's road, which is one round long in v0, so it has no effect until envoys travel longer (❓).",
   "scout": {
     "_comment": "Prepared like an envoy (DESIGN §3.2): dispatched now, resolves at the next round.",
-    "cost": { "denarii": 25 },
+    "cost": {
+      "denarii": 25
+    },
     "campCasualties": 2,
     "campFear": -4,
     "campDenarii": -15
   },
   "claim": {
-    "costBase": { "denarii": 90 },
-    "costPerRing": { "denarii": 12 },
+    "costBase": {
+      "denarii": 90
+    },
+    "costPerRing": {
+      "denarii": 12
+    },
     "upkeepPerRound": 5,
     "upkeepPerRing": 1,
     "garrisonMax": 12
@@ -53,5 +221,38 @@
     "garrisonStrengthPerMan": 3.2,
     "tribeShareAgainstSite": 0.45,
     "graceRounds": 10
+  },
+  "tiers": {
+    "_comment": "DESIGN §5.3 ✅: camp, station, fort, built in place on the village clock, one holding under construction at a time beside the building and the field. Yield and defence rise with the tier; the numbers are _tuning.",
+    "list": [
+      {
+        "name": "Camp",
+        "yieldMultiplier": 1,
+        "defence": 0
+      },
+      {
+        "name": "Station",
+        "yieldMultiplier": 1.5,
+        "defence": 8,
+        "cost": {
+          "wood": 120,
+          "clay": 60,
+          "denarii": 40
+        },
+        "buildSeconds": 1800
+      },
+      {
+        "name": "Fort",
+        "yieldMultiplier": 2,
+        "defence": 20,
+        "cost": {
+          "wood": 320,
+          "clay": 200,
+          "iron": 80,
+          "denarii": 120
+        },
+        "buildSeconds": 7200
+      }
+    ]
   }
 }

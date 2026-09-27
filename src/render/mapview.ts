@@ -5,7 +5,7 @@
  */
 import type { GameState } from '../state/types';
 import { centre, corners, key, within } from '../map/grid';
-import { claimOf, isScouted, siteAt } from '../map/sites';
+import { claimOf, isKnown, isScouted, isSpentTreasure, siteAt } from '../map/sites';
 import { generate, mapConfig } from '../map/world';
 
 const NS = 'http://www.w3.org/2000/svg';
@@ -54,11 +54,54 @@ function siteGlyph(id: string): SVGGElement {
                el('rect', { x: -1, y: -6, width: 3, height: 12, class: 'm-stone' }),
                el('rect', { x: 4, y: 0, width: 3, height: 6, class: 'm-stone' }));
       break;
+    case 'quarry':
+      g.append(el('polygon', { points: '-7,5 -5,-3 1,-5 7,-1 7,5', class: 'm-stone' }),
+               el('line', { x1: -4, y1: 1, x2: 4, y2: 1, class: 'm-cut' }));
+      break;
+    case 'salt_spring':
+      g.append(el('ellipse', { cx: 0, cy: 1, rx: 7, ry: 4, class: 'm-water' }),
+               el('ellipse', { cx: 0, cy: 1, rx: 3.5, ry: 1.8, class: 'm-salt' }));
+      break;
+    case 'troop_field':
+      for (let i = -1; i <= 1; i++) g.appendChild(el('line', { x1: i * 4, y1: 5, x2: i * 4 + 1, y2: -7, class: 'm-spear' }));
+      g.appendChild(el('rect', { x: -6, y: 1, width: 12, height: 3, class: 'm-shield' }));
+      break;
+    case 'watchtower':
+      g.append(el('rect', { x: -2.5, y: -7, width: 5, height: 12, class: 'm-wood' }),
+               el('polygon', { points: '-4.5,-7 0,-11 4.5,-7', class: 'm-roof' }));
+      break;
+    case 'treasure':
+      g.append(el('rect', { x: -5, y: -2, width: 10, height: 6, class: 'm-chest' }),
+               el('circle', { cx: 0, cy: -3, r: 2, class: 'm-coin' }));
+      break;
     case 'camp':
       g.append(el('polygon', { points: '0,-7 7,5 -7,5', class: 'm-camp' }),
                el('line', { x1: 0, y1: -9, x2: 0, y2: -2, class: 'm-spear' }));
       break;
   }
+  return g;
+}
+
+/**
+ * A holding's own mark (DESIGN §5.3), drawn in SVG and never painted: a camp is
+ * a mark, a station a walled mark, a fort a walled mark with a tower.
+ */
+export function holdingMark(tier: number, size: number): SVGGElement {
+  const g = el('g', { class: `holding tier-${tier}` });
+  const r = size * 0.62;
+  if (tier >= 2) {
+    const pts = [0, 1, 2, 3, 4, 5].map((i) => {
+      const a = (Math.PI / 180) * (60 * i - 30);
+      return `${(r * Math.cos(a)).toFixed(1)},${(r * Math.sin(a)).toFixed(1)}`;
+    }).join(' ');
+    g.appendChild(el('polygon', { points: pts, class: 'h-wall' }));
+  }
+  if (tier >= 3) {
+    g.append(el('rect', { x: r * 0.45, y: -r * 1.05, width: 5, height: 9, class: 'h-tower' }),
+             el('polygon', { points: `${r * 0.45 - 1},${-r * 1.05} ${r * 0.45 + 2.5},${-r * 1.05 - 4} ${r * 0.45 + 6},${-r * 1.05}`, class: 'h-roof' }));
+  }
+  g.appendChild(el('line', { x1: -r * 0.55, y1: r * 0.55, x2: -r * 0.55, y2: -r * 0.2, class: 'h-pole' }));
+  g.appendChild(el('polygon', { points: `${-r * 0.55},${-r * 0.2} ${-r * 0.55 + 6},${-r * 0.2 + 2} ${-r * 0.55},${-r * 0.2 + 4}`, class: 'h-flag' }));
   return g;
 }
 
@@ -91,11 +134,12 @@ export function createMapView(onSelect: (hex: string) => void): MapView {
     const terrainMap = generate(state.map.seed).terrain;
     for (const [k, cell] of cells) {
       const terrain = terrainMap[k] ?? 'plain';
-      const scouted = isScouted(state, k);
-      const id = siteAt(state, k);
+      const known = isKnown(state, k);
+      const spent = isSpentTreasure(state, k);
+      const id = spent ? null : siteAt(state, k);
       const held = claimOf(state, k);
       const home = k === '0,0';
-      const stamp = [terrain, scouted ? 's' : '', id ?? '', held ? `h${held.garrison}` : '', selected === k ? 'x' : '', state.map.pendingScout === k ? 'p' : ''].join('|');
+      const stamp = [terrain, known ? 's' : '', isScouted(state, k) ? 'x' : '', id ?? '', held ? `h${held.garrison}t${held.tier}` : '', state.map.works?.key === k ? 'w' : '', selected === k ? 'x' : '', state.map.pendingScout === k ? 'p' : ''].join('|');
       if (stamp === cell.state) continue;
       cell.state = stamp;
       cell.poly.setAttribute('class', `ground t-${terrain}${selected === k ? ' selected' : ''}${held ? ' held' : ''}`);
@@ -110,12 +154,19 @@ export function createMapView(onSelect: (hex: string) => void): MapView {
           el('polygon', { points: '-5,-3 0,-9 5,-3', class: 'home-roof' }),
         );
         cell.marks.appendChild(g);
-      } else if (id && !scouted) {
+      } else if (id && !known) {
         const t = el('text', { x: 0, y: 5, class: 'unknown' });
         t.textContent = '?';
         cell.marks.appendChild(t);
       } else if (id) {
+        if (held) cell.marks.appendChild(holdingMark(held.tier ?? 1, size));
         cell.marks.appendChild(siteGlyph(id));
+        if (!isScouted(state, k) && !held) cell.poly.classList.add('seen');
+        if (state.map.works?.key === k) {
+          const t = el('text', { x: size * 0.55, y: -size * 0.45, class: 'rising' });
+          t.textContent = '▲';
+          cell.marks.appendChild(t);
+        }
         if (held) {
           const badge = el('text', { x: 0, y: size * 0.78, class: 'garrison' });
           badge.textContent = held.garrison > 0 ? `⚔ ${held.garrison}` : 'held';

@@ -10,8 +10,9 @@ import { militiaPool, homeMilitia } from '../combat/militia';
 import { defenceStrength, raidChance, raidStrength } from '../combat/raids';
 import { tradeRate } from '../tribes/envoys';
 import { portraitSvg } from './portrait';
-import { claimCost, claimOf, isScouted, ringOf, scoutCost, siteAt, siteDefence, siteRaidChance, upkeepPerRound } from '../map/sites';
-import { site as siteDef } from '../map/world';
+import { claimCost, claimOf, isKnown, isScouted, isSpentTreasure, ringOf, scoutCost, siteAt, siteDefence, siteRaidChance, upkeepPerRound } from '../map/sites';
+import { checkHoldingWork, holdingRushPrice } from '../map/holdings';
+import { holdingTier, mapConfig, site as siteDef } from '../map/world';
 import { spareMilitia } from '../combat/militia';
 import { assassinationChance, backingCost, marriageCandidates, totalBodyguards } from '../politics/intrigue';
 import { officeHolder, playerHoldsOffice, tally } from '../politics/challenge';
@@ -49,6 +50,9 @@ export interface PanelHandlers {
   onTab(t: Tab): void;
   onChoice(id: string): void;
   onScout(hex: string): void;
+  /** Raise a holding a tier: village business on the village clock, no round (§5.3). */
+  onRaiseHolding(hex: string): void;
+  onRushHolding(): void;
   onBuild(slotId: string, buildingId: string): void;
   onSelectSlot(slotId: string): void;
   /** Start putting a town building down on the grid; '' stops (DESIGN §4.5 C.1). */
@@ -210,7 +214,7 @@ export function renderPanel(game: Game, tab: Tab, selected: string | null, now: 
   let body = '';
   switch (tab) {
     case 'village': body = renderVillage(s, selected, now, placing); break;
-    case 'map': body = renderMap(s, selectedHex); break;
+    case 'map': body = renderMap(s, selectedHex, now); break;
     case 'library': body = renderLibrary(s, now); break;
     case 'council': body = renderCouncil(s); break;
     case 'family': body = renderFamilies(s); break;
@@ -310,22 +314,37 @@ function charOption(s: GameState, id: string, stat: keyof typeof s.characters[st
   return `<option value="${c.id}">${ok ? '' : '✗ '}${esc(c.name)} — ${fam.name}, ${stat} ${c.stats[stat]}, rank ${gravitasRank(c)}</option>`;
 }
 
-function renderMap(s: GameState, hex: string | null): string {
+function renderMap(s: GameState, hex: string | null, now = 0): string {
   const claimed = s.map.claimed;
   const spare = spareMilitia(s);
   let out = `<h2>The country</h2>`;
-  out += `<p class="muted">Terrain is known; what stands on it is not. A <b>?</b> is something worth a look. Scouts are dispatched now and report at the next round.</p>`;
+  out += `<p class="muted">Terrain is known; what stands on it is not. A <b>?</b> is something worth a look: a place to hold, a hoard, or a war band. Scouts are dispatched now and report at the next round.</p>`;
   out += `<p>Scouted <b>${s.map.scouted.length}</b> · held <b>${claimed.length}</b> · upkeep <b>${upkeepPerRound(s)}</b> denarii a round · <b>${spare}</b> men uncommitted</p>`;
   if (s.map.pendingScout) out += `<p class="muted">Scouts are out toward ${esc(s.map.pendingScout)}.</p>`;
+  // The third lane (DESIGN §5.3): one holding rising at a time, beside the building and the field.
+  const w = s.map.works;
+  if (w) {
+    const price = holdingRushPrice(s, now);
+    const c = claimOf(s, w.key);
+    out += `<div class="card lane busy" data-lane="holding"><b>Holding lane</b> ${c ? esc(siteDef(c.siteId).name) : ''} at ${esc(w.key)}: the ${esc(holdingTier(w.toTier).name.toLowerCase())}, ${esc(remainingText(w.finishAt - now))}
+      <button class="act tiny" data-rush-holding ${s.resources.denarii < price ? 'disabled' : ''}>Finish now, ${price} denarii</button></div>`;
+  }
 
   if (claimed.length) {
     out += `<h3>Held</h3>`;
     for (const c of claimed) {
       const def = siteDef(c.siteId);
       const r = ringOf(c.key);
-      out += `<div class="card"><b>${esc(def.name)}</b> <span class="muted">${c.key}, ${r} rings out</span>
-        <p class="muted">Raid chance ${Math.round(siteRaidChance(s, c) * 100)}% a round · garrison ${c.garrison} (${Math.round(siteDefence(c))} strength)</p>
-        <button class="act" data-garrison="${c.key}" data-men="${c.garrison + 1}" ${spare < 1 ? 'disabled' : ''}>Send a man</button>
+      const tier = holdingTier(c.tier ?? 1);
+      const check = checkHoldingWork(s, c.key);
+      const next = mapConfig.tiers.list[c.tier ?? 1];
+      out += `<div class="card" data-held="${c.key}"><b>${esc(def.name)}</b> <span class="muted">${c.key}, ${r} rings out · ${esc(tier.name.toLowerCase())}</span>
+        <p class="muted">Raid chance ${Math.round(siteRaidChance(s, c) * 100)}% a round · garrison ${c.garrison} · defence ${Math.round(siteDefence(c))}</p>`;
+      if (next) {
+        out += `<p>${esc(next.name)}: yield ×${next.yieldMultiplier}, defence ${next.defence} · ${costTxt(check.cost, s)} · ${esc(durationText(check.seconds))}
+          <button class="act tiny" data-raise-holding="${c.key}" ${check.ok ? '' : 'disabled'}>Raise it</button>${check.ok ? '' : ` <span class="muted">${esc((check.reason ?? '').toLowerCase())}</span>`}</p>`;
+      }
+      out += `<button class="act" data-garrison="${c.key}" data-men="${c.garrison + 1}" ${spare < 1 ? 'disabled' : ''}>Send a man</button>
         <button class="act secondary" data-garrison="${c.key}" data-men="${Math.max(0, c.garrison - 1)}" ${c.garrison < 1 ? 'disabled' : ''}>Recall one</button>
         <button class="act secondary" data-release="${c.key}">Give it up</button></div>`;
     }
@@ -333,24 +352,30 @@ function renderMap(s: GameState, hex: string | null): string {
 
   if (!hex) return out + `<p>Select a hex.</p>`;
   const id = siteAt(s, hex);
-  const scouted = isScouted(s, hex);
+  const known = isKnown(s, hex);
   const held = claimOf(s, hex);
   out += `<h3>${esc(hex)} <span class="muted">— ${ringOf(hex)} rings out</span></h3>`;
   if (hex === '0,0') return out + `<p>${esc(config.townName)} stands here.</p>`;
-  if (!scouted) {
+  const seenTreasure = !!id && siteDef(id).treasure && known && !isScouted(s, hex);
+  if (!known || seenTreasure) {
     const cost = scoutCost();
     const can = !s.map.pendingScout && (s.resources.denarii >= (cost.denarii ?? 0));
-    out += id ? `<p>Something stands here. Nobody has been close enough to say what.</p>` : `<p class="muted">Nothing has been reported here.</p>`;
+    out += seenTreasure ? `<p>The tower has seen a hoard here. Scouts would bring it home.</p>`
+      : id ? `<p>Something stands here. Nobody has been close enough to say what.</p>` : `<p class="muted">Nothing has been reported here.</p>`;
     out += `<button class="act" data-scout="${hex}" ${can ? '' : 'disabled'}>Send scouts (${cost.denarii} denarii)</button>`;
     return out;
   }
-  if (!id) return out + `<p class="muted">Scouted. Empty country.</p>`;
+  if (!id || isSpentTreasure(s, hex)) return out + `<p class="muted">${id ? 'The hoard is gone. Empty country.' : 'Scouted. Empty country.'}</p>`;
   const def = siteDef(id);
   out += `<div class="card"><b>${esc(def.name)}</b><p class="muted">${esc(def.description)}</p>`;
-  if (def.produces) out += `<p>Yields ${Object.entries(def.produces).map(([k, v]) => `${v} ${k}/h`).join(', ')}</p>`;
-  if (def.effect) out += `<p>${Object.entries(def.effect).map(([k, v]) => `${k} ${v > 0 ? '+' : ''}${v}`).join(', ')}</p>`;
+  if (def.produces && Object.keys(def.produces).length) out += `<p>Yields ${Object.entries(def.produces).map(([k, v]) => `${v} ${k}/h`).join(', ')} as a camp, more as a station and a fort</p>`;
+  if (def.idle) out += `<p class="muted">Idle until ${esc(def.idle)} is worked.</p>`;
+  if (def.effect) out += `<p>${esc(effectWords(def.effect))}</p>`;
+  if (def.militiaPerTier) out += `<p>Militia ${def.militiaPerTier.join(' / ')} men as camp, station and fort, not drawn from the colony's people</p>`;
+  if (def.revealRadius) out += `<p>Shows the country for ${def.revealRadius} hexes round</p>`;
+  if (def.claimReward?.scrolls) out += `<p>${s.map.ruinsSpent.includes(hex) ? 'Searched already: it has nothing more to give.' : `${def.claimReward.scrolls} research scrolls when first held, then nothing`}</p>`;
   if (def.hostile) out += `<p style="color:var(--terracotta)">A war band. There is nothing here to hold.</p>`;
-  else if (held) out += `<p>Held since round ${held.claimedRound}.</p>`;
+  else if (held) out += `<p>Held since round ${held.claimedRound}, a ${esc(holdingTier(held.tier ?? 1).name.toLowerCase())}.</p>`;
   else {
     const cost = claimCost(hex);
     const inPower = playerHoldsOffice(s);
@@ -821,6 +846,8 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.dismiss) return h.onPolitical({ type: 'dismiss', postId: d.dismiss });
     if (d.choice) return h.onChoice(d.choice);
     if (d.scout) return h.onScout(d.scout);
+    if (d.raiseHolding) return h.onRaiseHolding(d.raiseHolding);
+    if ('rushHolding' in d) return h.onRushHolding();
     if (d.claim) return h.onPolitical({ type: 'claim', hex: d.claim });
     if (d.release) return h.onPolitical({ type: 'release', hex: d.release });
     if (d.garrison) return h.onPolitical({ type: 'garrison', hex: d.garrison, men: Number(d.men) });

@@ -327,15 +327,30 @@ export interface ClaimedSite {
   siteId: string;
   garrison: number;
   claimedRound: number;
+  /** Camp 1, station 2, fort 3 (DESIGN §5.3). */
+  tier: number;
+}
+
+/** A holding rising a tier: the third lane, beside the building and the field (§5.3). */
+export interface HoldingWork {
+  key: string;
+  toTier: number;
+  startedAt: number;
+  finishAt: number;
 }
 
 export interface MapState {
   /** Fixed at founding. Terrain and sites are derived from it, never stored. */
   seed: number;
   scouted: string[];
+  /** Hexes a held watchtower shows (§5.2): their site is known without a scout. */
+  seen: string[];
   claimed: ClaimedSite[];
   /** Dispatched now, resolves at the next round (DESIGN §3.2). */
   pendingScout: string | null;
+  /** A ruin pays once, when it is first held (§5.2); these have paid. */
+  ruinsSpent: string[];
+  works: HoldingWork | null;
 }
 
 /** A forced vote on the top office (DESIGN §9.5). */

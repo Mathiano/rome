@@ -234,7 +234,7 @@ describe('the colony index', () => {
 function noHandlers(): PanelHandlers {
   return {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-    onSelectSlot: () => {}, onPlace: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
+    onSelectSlot: () => {}, onPlace: () => {}, onRaiseHolding: () => {}, onRushHolding: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
     onExport: () => {}, onImport: () => {}, onReset: () => {},
     onSelectHex: () => {}, onDismissAdvisor: () => {},

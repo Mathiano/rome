@@ -16,9 +16,23 @@ export interface SiteDef {
   hostile?: boolean;
   produces?: Record<string, number>;
   effect?: Record<string, number>;
+  /** Paid when the scouts reach it (a treasure). */
   reward?: Record<string, number>;
+  /** Paid once, when it is first held (a ruin, §5.2). */
+  claimReward?: Record<string, number>;
+  /** Claimable but idle until this resource exists (§4.1: a quarry waits for stone). */
+  idle?: string;
+  /** A one-time find the scouts carry home, leaving nothing to hold. */
+  treasure?: boolean;
+  /** Men added to the militia pool at each tier, not drawn from the population (§5.2, troop field). */
+  militiaPerTier?: number[];
+  /** Hexes within this distance are shown once it is held (§5.2, watchtower). */
+  revealRadius?: number;
+  /** Rounds an envoy's road is shortened while it is held (§5.2, ford). */
+  envoyRoundsSaved?: number;
   description: string;
 }
+export interface HoldingTierDef { name: string; yieldMultiplier: number; defence: number; cost?: Record<string, number>; buildSeconds?: number }
 
 export const mapConfig = mapJson as unknown as {
   radius: number;
@@ -30,7 +44,14 @@ export const mapConfig = mapJson as unknown as {
   scout: { cost: Record<string, number>; campCasualties: number; campFear: number; campDenarii: number };
   claim: { costBase: Record<string, number>; costPerRing: Record<string, number>; upkeepPerRound: number; upkeepPerRing: number; garrisonMax: number };
   hold: { raidChanceBase: number; raidChancePerRing: number; garrisonStrengthPerMan: number; tribeShareAgainstSite: number; graceRounds: number };
+  tiers: { list: HoldingTierDef[] };
 };
+
+/** A holding tier's definition: 1 camp, 2 station, 3 fort (§5.3). */
+export function holdingTier(tier: number): HoldingTierDef {
+  const list = mapConfig.tiers.list;
+  return list[Math.max(1, Math.min(list.length, tier)) - 1];
+}
 
 export function site(id: string): SiteDef {
   const s = mapConfig.sites.find((x) => x.id === id);

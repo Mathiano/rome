@@ -134,7 +134,7 @@ describe('the render path', () => {
     const writes = src.split('\n').filter((l) => /\.innerHTML\s*=/.test(l)).map((l) => l.trim());
     // the app shell at boot, and a new tab's page
     expect(writes).toEqual([
-      'app.innerHTML = `<header></header><div id="stage"><div id="village"></div><div id="map"></div></div><div id="panel"></div>`;',
+      'app.innerHTML = `<header></header><div id="stage"><div id="village"></div><div id="map"></div><nav class="stage-switch"><button data-stage="town">Town</button><button data-stage="country">Country</button></nav></div><div id="panel"></div>`;',
       'panelEl.innerHTML = html;',
     ]);
     const tabSwitch = src.slice(src.indexOf('if (tab !== lastTab) {'), src.indexOf('patchHtml(panelEl, html);'));
