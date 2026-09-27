@@ -158,11 +158,30 @@ export function serialise(state: GameState): string {
   return JSON.stringify(state);
 }
 
+/**
+ * The save rule (CLAUDE.md): before 1.0, a save-format change bumps
+ * `saveVersion` and resets older saves instead of migrating them. The one
+ * exception is the ring-to-grid move, a kept one-off from format 1 to 2
+ * (`migrateRingsToGrid`); it applies only while the current format is 2.
+ */
+export const KEPT_MIGRATION = { from: 1, to: 2 } as const;
+
+/** A save from an older format that the rule does not carry forward. */
+export class SaveTooOld extends Error {
+  constructor(public readonly version: number) {
+    super(`This save is from an older version of the game (format ${version}) and cannot be loaded.`);
+    this.name = 'SaveTooOld';
+  }
+}
+
 export function deserialise(json: string): GameState {
   const raw = JSON.parse(json) as Partial<GameState>;
   if (typeof raw !== 'object' || raw === null || typeof raw.version !== 'number') {
     throw new Error('Not a save file');
   }
+  if (raw.version > config.saveVersion) throw new Error('This save is from a newer version of the game.');
+  const kept = raw.version === KEPT_MIGRATION.from && config.saveVersion === KEPT_MIGRATION.to;
+  if (raw.version < config.saveVersion && !kept) throw new SaveTooOld(raw.version);
   return migrate(raw as GameState);
 }
 
@@ -255,11 +274,24 @@ export function saveToLocalStorage(state: GameState, key: string = SAVE_KEY): bo
   }
 }
 
-export function loadFromLocalStorage(key: string = SAVE_KEY): GameState | null {
+/** Where a save the rule resets is set aside, so a reset never destroys it. */
+export const retiredKey = (key: string, version: number) => `${key}.retired.v${version}`;
+
+/**
+ * The stored game, or null. A save too old to load is copied aside under
+ * `retiredKey` before null is returned, so the new colony's first save cannot
+ * overwrite the only copy; `onRetired` hears its format.
+ */
+export function loadFromLocalStorage(key: string = SAVE_KEY, onRetired?: (version: number) => void): GameState | null {
+  let json: string | null | undefined;
   try {
-    const json = globalThis.localStorage?.getItem(key);
+    json = globalThis.localStorage?.getItem(key);
     return json ? deserialise(json) : null;
-  } catch {
+  } catch (e) {
+    if (e instanceof SaveTooOld && json) {
+      try { globalThis.localStorage?.setItem(retiredKey(key, e.version), json); } catch { /* nowhere to keep it */ }
+      onRetired?.(e.version);
+    }
     return null;
   }
 }

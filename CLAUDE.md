@@ -78,6 +78,7 @@ assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites +
 - Mathias cross-checks proposals with Gemini. Gemini's art-direction instincts are sound; its codebase-specific claims need verification against this repo before acting on them.
 - End every substantial session with a `docs/CAPSULE-SESSION-<date>.md`: what changed, what's verified, what's next, what's open.
 - In an unattended session, a ❓ may be resolved only as a data-file default, listed in the session capsule for confirmation. Never in code.
+- **Saves:** Before 1.0, a save-format change bumps saveVersion and resets older saves instead of migrating them. The ring-to-grid migration (migrateRingsToGrid, 2026-09-27) is a kept one-off; don't add another without asking. After 1.0, ask first. *(Mathias, 2026-09-28. In code: `deserialise` refuses an older format with `SaveTooOld`, and the load sets the old save aside under `rome.save.v1.retired.v<n>` rather than letting the new colony overwrite it.)*
 
 ## Do not
 

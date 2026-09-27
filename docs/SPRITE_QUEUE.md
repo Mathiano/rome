@@ -1,6 +1,6 @@
 # Sprite queue — Arctown, stylised
 
-42 sprites: 14 buildings × 3 tiers. The wall is drawn in code and has no sprite.
+45 sprites: 15 buildings × 3 tiers (entries 43–45, the Barracks, were added after the rest and sit at the end of their phases). The wall is drawn in code and has no sprite.
 
 **How to use.** One Gemini chat per phase is fine; re-attach the images every time anyway. Copy the whole prompt block — it restates the style and specs on purpose, because Gemini drifts when it relies on the attachment alone. Save each result under its exact file name and upload to `assets/src/` on a `design/…` or `mathiano-…` branch.
 
@@ -292,7 +292,26 @@ A timber-framed mine entrance cut into a low rock face, an ore cart on rails and
 Do not include: people, animals, emblems or heraldry other than the Roman eagle, blue-and-gold colour schemes, green, blue or purple fire or glow, runes, crystals, magic effects, or any text except where stated. Nothing copied from any existing game.
 ```
 
-**Checkpoint:** all thirteen tier-1s plus the praetorium on one screen. Regenerate any outlier before starting tier 2 — every later tier inherits it.
+*The Barracks was added 2026-09-27, after this queue was written: a repeatable 1×1 building, the military counterpart to farms. A tier-1 still already exists (`assets/src/barracks_t1.jpg`, placed); regenerate it from entry 43 only if it fails the Phase 2 checkpoint beside the others.*
+
+### 43. [ ] `barracks-t1.jpg` — Barracks, tier 1
+Attach: `anchor-v2.jpg`
+
+```
+Style: match the first attached image exactly. A stylised, hand-painted game building: chunky, exaggerated proportions, roof tiles about three times real size, thick walls, oversized doors and windows. Heavy dark-brown outlines on every edge. Saturated warm terracotta roofs, cool cream stone and warm brown timber, with bold painted highlights on edges facing the light. Hand-painted texture on every surface, slightly wonky hand-drawn edges. Cozy and lived-in. A hand-painted MMO building, not a historical illustration.
+
+Setting: a Roman colony on the Germanic frontier, year 0. Roman in every detail: red-and-gold banners bearing a golden eagle, oil lamps and braziers with ordinary orange flame, terracotta, travertine and timber.
+
+Camera and framing: isometric 2:1, the same angle as the first image. Light from the top left; shadows fall down and to the right. One structure only, on one flat ground plate: a square plot seen in isometric, a flat diamond exactly twice as wide as it is tall. Footprint: one building plot, a compact building on a small plate. The plate is packed earth and paving stones with a little grass at the edges. The whole building and the whole plate sit inside the frame with a clear white margin on every side; nothing overhangs the edge of the plate. Plain flat white background: no checkerboard, no scenery beyond the plate.
+
+Tier 1 of 3: the humble founding version. Timber, wattle and packed earth, small and simple, few decorations.
+
+A military yard: a long, low timber barracks hall with a tiled roof along the back of the plot, and in front of it a packed-earth drill yard with three wooden training posts and a rack of spears and shields.
+
+Do not include: people, animals, emblems or heraldry other than the Roman eagle, blue-and-gold colour schemes, green, blue or purple fire or glow, runes, crystals, magic effects, or any text except where stated. Nothing copied from any existing game.
+```
+
+**Checkpoint:** all fourteen tier-1s plus the praetorium on one screen. Regenerate any outlier before starting tier 2 — every later tier inherits it.
 
 ## Phase 3 — tier 2
 
@@ -513,6 +532,23 @@ Camera and framing: isometric 2:1, the same angle as the first image. Light from
 Tier 2 of 3. The second attached image is tier 1 of this same building. Upgrade it: same footprint, layout still recognisable, now with stone footings, a tiled roof, an extra storey or wing, paving and more clutter.
 
 A reinforced mine entrance with a timber headframe, rails and a small smelting furnace.
+
+Do not include: people, animals, emblems or heraldry other than the Roman eagle, blue-and-gold colour schemes, green, blue or purple fire or glow, runes, crystals, magic effects, or any text except where stated. Nothing copied from any existing game.
+```
+
+### 44. [ ] `barracks-t2.jpg` — Barracks, tier 2
+Attach: `anchor-v2.jpg` + `barracks-t1.jpg`
+
+```
+Style: match the first attached image exactly. A stylised, hand-painted game building: chunky, exaggerated proportions, roof tiles about three times real size, thick walls, oversized doors and windows. Heavy dark-brown outlines on every edge. Saturated warm terracotta roofs, cool cream stone and warm brown timber, with bold painted highlights on edges facing the light. Hand-painted texture on every surface, slightly wonky hand-drawn edges. Cozy and lived-in. A hand-painted MMO building, not a historical illustration.
+
+Setting: a Roman colony on the Germanic frontier, year 0. Roman in every detail: red-and-gold banners bearing a golden eagle, oil lamps and braziers with ordinary orange flame, terracotta, travertine and timber.
+
+Camera and framing: isometric 2:1, the same angle as the first image. Light from the top left; shadows fall down and to the right. One structure only, on one flat ground plate: a square plot seen in isometric, a flat diamond exactly twice as wide as it is tall. Footprint: one building plot, a compact building on a small plate. The plate is packed earth and paving stones with a little grass at the edges. The whole building and the whole plate sit inside the frame with a clear white margin on every side; nothing overhangs the edge of the plate. Plain flat white background: no checkerboard, no scenery beyond the plate.
+
+Tier 2 of 3. The second attached image is tier 1 of this same building. Upgrade it: same footprint, layout still recognisable, now with stone footings, a tiled roof, an extra storey or wing, paving and more clutter.
+
+The same military yard grown: the barracks hall on stone footings with plastered walls and a row of arched doorways, a short wing at one side, a paved drill yard with training posts and two weapon racks.
 
 Do not include: people, animals, emblems or heraldry other than the Roman eagle, blue-and-gold colour schemes, green, blue or purple fire or glow, runes, crystals, magic effects, or any text except where stated. Nothing copied from any existing game.
 ```
@@ -762,6 +798,25 @@ Tier 3 of 3. The second attached image is tier 2 of this same building. Upgrade 
 A stone-faced mine entrance with a large timber headframe and winch, and a bloomery furnace with bellows.
 
 It must include the furnace glowing orange with smoke rising from its chimney, clearly visible and unobstructed, because the game animates it.
+
+Do not include: people, animals, emblems or heraldry other than the Roman eagle, blue-and-gold colour schemes, green, blue or purple fire or glow, runes, crystals, magic effects, or any text except where stated. Nothing copied from any existing game.
+```
+
+### 45. [ ] `barracks-t3.jpg` — Barracks, tier 3
+Attach: `anchor-v2.jpg` + `barracks-t2.jpg`
+
+```
+Style: match the first attached image exactly. A stylised, hand-painted game building: chunky, exaggerated proportions, roof tiles about three times real size, thick walls, oversized doors and windows. Heavy dark-brown outlines on every edge. Saturated warm terracotta roofs, cool cream stone and warm brown timber, with bold painted highlights on edges facing the light. Hand-painted texture on every surface, slightly wonky hand-drawn edges. Cozy and lived-in. A hand-painted MMO building, not a historical illustration.
+
+Setting: a Roman colony on the Germanic frontier, year 0. Roman in every detail: red-and-gold banners bearing a golden eagle, oil lamps and braziers with ordinary orange flame, terracotta, travertine and timber.
+
+Camera and framing: isometric 2:1, the same angle as the first image. Light from the top left; shadows fall down and to the right. One structure only, on one flat ground plate: a square plot seen in isometric, a flat diamond exactly twice as wide as it is tall. Footprint: one building plot, a compact building on a small plate. The plate is packed earth and paving stones with a little grass at the edges. The whole building and the whole plate sit inside the frame with a clear white margin on every side; nothing overhangs the edge of the plate. Plain flat white background: no checkerboard, no scenery beyond the plate.
+
+Tier 3 of 3. The second attached image is tier 2 of this same building. Upgrade it to its grandest form: same footprint, layout still recognisable, now stone and plaster, colonnades and rich detail.
+
+A stone barracks hall, two storeys of coursed stone and plaster with arched doorways and a tiled roof, a wing at one side, and a paved drill yard with a row of training posts and weapon racks.
+
+It must include a red-and-gold standard bearing a golden eagle on a tall pole at the front corner of the drill yard, clearly visible and unobstructed, because the game animates it.
 
 Do not include: people, animals, emblems or heraldry other than the Roman eagle, blue-and-gold colour schemes, green, blue or purple fire or glow, runes, crystals, magic effects, or any text except where stated. Nothing copied from any existing game.
 ```

@@ -23,7 +23,9 @@ const villageEl = document.getElementById('village')!;
 const mapEl = document.getElementById('map')!;
 const panelEl = document.getElementById('panel')!;
 
-let game = new Game(loadFromLocalStorage(saveKey) ?? createInitialState(dev.now()));
+// A save from an older format is set aside, not loaded (the save rule, CLAUDE.md).
+let retiredFormat: number | null = null;
+let game = new Game(loadFromLocalStorage(saveKey, (v) => { retiredFormat = v; }) ?? createInitialState(dev.now()));
 let tab: Tab = 'village';
 let selected: string | null = null;
 let selectedHex: string | null = null;
@@ -62,12 +64,12 @@ const mapView = createMapView((hex) => {
 });
 mapEl.appendChild(mapView.root);
 
-function toast(msg: string): void {
+function toast(msg: string, ms = 3500): void {
   const t = document.createElement('div');
   t.className = 'toast';
   t.textContent = msg;
   villageEl.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => t.remove(), ms);
 }
 
 /** The first action or tab change puts the return strip away, and the colony has been seen. */
@@ -273,6 +275,9 @@ const sinceSeen = arrive(game.state, dev.now());
 if (sinceSeen) setReturnStrip(awayLines(sinceSeen));
 persist();
 render(true);
+if (retiredFormat !== null) {
+  toast(`This colony was saved by an older version of the game (format ${retiredFormat}) and could not be carried over, so a new one is founded. The old save is kept in this browser.`, 12_000);
+}
 // The village tick: the economy advances (never a round, §3.3), then only
 // what changed is drawn. It never forces a redraw of what the player is using.
 setInterval(() => {
