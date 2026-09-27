@@ -1,7 +1,8 @@
-import { building, buildings, config, layout } from '../data';
+import { building, buildings, config } from '../data';
 import type { GameState, Construction, Slot } from '../state/types';
 import { canAfford, pay, buildTimeMultiplier, corruptionCostMultiplier, outputValuePerHour } from './economy';
 import { forumTier } from './storage';
+import { anchors, nextTownSlotId, placeProblem, uniqueTaken } from './grid';
 import { log } from '../state/store';
 import type { BuildingDef, Cost } from '../data';
 
@@ -18,19 +19,21 @@ export function scaledCost(state: GameState, base: Cost): Cost {
   return out;
 }
 
-export function eligibleBuildings(state: GameState, slot: Slot): string[] {
+/**
+ * What may rise on a slot. A town slot exists only once something is placed
+ * on it, so it only ever holds its own building; a site takes the building of
+ * its resource, as many sites as there are (§4.4, repeatable); the wall slot
+ * takes the wall.
+ */
+export function eligibleBuildings(_state: GameState, slot: Slot): string[] {
   if (slot.building) return [slot.building];
-  const def = layout.slots.find((s) => s.id === slot.id)!;
-  if (def.fixedBuilding) return [def.fixedBuilding];
-  const taken = new Set(state.slots.filter((s) => s.building).map((s) => s.building));
-  return buildings
-    .filter((b) => b.ring === slot.ring)
-    .filter((b) => (slot.ring === 'outer' ? b.site === slot.site : !taken.has(b.id)))
-    .map((b) => b.id);
+  if (slot.zone === 'wall') return ['wall'];
+  if (slot.zone === 'site') return buildings.filter((b) => b.zone === 'site' && b.site === slot.site).map((b) => b.id);
+  return [];
 }
 
 /** Which rule a build fails on. `reason` is the same gate in words. */
-export type BuildGate = 'top' | 'occupied' | 'ineligible' | 'slot_busy' | 'lane' | 'forum' | 'resources';
+export type BuildGate = 'top' | 'occupied' | 'ineligible' | 'slot_busy' | 'unique' | 'room' | 'lane' | 'forum' | 'resources';
 
 export interface BuildCheck {
   ok: boolean;
@@ -60,15 +63,44 @@ export function checkBuild(state: GameState, slotId: string, buildingId: string)
     const reason = 'Already at the top tier';
     return { ok: false, reason, reasons: [reason], gates: ['top'], short: {}, cost: {}, seconds: 0, toTier };
   }
-  const tier = def.tiers[toTier - 1];
-  const cost = scaledCost(state, tier.cost);
-  const seconds = Math.ceil(tier.buildSeconds * buildTimeMultiplier(state));
   const reasons: string[] = [];
   const gates: BuildGate[] = [];
   const fail = (gate: BuildGate, reason: string) => { gates.push(gate); reasons.push(reason); };
   if (slot.building && slot.building !== buildingId) fail('occupied', 'Slot holds another building');
   if (!eligibleBuildings(state, slot).includes(buildingId)) fail('ineligible', 'Cannot build that here');
   if (state.constructions.some((c) => c.slotId === slotId)) fail('slot_busy', 'Already under construction');
+  return commonGates(state, def, toTier, fail, reasons, gates);
+}
+
+/**
+ * A town building not yet on the grid (§4.5 C.1): the same gates as any
+ * build, plus one of a unique building and room to put it down. With a cell
+ * named, room means that cell; without, anywhere inside the wall.
+ */
+export function checkPlace(state: GameState, buildingId: string, at?: { x: number; y: number }): BuildCheck {
+  const def = building(buildingId);
+  const reasons: string[] = [];
+  const gates: BuildGate[] = [];
+  const fail = (gate: BuildGate, reason: string) => { gates.push(gate); reasons.push(reason); };
+  if (def.zone !== 'town') fail('ineligible', 'Not a building for the town grid');
+  else if (uniqueTaken(state, buildingId)) fail('unique', `The colony has its ${def.name.toLowerCase()} already`);
+  else if (at) {
+    const problem = placeProblem(state, buildingId, at.x, at.y);
+    if (problem) fail('room', problem);
+  } else if (!anchors(state, buildingId).length) {
+    fail('room', def.placement === 'riverbank' ? 'No room on the riverbank' : 'No room inside the wall');
+  }
+  return commonGates(state, def, 1, fail, reasons, gates);
+}
+
+function commonGates(
+  state: GameState, def: BuildingDef, toTier: number,
+  fail: (gate: BuildGate, reason: string) => void, reasons: string[], gates: BuildGate[],
+): BuildCheck {
+  const buildingId = def.id;
+  const tier = def.tiers[toTier - 1];
+  const cost = scaledCost(state, tier.cost);
+  const seconds = Math.ceil(tier.buildSeconds * buildTimeMultiplier(state));
   const concurrent = state.constructions.filter((c) => c.kind === def.kind).length;
   const limit = def.kind === 'field' ? config.concurrency.field : config.concurrency.building;
   if (concurrent >= limit) fail('lane', def.kind === 'field' ? 'A field is already being worked' : 'A building is already under construction');
@@ -115,6 +147,19 @@ export function startBuild(state: GameState, slotId: string, buildingId: string,
   state.constructions.push(c);
   log(state, 'village', `${building(buildingId).name}: work begins on tier ${check.toTier}.`);
   return c;
+}
+
+/**
+ * Put a town building down on the grid and start its first tier (§4.5 C.1).
+ * The slot is made here, holding its building from the start, so the cells
+ * are taken while it rises and nothing else can be placed across it.
+ */
+export function placeBuild(state: GameState, buildingId: string, x: number, y: number, now: number): Construction {
+  const check = checkPlace(state, buildingId, { x, y });
+  if (!check.ok) throw new Error(check.reason);
+  const slot: Slot = { id: nextTownSlotId(state), zone: 'town', x, y, building: buildingId, tier: 0 };
+  state.slots.push(slot);
+  return startBuild(state, slot.id, buildingId, now);
 }
 
 /** Pillar 3: the price never exceeds what the colony earns in the remaining time. */

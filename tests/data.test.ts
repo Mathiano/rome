@@ -6,9 +6,10 @@ const KNOWN_EFFECTS = new Set(['gravitasPerRound', 'militiaBonus', 'warehouseCap
 const KNOWN_RESEARCH_EFFECTS = new Set([...KNOWN_EFFECTS, 'buildSpeed', 'grainMultiplier', 'materialMultiplier', 'corruptionDrift']);
 
 describe('data integrity', () => {
-  it('has 15 buildings with three tiers each (DESIGN §4.4)', () => {
-    // 14, plus the wall — its own building since 2026-09-22, not the castellum's tier.
-    expect(buildings).toHaveLength(15);
+  it('has 16 buildings with three tiers each (DESIGN §4.4)', () => {
+    // 14, plus the wall — its own building since 2026-09-22, not the castellum's
+    // tier — plus the barracks, the military counterpart to farms (2026-09-27).
+    expect(buildings).toHaveLength(16);
     for (const b of buildings) expect(b.tiers, b.id).toHaveLength(3);
   });
   it('uses only effect keys the code reads', () => {
@@ -64,24 +65,17 @@ describe('data integrity', () => {
     expect(Math.min(...byRank(3))).toBeGreaterThan(Math.max(...byRank(2)));
   });
 
-  it('gives the Library a plot to stand on', () => {
-    const inner = layout.slots.filter((s) => s.ring === 'inner');
-    const innerBuildings = buildings.filter((b) => b.ring === 'inner');
-    expect(inner.length).toBeGreaterThanOrEqual(innerBuildings.length);
-    // and no two plots may sit on top of each other once projected. The forum
-    // and the castellum are the one deliberately tight pair, at 36px; the inner
-    // ring never comes closer to itself than 58, which is where i8 sits too.
-    const seen: { sx: number; sy: number; id: string; ring: string }[] = [];
-    for (const s of layout.slots) {
-      const sx = ((s.x - s.y) * layout.tile.w) / 2;
-      const sy = ((s.x + s.y) * layout.tile.h) / 2;
-      for (const o of seen) {
-        const d = Math.hypot(sx - o.sx, sy - o.sy);
-        const floor = s.ring === 'inner' && o.ring === 'inner' ? 55 : 35;
-        expect(d, `${s.id} and ${o.id}`).toBeGreaterThanOrEqual(floor);
-      }
-      seen.push({ sx, sy, id: s.id, ring: s.ring });
-    }
+  it('fits one of every town building inside the smallest wall (§4.5 C.1)', () => {
+    // C.1 says one of each costs about 23 cells and tier 0 leaves room for a
+    // dozen more; a save moved off the ring layout must always find room.
+    const town = buildings.filter((b) => b.zone === 'town');
+    const cells = town.reduce((n, b) => n + (b.footprint ?? [1, 1])[0] * (b.footprint ?? [1, 1])[1], 0);
+    const smallest = layout.grid.sizeByWallTier[0] ** 2;
+    expect(cells).toBeLessThan(smallest);
+    // the wall only ever grows the town
+    const sizes = layout.grid.sizeByWallTier;
+    for (let i = 1; i < sizes.length; i++) expect(sizes[i]).toBeGreaterThan(sizes[i - 1]);
+    expect(sizes).toHaveLength(buildings.find((b) => b.id === 'wall')!.tiers.length + 1);
   });
 
   it('has five council posts in v0 (DESIGN §13)', () => {
@@ -124,12 +118,15 @@ describe('data integrity', () => {
       if (r.deliver) for (const k of Object.keys(r.deliver)) expect(RESOURCE_IDS).toContain(k);
     }
   });
-  it('layout: every outer slot has a site matching a field building; centre slots are pinned', () => {
-    for (const s of layout.slots) {
-      if (s.ring === 'outer') expect(buildings.some((b) => b.site === s.site), s.id).toBe(true);
-      if (s.ring === 'centre') expect(s.fixedBuilding).toBeDefined();
+  it('layout: every site has a field building; every building knows where it stands', () => {
+    for (const s of layout.sites) expect(buildings.some((b) => b.zone === 'site' && b.site === s.site), s.id).toBe(true);
+    for (const b of buildings) {
+      expect(['town', 'site', 'wall'], b.id).toContain(b.zone);
+      if (b.zone === 'town') expect(b.footprint, b.id).toHaveLength(2);
+      if (b.zone === 'site') expect(b.site, b.id).toBeDefined();
     }
-    expect(layout.slots.filter((s) => s.ring === 'inner').length).toBe(buildings.filter((b) => b.ring === 'inner').length);
+    // the sprite plate is one cell across (CLAUDE.md, Sprites)
+    expect(layout.cellTiles).toBeGreaterThan(0);
   });
   it('lifespan window is inside the proposed 120–200 range', () => {
     expect(config.lifespan.roundsMin).toBeGreaterThanOrEqual(120);

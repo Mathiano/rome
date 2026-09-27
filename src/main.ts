@@ -26,6 +26,8 @@ let game = new Game(loadFromLocalStorage(saveKey) ?? createInitialState(dev.now(
 let tab: Tab = 'village';
 let selected: string | null = null;
 let selectedHex: string | null = null;
+/** A town building being put down: the village marks every place it fits (DESIGN §4.5 C.1). */
+let placing: string | null = null;
 let lastPanelHtml = '';
 let lastPanelKey = '';
 let lastTab: Tab | null = null;
@@ -34,9 +36,21 @@ const STAGE_FADE_MS = 280;
 let fadingUntil = 0;
 
 const view = createVillageView((id) => {
+  if (placing) return; // a click while placing chooses cells, never a plot
   selected = id;
   tab = 'village';
   render(true);
+}, (x, y) => {
+  const b = placing;
+  if (!b) return;
+  guard(() => {
+    selected = game.place(b, x, y, dev.now());
+    placing = null;
+  });
+});
+// Escape puts the building back down unplaced.
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && placing) { placing = null; render(true); }
 });
 villageEl.appendChild(view.root);
 
@@ -123,7 +137,7 @@ function panelKey(now: number): string {
     ...st.research.active.map((r) => `${r.id}:${mins(r.finishAt)}`),
     `r${st.research.completed.length}`, `s${st.rome.scrolls}`,
   ].join(',');
-  return [tab, selected, selectedHex, st.round, st.logSeq, res, work, Math.floor(st.population),
+  return [tab, selected, selectedHex, placing, st.round, st.logSeq, res, work, Math.floor(st.population),
     Math.round(st.corruption), st.map.claimed.length, st.map.scouted.length, st.map.pendingScout,
     Object.values(st.tribes).map((t) => `${t.pendingEnvoy}${t.massingForRound}${Math.round(t.trust)}${Math.round(t.fear)}`).join(''),
     st.rome.activeRequestId, st.office, st.challenge?.voteRound ?? '',
@@ -155,13 +169,13 @@ function render(force = false): void {
   }
   const crossFading = Date.now() < fadingUntil;
   if (onMap || crossFading) mapView.update(game.state, selectedHex);
-  if (!onMap || crossFading) view.update(game.state, now, selected);
+  if (!onMap || crossFading) view.update(game.state, now, selected, placing);
 
   const pk = panelKey(now);
   if (!force && pk === lastPanelKey) return;
   lastPanelKey = pk;
 
-  const html = renderPanel(game, tab, selected, now, selectedHex);
+  const html = renderPanel(game, tab, selected, now, selectedHex, placing);
   if (force || html !== lastPanelHtml) {
     // Never clobber a select or textarea the player is using mid-interaction.
     const active = document.activeElement;
@@ -177,7 +191,8 @@ function render(force = false): void {
 
 bindPanel(panelEl, {
   onTab: (t) => { tab = t; setReturnStrip([]); render(true); },
-  onSelectSlot: (id) => { selected = id; tab = 'village'; render(true); },
+  onSelectSlot: (id) => { selected = id; placing = null; tab = 'village'; render(true); },
+  onPlace: (b) => { placing = b || null; selected = null; tab = 'village'; render(true); },
   onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; render(true); },
   onDismissAdvisor: () => guard(() => game.dismissAdvisor()),
   onChoice: (id) => guard(() => game.choose(id, dev.now())),

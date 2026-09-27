@@ -7,6 +7,7 @@ import { startBuild } from '../src/village/construction';
 import { dueItems, idleHoursOf, idleLine, renderDue } from '../src/render/due';
 import { bindPanel, pendingNews, renderNews, renderPanel, type PanelHandlers } from '../src/render/panel';
 import type { GameState } from '../src/state/types';
+import { plot } from './helpers';
 
 const H = 3_600_000;
 const PLENTY = { wood: 9999, clay: 9999, iron: 9999, grain: 9999, denarii: 9999 };
@@ -16,7 +17,7 @@ const strip = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' 
 function noHandlers(): PanelHandlers {
   return {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-    onSelectSlot: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
+    onSelectSlot: () => {}, onPlace: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
     onExport: () => {}, onImport: () => {}, onReset: () => {},
     onSelectHex: () => {}, onDismissAdvisor: () => {},
@@ -47,6 +48,7 @@ describe('the due collector', () => {
   it('a construction is a village item carrying its slot; a study points at the library', () => {
     const s = createInitialState(0, 5);
     s.resources = { ...PLENTY };
+    plot(s, 'warehouse', 'i1');
     startBuild(s, 'i1', 'warehouse', 0);
     s.research.active.push({ id: 'groma', startedAt: 0, finishAt: 40 * 60_000 });
     const d = dueItems(s, 0);
@@ -134,12 +136,13 @@ describe('the Due block on the Village tab', () => {
     expect(block).not.toMatch(/second/);
     // above the overview's lanes, and on the plot card too
     expect(start).toBeLessThan(html.indexOf('<div class="lanes">'));
-    expect(renderPanel(g, 'village', 'i1', 0)).toContain('data-menu="due"');
+    expect(renderPanel(g, 'village', 'o2', 0)).toContain('data-menu="due"');
   });
 
   it('each line is a link to where it lands, grouped and each stated once', () => {
     const g = new Game(createInitialState(0, 5));
     g.state.resources = { ...PLENTY };
+    plot(g.state, 'warehouse', 'i1');
     g.build('i1', 'warehouse', 0);
     const t = Object.values(g.state.tribes)[0];
     t.massingForRound = g.state.round + 1;
@@ -166,7 +169,7 @@ describe('the Due block on the Village tab', () => {
     expect(details().open).toBe(true);
     details().open = false;
     details().dispatchEvent(new Event('toggle'));
-    panel.innerHTML = renderPanel(g, 'village', 'i1', 0);
+    panel.innerHTML = renderPanel(g, 'village', 'o2', 0);
     expect(details().open, 'closed stays closed when a plot is selected').toBe(false);
     panel.innerHTML = renderPanel(g, 'village', null, 0);
     expect(details().open).toBe(false);
@@ -179,6 +182,7 @@ describe('the Due block on the Village tab', () => {
   it('a line routes to its tab or its plot through the existing handlers', () => {
     const g = new Game(createInitialState(0, 5));
     g.state.resources = { ...PLENTY };
+    plot(g.state, 'warehouse', 'i1');
     g.build('i1', 'warehouse', 0);
     Object.values(g.state.tribes)[0].massingForRound = g.state.round + 1;
     const panel = document.createElement('div');

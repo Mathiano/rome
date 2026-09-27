@@ -15,8 +15,12 @@ import advisorJson from '../data/advisor.json';
 
 export type ResourceId = 'wood' | 'clay' | 'iron' | 'grain' | 'denarii';
 export type StatId = 'authority' | 'discipline' | 'craft' | 'connections' | 'piety';
-/** `perimeter` is the wall's alone: one slot, in no ring, at the gate (DESIGN §4.4, §4.5). */
-export type Ring = 'centre' | 'inner' | 'outer' | 'perimeter';
+/**
+ * Where a building stands (DESIGN §4.5 C.2): `town` on the grid inside the
+ * wall, `site` on a resource site outside it, `wall` is the circuit itself —
+ * one slot, at the gate.
+ */
+export type Zone = 'town' | 'site' | 'wall';
 export type Cost = Partial<Record<ResourceId, number>>;
 
 export interface BuildingTier {
@@ -28,7 +32,16 @@ export interface BuildingTier {
 export interface BuildingDef {
   id: string;
   name: string;
-  ring: Ring;
+  zone: Zone;
+  /** Grid cells, [along x, along y]; town buildings only (§4.4 Footprints). */
+  footprint?: [number, number];
+  /** One per colony. Everything else is repeatable (§4.4). */
+  unique?: boolean;
+  /**
+   * `riverbank`: placed only on the reserved strip along the river edge,
+   * its footprint read as [along the bank, away from it] (§4.5, the harbour).
+   */
+  placement?: 'riverbank';
   kind: 'building' | 'field';
   site?: string;
   produces?: ResourceId;
@@ -46,13 +59,27 @@ export interface ResearchDef {
   description: string;
   effects: Record<string, number>;
 }
-export interface SlotDef {
+/** A resource site outside the wall: fixed by the layout, not placed by the player (§4.5 C.2). */
+export interface SiteSlotDef {
   id: string;
-  ring: Ring;
+  site: string;
   x: number;
   y: number;
-  fixedBuilding?: string;
-  site?: string;
+}
+export interface GridDef {
+  /** The enclosure's side in cells, indexed by the wall's tier (§4.5 C.1). */
+  sizeByWallTier: number[];
+  /** The x of the enclosure's river edge. The enclosure grows away from it. */
+  riverEdge: number;
+  riverbankDepth: number;
+}
+export interface LayoutDef {
+  tile: { w: number; h: number };
+  cellTiles: number;
+  grid: GridDef;
+  sites: SiteSlotDef[];
+  wall: { id: string };
+  startBuilt: ({ id: string; building: string; x: number; y: number; tier: number } | { slot: string; building: string; tier: number })[];
 }
 export interface MemberDef {
   id: string;
@@ -156,7 +183,7 @@ export const config = configJson;
 export const resources = resourcesJson.resources as { id: ResourceId; name: string; store: string; site?: string; denariiValue: number }[];
 export const startResources = resourcesJson.start as Record<ResourceId, number>;
 export const buildings = buildingsJson.buildings as BuildingDef[];
-export const layout = layoutJson as { tile: { w: number; h: number }; slots: SlotDef[]; startBuilt: { slot: string; building: string; tier: number }[] };
+export const layout = layoutJson as unknown as LayoutDef;
 export const families = familiesJson.families as FamilyDef[];
 export const newMen = familiesJson.newMen;
 export const posts = postsJson.posts as PostDef[];
@@ -215,9 +242,11 @@ export interface EffectWordsDef { noun: string; unit: string; percent?: boolean 
 export const effectVocabulary = effectsJson.effects as Record<string, EffectWordsDef>;
 // ---------------------------------------------------------------- the counsel
 /** Where a counsel step points: a tab, and on it a village slot or a map hex. */
-export interface AdvisorGoto { tab: 'village' | 'map' | 'library' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save'; slot?: string; hex?: 'nearestUnknown' }
+/** `place` opens the village on placing that building on the grid (§4.5 C.1). */
+export interface AdvisorGoto { tab: 'village' | 'map' | 'library' | 'council' | 'family' | 'tribe' | 'rome' | 'log' | 'save'; slot?: string; place?: string; hex?: 'nearestUnknown' }
 /** What a step asks for, so the card can say what is still short. */
-export interface AdvisorAction { build?: { slot: string; building: string }; scout?: true }
+/** A build names its slot, or none for a town building still to be placed on the grid. */
+export interface AdvisorAction { build?: { slot?: string; building: string }; scout?: true }
 /** One condition the colony either meets or does not; evaluated in src/render/advisor.ts. */
 export type AdvisorCondition = Record<string, unknown>;
 export interface AdvisorStep {

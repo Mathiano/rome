@@ -26,9 +26,9 @@
     },
     {
       "id": "castellum",
-      "text": "Raise the castellum while the mine is dug. A field and a building may rise at the same time; neither waits on the other.",
-      "goto": { "tab": "village", "slot": "c2" },
-      "action": { "build": { "slot": "c2", "building": "castellum" } },
+      "text": "Raise the castellum while the mine is dug, and choose where inside the wall it stands. A field and a building may rise at the same time; neither waits on the other.",
+      "goto": { "tab": "village", "place": "castellum" },
+      "action": { "build": { "building": "castellum" } },
       "done": [
         { "underWay": { "building": "castellum" } },
         { "buildingTier": { "id": "castellum", "atLeast": 1 } }

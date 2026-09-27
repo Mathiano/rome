@@ -6,7 +6,7 @@ import { renderHeader, renderPanel, tabBadge, type Tab } from '../src/render/pan
 import { createVillageView, project } from '../src/render/village';
 import { sprite, spriteCount, spriteManifest } from '../src/render/sprites';
 import { config, layout, researchNodes } from '../src/data';
-import { renderSummary, plotsRaised, sitesSeen } from '../src/render/summary';
+import { renderSummary, cellsUsed, sitesSeen } from '../src/render/summary';
 import { mapConfig, site } from '../src/map/world';
 import { nearestUnknown, claimSite } from '../src/map/sites';
 import { playerHoldsOffice } from '../src/politics/challenge';
@@ -14,10 +14,14 @@ import { defenceStrength } from '../src/combat/raids';
 import { n } from '../src/render/overview';
 
 describe('render', () => {
-  it('projects the grid isometrically', () => {
+  it('projects the grid isometrically, one sprite plate to a cell', () => {
+    const w = layout.tile.w * layout.cellTiles;
+    const h = layout.tile.h * layout.cellTiles;
     expect(project(0, 0)).toEqual({ sx: 0, sy: 0 });
-    expect(project(1, 0)).toEqual({ sx: layout.tile.w / 2, sy: layout.tile.h / 2 });
-    expect(project(0, 1)).toEqual({ sx: -layout.tile.w / 2, sy: layout.tile.h / 2 });
+    expect(project(1, 0)).toEqual({ sx: w / 2, sy: h / 2 });
+    expect(project(0, 1)).toEqual({ sx: -w / 2, sy: h / 2 });
+    // a cell is exactly as wide as a sprite's ground plate (CLAUDE.md, Sprites)
+    expect(w).toBe(spriteManifest.tileWidth);
   });
   it('places a sprite from the manifest by its anchor and ignores unknown ones', () => {
     const m = { tileWidth: 64, ppu: 4, sprites: { 'lumber-camp-t1': { file: 'lumber-camp-t1.png', width: 400, height: 300, ax: 200, ay: 220, ppu: 4, plateWidth: 64 } } };
@@ -32,14 +36,14 @@ describe('render', () => {
     g.act({ type: 'convene' }, 1);
     expect(renderHeader(g.state)).toContain('Round 1');
     for (const t of ['village', 'council', 'family', 'tribe', 'rome', 'log', 'save'] as Tab[]) {
-      expect(renderPanel(g, t, 'i1', 2).length).toBeGreaterThan(50);
+      expect(renderPanel(g, t, 'o2', 2).length).toBeGreaterThan(50);
     }
   });
-  it('renders a slot group per layout slot and an <image> only where art exists', () => {
+  it('renders a slot group per slot the colony has and an <image> only where art exists', () => {
     const g = new Game(createInitialState(0, 1));
     const view = createVillageView(() => {});
     view.update(g.state, 0, null);
-    expect(view.root.querySelectorAll('.slot')).toHaveLength(layout.slots.length);
+    expect(view.root.querySelectorAll('.slot')).toHaveLength(g.state.slots.length);
     // The painted country is an <image> as well, and is not anchored on a plate.
     const images = [...view.root.querySelectorAll('image')].filter((i) => !i.classList.contains('base-map'));
     for (const img of images) {
@@ -73,13 +77,15 @@ describe('the Reports tab (reports unit)', () => {
 describe('the colony at a glance', () => {
   const strip = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
 
-  it('the header names the wall, the plots and the holdings; the wall is not a plot', () => {
+  it('the header names the wall, the cells built on and the holdings; the wall is not counted', () => {
     const g = new Game(createInitialState(0, 1));
     const head = renderHeader(g.state);
-    expect(head).toContain('Forum I · no wall · 4 of 18 plots raised · no holdings');
-    expect(plotsRaised(g.state)).toEqual({ raised: 4, total: layout.slots.filter((s) => s.ring !== 'perimeter').length });
+    // the forum stands on 2×2 of the ditch-and-bank's 6×6 (DESIGN §4.5 C.1)
+    const size = (t: number) => layout.grid.sizeByWallTier[t] ** 2;
+    expect(head).toContain(`Forum I · no wall · 4 of ${size(0)} cells built on · no holdings`);
+    expect(cellsUsed(g.state)).toEqual({ used: 4, total: size(0) });
     g.state.slots.find((s) => s.id === 'w1')!.tier = 2;
-    expect(renderHeader(g.state)).toContain('Wall II · 4 of 18 plots raised');
+    expect(renderHeader(g.state)).toContain(`Wall II · 4 of ${size(2)} cells built on`);
   });
 
   it('a fresh colony reads as it stands, and carries no summed tier and no clock', () => {
@@ -90,8 +96,7 @@ describe('the colony at a glance', () => {
     expect(html.indexOf('data-summary')).toBeLessThan(html.indexOf('<div class="lanes">'));
     expect(card).toContain('Forum I');
     expect(card).toContain('none raised');
-    expect(card).toContain('4 of 18 raised');
-    expect(card).not.toContain('and the wall');
+    expect(card).toContain(`4 of ${layout.grid.sizeByWallTier[0] ** 2} cells built on, inside the ditch and bank`);
     expect(card).toContain(`Population ${config.population.start} → ${config.population.start} of`);
     expect(card).toContain(`0 of ${mapConfig.siteCount} sites seen`);
     expect(card).toContain(`0 of ${researchNodes.length} studies known`);
@@ -131,7 +136,7 @@ describe('the colony at a glance', () => {
     s.map.scouted.push('1,0');
     expect(sitesSeen(s)).toBe(s.map.scouted.length - 1);
     const card = renderSummary(s);
-    expect(card).toContain('and the wall');
+    expect(card).toContain('inside a wall of tier I');
     const def = site(s.map.claimed[0].siteId);
     if (def.produces && Object.keys(def.produces).length) expect(card).toMatch(/Holdings<\/span><span>1, yielding [\d.]+ \w+\/h/);
     else expect(card).toContain('Holdings</span><span>1</span>');

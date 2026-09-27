@@ -8,6 +8,7 @@ import { bribe, seekRomeBacking } from '../src/politics/intrigue';
 import { config, post } from '../src/data';
 import { runRound } from '../src/politics/rounds';
 import { renderReports } from '../src/render/reports';
+import { anchors } from '../src/village/grid';
 
 const H = 3_600_000;
 
@@ -38,7 +39,8 @@ describe('news', () => {
     g.state.seenOpening = true;
     expect(pendingNews(g.state)).toBeNull();
     // starting work writes a log line; it must not put the card back
-    g.build('c2', 'castellum', 1);
+    const at = anchors(g.state, 'castellum')[0];
+    g.place('castellum', at.x, at.y, 1);
     expect(g.state.log.some((e) => e.kind === 'village' && e.id > g.state.seenLogId)).toBe(true);
     expect(pendingNews(g.state), 'a build should not raise the news overlay').toBeNull();
     // but a round still reports, and carries the village lines it collected

@@ -37,7 +37,7 @@ function prefect(s: GameState, id: string) {
 function noHandlers(): PanelHandlers {
   return {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-    onSelectSlot: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
+    onSelectSlot: () => {}, onPlace: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
     onExport: () => {}, onImport: () => {}, onReset: () => {},
     onSelectHex: () => {}, onDismissAdvisor: () => {},

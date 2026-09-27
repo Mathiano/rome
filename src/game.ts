@@ -4,7 +4,7 @@
 import type { GameState } from './state/types';
 import { createInitialState } from './state/store';
 import { tick } from './village/clock';
-import { startBuild, rush } from './village/construction';
+import { startBuild, placeBuild, rush } from './village/construction';
 import { rushResearch, startResearch } from './village/research';
 import { appoint, appointLesser, dismiss, dismissLesser } from './politics/posts';
 import { assassinate, bribe, denounce, exile, expose, marry, marryTribe, seekRomeBacking, setBodyguards } from './politics/intrigue';
@@ -58,6 +58,11 @@ export class Game {
   build(slotId: string, buildingId: string, now = Date.now()): void {
     this.tick(now);
     startBuild(this.state, slotId, buildingId, now);
+  }
+  /** Put a town building down on the grid and start it (DESIGN §4.5 C.1). Returns its new slot. */
+  place(buildingId: string, x: number, y: number, now = Date.now()): string {
+    this.tick(now);
+    return placeBuild(this.state, buildingId, x, y, now).slotId;
   }
   rush(slotId: string, now = Date.now()): void {
     this.tick(now);

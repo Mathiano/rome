@@ -1,19 +1,18 @@
 import { config, families as familyDefs, layout, startResources, posts, lesserPosts, activeTribes, RESOURCE_IDS } from '../data';
 import type { GameState, Family, Character, Slot, LogEntry, TribeState } from './types';
 import { issueNext } from '../rome/requests';
+import { fixedSlots, migrateRingsToGrid } from '../village/grid';
 
 export function createInitialState(now: number = Date.now(), seed: number = (now ^ 0x9e3779b9) | 0): GameState {
-  const slots: Slot[] = layout.slots.map((s) => ({
-    id: s.id,
-    ring: s.ring,
-    site: s.site,
-    building: s.fixedBuilding ?? null,
-    tier: 0,
-  }));
+  const slots: Slot[] = fixedSlots();
   for (const b of layout.startBuilt) {
-    const slot = slots.find((s) => s.id === b.slot)!;
-    slot.building = b.building;
-    slot.tier = b.tier;
+    if ('slot' in b) {
+      const slot = slots.find((s) => s.id === b.slot)!;
+      slot.building = b.building;
+      slot.tier = b.tier;
+    } else {
+      slots.push({ id: b.id, zone: 'town', x: b.x, y: b.y, building: b.building, tier: b.tier });
+    }
   }
 
   const families: Record<string, Family> = {};
@@ -206,10 +205,14 @@ export function migrate(state: GameState): GameState {
   if (state.seenOpening === undefined) state.seenOpening = state.round > 0 || state.seenLogId > 0;
   // A colony that has already met its council has no use for the opening counsel.
   if (state.advisorDismissed === undefined) state.advisorDismissed = state.round > 0;
-  // Slots added to the layout after a save was made appear as empty ground.
-  for (const def of layout.slots) {
-    if (state.slots.some((s) => s.id === def.id)) continue;
-    state.slots.push({ id: def.id, ring: def.ring, site: def.site, building: def.fixedBuilding ?? null, tier: 0 });
+  // Saves from the ring layout are set down on the town grid (DESIGN §4.5 C.1).
+  migrateRingsToGrid(state);
+  // Sites added to the layout after a save was made appear as open ground, and
+  // every fixed slot takes the layout's position, so moving a site moves it.
+  for (const def of fixedSlots()) {
+    const have = state.slots.find((s) => s.id === def.id);
+    if (!have) state.slots.push(def);
+    else if (def.zone === 'site') { have.x = def.x; have.y = def.y; }
   }
   if (state.challenge === undefined) state.challenge = null;
   if (state.lastChallengeRound === undefined) state.lastChallengeRound = -999;

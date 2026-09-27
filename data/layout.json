@@ -1,156 +1,33 @@
 {
-  "_comment": "Fixed slots (DESIGN §4.5). Grid coordinates are isometric tile units; render converts to screen. Centre slots are pinned to a building. The perimeter slot is the wall: it stands in no ring, and its coordinates put it at the gate. Inner slots take any inner-ring building. Outer slots are tied to a site.",
+  "_comment": "The town grid (DESIGN §4.5 C.1). Cells are integer (x, y) on the isometric grid; +x runs down-right on screen, +y down-left. One cell is `cellTiles` layout tiles across, the width of a sprite's ground plate, so a 1×1 building's plate fills its cell. The enclosure is a rectangle whose size is set by the wall's tier; it grows away from the river, so the riverbank edge never moves and nothing already placed ever falls outside. The riverbank is a strip `riverbankDepth` cells deep beyond the enclosure's river edge, outside the wall, reserved for buildings placed only there (the harbour, not yet built). Resource sites stand outside the wall (C.2), placed here rather than by the player.",
   "tile": {
     "w": 64,
     "h": 32
   },
-  "slots": [
-    {
-      "id": "c1",
-      "ring": "centre",
-      "x": 0,
-      "y": 0,
-      "fixedBuilding": "forum"
-    },
-    {
-      "id": "c2",
-      "ring": "centre",
-      "x": 1,
-      "y": 0,
-      "fixedBuilding": "castellum"
-    },
-    {
-      "id": "i1",
-      "ring": "inner",
-      "x": -2,
-      "y": -1
-    },
-    {
-      "id": "i2",
-      "ring": "inner",
-      "x": 0,
-      "y": -2
-    },
-    {
-      "id": "i3",
-      "ring": "inner",
-      "x": 2,
-      "y": -2
-    },
-    {
-      "id": "i4",
-      "ring": "inner",
-      "x": 3,
-      "y": 0
-    },
-    {
-      "id": "i5",
-      "ring": "inner",
-      "x": 2,
-      "y": 2
-    },
-    {
-      "id": "i6",
-      "ring": "inner",
-      "x": 0,
-      "y": 2
-    },
-    {
-      "id": "i7",
-      "ring": "inner",
-      "x": -2,
-      "y": 1
-    },
-    {
-      "id": "i8",
-      "ring": "inner",
-      "x": -2.25,
-      "y": -2.75
-    },
-    {
-      "id": "o1",
-      "ring": "outer",
-      "x": -4,
-      "y": -3,
-      "site": "forest"
-    },
-    {
-      "id": "o2",
-      "ring": "outer",
-      "x": -1,
-      "y": -4,
-      "site": "forest"
-    },
-    {
-      "id": "o3",
-      "ring": "outer",
-      "x": 2,
-      "y": -4,
-      "site": "clay_bank"
-    },
-    {
-      "id": "o4",
-      "ring": "outer",
-      "x": 5,
-      "y": -2,
-      "site": "clay_bank"
-    },
-    {
-      "id": "o5",
-      "ring": "outer",
-      "x": 5,
-      "y": 1,
-      "site": "iron_seam"
-    },
-    {
-      "id": "o6",
-      "ring": "outer",
-      "x": 3,
-      "y": 4,
-      "site": "farmland"
-    },
-    {
-      "id": "o7",
-      "ring": "outer",
-      "x": 0,
-      "y": 4,
-      "site": "farmland"
-    },
-    {
-      "id": "o8",
-      "ring": "outer",
-      "x": -4,
-      "y": 3,
-      "site": "farmland"
-    },
-    {
-      "id": "w1",
-      "ring": "perimeter",
-      "x": 4.36,
-      "y": 4.36,
-      "fixedBuilding": "wall"
-    }
+  "cellTiles": 1.75,
+  "grid": {
+    "_tuning": "DESIGN §4.5 C.1 🟡 starting values: wall tier 0 (ditch and bank) 6×6, I 7×7, II 8×8, III 9×9. The riverbank edge and its depth are Claude's first pass (2026-09-27), flagged for confirmation.",
+    "sizeByWallTier": [6, 7, 8, 9],
+    "riverEdge": 4,
+    "riverbankDepth": 1
+  },
+  "sites": [
+    { "id": "o1", "site": "forest", "x": -7, "y": -3 },
+    { "id": "o2", "site": "forest", "x": -7, "y": 0 },
+    { "id": "o3", "site": "clay_bank", "x": 3, "y": -7 },
+    { "id": "o4", "site": "clay_bank", "x": 1, "y": -7 },
+    { "id": "o5", "site": "iron_seam", "x": -2, "y": -7 },
+    { "id": "o6", "site": "farmland", "x": 4, "y": 7 },
+    { "id": "o7", "site": "farmland", "x": -2, "y": 7 },
+    { "id": "o8", "site": "farmland", "x": -5, "y": 7 }
   ],
+  "wall": {
+    "id": "w1"
+  },
   "startBuilt": [
-    {
-      "slot": "c1",
-      "building": "forum",
-      "tier": 1
-    },
-    {
-      "slot": "o1",
-      "building": "lumber_camp",
-      "tier": 1
-    },
-    {
-      "slot": "o3",
-      "building": "clay_works",
-      "tier": 1
-    },
-    {
-      "slot": "o7",
-      "building": "farm",
-      "tier": 1
-    }
+    { "id": "c1", "building": "forum", "x": 1, "y": 0, "tier": 1 },
+    { "slot": "o1", "building": "lumber_camp", "tier": 1 },
+    { "slot": "o3", "building": "clay_works", "tier": 1 },
+    { "slot": "o7", "building": "farm", "tier": 1 }
   ]
 }

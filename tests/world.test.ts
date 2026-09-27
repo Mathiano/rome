@@ -9,6 +9,7 @@ import { config, requestProgression, activeTribe } from '../src/data';
 import { appoint } from '../src/politics/posts';
 import type { GameState } from '../src/state/types';
 import { pendingNews, renderNews } from '../src/render/panel';
+import { raise } from './helpers';
 /** v0.1 woke the other two tribes; these tests speak to the raider. */
 const TRIBE_ID = 'chatti';
 const TRIBE = (s: GameState) => s.tribes[TRIBE_ID];
@@ -26,9 +27,7 @@ describe('raids', () => {
     TRIBE(s).strength = 10_000;
     s.resources = { wood: 500, clay: 500, iron: 500, grain: 500, denarii: 500 };
     // give cellars tier 1 by placing one
-    const cellar = s.slots.find((x) => x.id === 'i1')!;
-    cellar.building = 'cellars';
-    cellar.tier = 1;
+    raise(s, 'cellars', 1);
     const r = resolveRaid(s, TRIBE(s));
     expect(r.fraction).toBe(config.raid.maxLossFraction);
     expect(s.resources.denarii).toBe(500);
@@ -74,9 +73,7 @@ describe('tribe envoys', () => {
     dispatchEnvoy(s, TRIBE_ID, 'offer_trade');
     resolveEnvoy(s, TRIBE(s));
     expect(TRIBE(s).tradeOpen).toBe(false);
-    const m = s.slots.find((x) => x.id === 'i4')!;
-    m.building = 'market';
-    m.tier = 1;
+    raise(s, 'market', 1);
     dispatchEnvoy(s, TRIBE_ID, 'offer_trade');
     resolveEnvoy(s, TRIBE(s));
     expect(TRIBE(s).tradeOpen).toBe(true);
@@ -128,9 +125,7 @@ describe('Rome', () => {
     expect(s.rome.activeRequest!.kind).toBe('build');
     romeTurn(s);
     expect(s.rome.activeRequest!.fulfilled).toBe(false);
-    const w = s.slots.find((x) => x.id === 'i5')!;
-    w.building = 'waystation';
-    w.tier = 1;
+    raise(s, 'waystation', 1);
     romeTurn(s);
     expect(s.rome.completedIds).toHaveLength(2);
   });
