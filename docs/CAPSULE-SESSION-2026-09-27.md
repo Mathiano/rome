@@ -78,3 +78,55 @@ and the repository setting were asked for; the proxy blocks both.
 
 Three PRs are open (#13, #14, #15). That is one over the limit of two,
 because of this request.
+
+## Later: tier-1 stills through artgen (`claude/tier1-sprites`, no PR yet)
+
+This work is on `claude/tier1-sprites`, stacked on `Mathiano-tier1-art`.
+
+**Placed as tier-1 sprites (12).** Each one passes the plate assertion:
+
+- castellum
+- forum
+- cellars
+- clay works, from `clay_pit` 🟡
+- farm
+- granary
+- insulae
+- iron mine
+- lumber camp
+- market
+- temple, from `shrine` 🟡
+- waystation
+
+Tiers II and III keep their old drawn sprites, so every colony now
+mixes the two styles.
+
+**Failed the plate assertion.** The assertion was not changed.
+
+- `library_t1.jpg`: slopes +0.548 / −0.553. The tolerance is ±0.45…0.55.
+- `rome_anchor_1.jpg` (the praetorium): slopes +0.286 / −0.294. There
+  is no praetorium building to place it on anyway.
+
+**Passed but not placed.**
+
+- `warehouse_t1.jpg` has a 15×112 px black bar at its top-right edge,
+  which is in the source image.
+- `barracks_t1`, `blacksmith_t1`, `iron_works_t1` and `stables_t1`
+  have no building in `data/buildings.json`.
+
+**Art reaching the frame edge.** Most of the stills touch the top or
+bottom of the frame. Where the bottom tip of the plate is cut off, the
+anchor is unaffected, because it is computed from the side corners
+only. Where the top is cut off, a roof or plume may be clipped.
+
+**Tool fixes** in `tools/artgen/build.py`:
+
+- `path=key` names a sprite separately from its file name.
+- The default tile width now includes the manifest's `plateTiles`. A
+  plain `npm run assets` used to wipe the manifest.
+- Rewriting the manifest keeps `plateTiles`.
+- A batch reports every failing plate before it exits.
+- The selftest covers all of the above.
+
+**PR.** Not opened: #13, #14 and #15 are already open, over the limit
+of two.
