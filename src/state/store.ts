@@ -60,7 +60,6 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     seed,
     createdAt: now,
     lastTick: now,
-    lastRoundAt: now,
     round: 0,
     resources: { ...startResources },
     slots,
@@ -122,7 +121,6 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
     reports: [],
     reportSeq: 0,
     pendingChoice: null,
-    awayRounds: 0,
     stats: emptyStats(),
     overflowSinceSeen: {},
   };
@@ -136,7 +134,7 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
 
 export function emptyStats() {
   return {
-    rounds: 0, idleRounds: 0, raidsSuffered: 0, raidsRepelled: 0, goodsLostToRaids: 0, deaths: 0,
+    rounds: 0, raidsSuffered: 0, raidsRepelled: 0, goodsLostToRaids: 0, deaths: 0,
     demandsGranted: 0, demandsRefused: 0, choicesAnswered: 0, romeRequestsCompleted: 0,
     romeRequestsDeclined: 0, peakPopulation: 0, denariiSpentOnHaste: 0,
     challengesFaced: 0, challengesWon: 0, roundsOutOfOffice: 0, assassinationsOrdered: 0,
@@ -178,9 +176,15 @@ export function migrate(state: GameState): GameState {
     for (const e of state.log) e.id = ++state.logSeq;
     state.seenLogId = state.logSeq;
     state.lastReport = null;
-    state.awayRounds = 0;
   }
   if (state.pendingChoice === undefined) state.pendingChoice = null;
+  // The idle round is gone (DESIGN §3.3, ruled 2026-09-25): no round runs
+  // without the player. Its bookkeeping goes with it; a digest of rounds that
+  // already ran is read as an ordinary round report.
+  const idleEra = state as unknown as Record<string, unknown>;
+  delete idleEra.awayRounds;
+  delete idleEra.lastRoundAt;
+  if (state.stats) delete (state.stats as unknown as Record<string, unknown>).idleRounds;
   if (!state.lesserPosts) state.lesserPosts = {};
   for (const p of lesserPosts) if (!(p.id in state.lesserPosts)) state.lesserPosts[p.id] = null;
   for (const c of Object.values(state.characters)) if (c.lesserPost === undefined) c.lesserPost = null;

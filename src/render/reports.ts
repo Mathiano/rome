@@ -295,40 +295,7 @@ export function renderNewsRecord(state: GameState, news: News): { html: string; 
     }
     return { html, covered };
   }
-  if (news.kind === 'away') return renderAwayDigest(state, news, covered);
   return { html: '', covered };
-}
-
-/**
- * The digest (DESIGN §3.3): one line of tally, then each round that ran
- * without the player with its ledger, its reports and its lines, instead of
- * one pile of up to seven rounds' prose.
- */
-function renderAwayDigest(state: GameState, news: News, covered: Set<number>): { html: string; covered: Set<number> } {
-  const rounds = state.history.slice(-state.awayRounds).filter((r) => r.idle);
-  if (!rounds.length) return { html: '', covered };
-  const raids = state.reports.filter((r) => rounds.some((h) => h.round === r.round) && (r.kind === 'raid' || r.kind === 'site_raid'));
-  const through = raids.filter((r) => (r.kind === 'raid' && r.data.fraction > 0) || (r.kind === 'site_raid' && !r.data.held)).length;
-  const tally: string[] = [];
-  tally.push(raids.length ? `${plural(raids.length, 'raid')}, ${through} got through` : 'no raids');
-  const demands = Object.values(state.families).filter((f) => f.demand).length;
-  if (demands) tally.push(`${plural(demands, 'demand')} waiting`);
-  if (state.challenge) tally.push('a vote pending');
-  if (state.rome.activeRequest && !state.rome.activeRequest.fulfilled) tally.push(`Rome asks for ${esc(state.rome.activeRequest.title)}`);
-  let html = `<p class="tally-line">${tally.join(' · ')}.</p>`;
-  for (const r of [...rounds].reverse()) {
-    const lines = linesOfRound(state, r).filter((e) => news.lines.includes(e));
-    const reps = state.reports.filter((x) => x.round === r.round);
-    for (const rep of reps) covered.add(rep.logId);
-    // Everything the round wrote is inside its folder, the idle marker included,
-    // so nothing of it is read again in the loose list below.
-    const { from, to } = rangeOfRound(state, r);
-    for (const e of state.log) if (e.id > from && e.id <= to) covered.add(e.id);
-    html += `<details class="round" open><summary>Round ${r.round}</summary>${renderRoundLedger(r)}`
-      + reps.map((x) => renderReport(x, state)).join('')
-      + `<ul>${lines.filter((e) => !reps.some((x) => x.logId === e.id)).map((e) => `<li class="k-${e.kind}">${esc(e.text)}</li>`).join('')}</ul></details>`;
-  }
-  return { html, covered };
 }
 
 // ---------------------------------------------------------------------------

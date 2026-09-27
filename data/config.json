@@ -8,14 +8,10 @@
   },
   "_proposed": {
     "townName": "DESIGN \u00a715.1 \u2014 confirmed Arctown",
-    "calendarFloorHours": "DESIGN \u00a73.3 \u2014 confirmed 24",
     "lifespan": "DESIGN \u00a73.4 \u2014 confirmed 120\u2013200 rounds",
-    "topOffice": "DESIGN \u00a79.3 \u2014 confirmed praefectus",
-    "idleRoundsMaxCatchUp": "DESIGN \u00a73.3 \u2014 confirmed 7"
+    "topOffice": "DESIGN \u00a79.3 \u2014 confirmed praefectus"
   },
   "tickMs": 1000,
-  "calendarFloorHours": 24,
-  "idleRoundsMaxCatchUp": 7,
   "topOffice": {
     "id": "praefectus",
     "title": "Praefectus"

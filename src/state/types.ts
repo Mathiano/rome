@@ -127,7 +127,8 @@ export interface LogEntry {
 export interface RoundReport {
   round: number;
   at: number;
-  idle: boolean;
+  /** Historical: rounds that ran without the player before 2026-09-25, when the idle round was removed. No round is written with it now. */
+  idle?: boolean;
   fromLogId: number;
   population: number;
   corruption: number;
@@ -271,7 +272,6 @@ export type Report = { [K in ReportKind]: { id: number; round: number; at: numbe
 /** Counters a playtester can quote back without keeping notes. */
 export interface PlaytestStats {
   rounds: number;
-  idleRounds: number;
   raidsSuffered: number;
   raidsRepelled: number;
   goodsLostToRaids: number;
@@ -343,7 +343,6 @@ export interface GameState {
   seed: number;
   createdAt: number;
   lastTick: number;
-  lastRoundAt: number;
   round: number;
   resources: Resources;
   slots: Slot[];
@@ -382,8 +381,6 @@ export interface GameState {
   reportSeq: number;
   /** An event waiting on the player's answer. Nothing else is blocked by it. */
   pendingChoice: { eventId: string; title: string; text: string } | null;
-  /** Rounds that ran while the player was away, pending a digest. */
-  awayRounds: number;
   /** Local playtest record. Never read by the game; written for the Save tab. */
   stats: PlaytestStats;
   /**
