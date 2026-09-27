@@ -31,8 +31,15 @@ These are not up for negotiation inside a session. Changing one is an Owner deci
 6. **Population is opportunity, not a chore.** More people means more posts, income and militia. No sickness, overpopulation or Farthest Frontier-style micromanagement.
 7. **Never unrecoverable.** Setbacks are hard. Total loss is impossible. Research survives everything.
 8. **Defer, don't drop.** Features that don't fit the current version are banked in §14, not deleted.
-9. **Keep it real.** Roman names, Roman gods, Roman practices (adoption, patrilineal families, the castellum). Anachronisms are flagged, not silently adopted.
+9. **Keep it real — mythic Rome.** ✅ *Amended 2026-09-27.* Roman names, Roman gods, Roman practice (adoption, patrilineal families, the castellum). The gods act: a sacrifice is answered, a temple has power, the cult of Augustus is the state cult with real effect. No wizards, no spells, no mana. Anachronisms are flagged, not silently adopted.
+
+    The tone is cozy and adventurous. The politics keep their edge — assassination, coups and secession stay — but the game should reach for festivals, games, dedications and rivalries before it reaches for the knife. 🟡 Festivals as a council action, proposed for v0.2.
 10. **PC first, landscape.** Mobile is a later decision.
+11. **Absence costs opportunity, never assets.** ✅ *2026-09-25.* Nothing the player holds may be taken while they are away. Not resources, not population, not characters, not sites, not the top office. What absence costs is what the player *would have gained*: production above the storage cap, a Rome request that expired unanswered, a site a tribe claimed first, a marriage another house arranged.
+
+    Returning after a week is finding letters on the desk, not damage in the yard.
+
+    This pillar governs every other section. Where an older rule conflicts with it, this one wins and the older rule is amended.
 
 ---
 
@@ -66,14 +73,19 @@ A round the player calls always answers: when it brings no news, a short card sa
 
 Any number of rounds may run per day. Political actions can be **prepared** at any time (queue an intrigue, dispatch an envoy, send scouts) and **resolve** at the next round. Preparation fills a session; resolution stays turn-based.
 
-### 3.3 No round runs unattended ✅
+### 3.3 Absence ✅
 
-*Ruled 2026-09-25 by Mathias, reversing the calendar floor.* A political round runs only when the player acts (§3.2). Nothing advances the council on its own: not real time, not a closed tab, not the dev clock's multiplier or its skip buttons. While the player is away, no one ages, no rival moves, no tribe raids and Rome does not write; the village clock alone runs (§3.1), and a save loaded after any absence is at the round it was left at. The dev multiplier scales the village clock only.
+*Amended 2026-09-25 by §2.11, the absence pillar, which is the reason for everything in this section.* **The idle round is removed.** No political round runs without the player. Characters do not age, die or lose office while the player is away, because ageing advances per round (§3.2) and no round runs unattended. The dev clock's multiplier and skip buttons scale the village clock only and never advance a round.
 
-This read, from 2026-09-15: *"If no round has run in N real hours, an idle round runs automatically: opponents act, the player does not."* It ran up to 7 such rounds on load (`calendarFloorHours` 24, `idleRoundsMaxCatchUp` 7). It existed to close what was called an exploit: a player who never convenes never ages, is never raided and never faces a challenge. ✅ *Mathias, 2026-09-25:* it is not an exploit. This is single-player; a player who never convenes gains no advantage over anyone — they are not playing. Both config values, the round-runner and every surface that spoke of the idle round are removed. Old saves drop its bookkeeping on load, and rounds that already ran without the player keep their mark in Reports.
+- **The world still moves.** While the player is away, tribes shift disposition, tribes claim *unclaimed* sites, Rome issues and expires requests, and rival houses form intentions. None of this removes anything the player holds. It rearranges the board around them.
+- **The digest.** On return, the player is shown what happened as a short report — headline cards first, totals after — including what was lost to full stores, and which opportunities have closed. One report, not a stack of round cards.
+- **Not an exploit.** A player who never convenes is not exploiting the game; they are not playing it. There is no punishment for absence, and none is to be added.
 
-**Why it is gone, so it is not restored:** the absence pillar, §2.11 (✅ Mathias, 2026-09-25), is the reason — not a tuning choice. No idle round, calendar floor, catch-up or other mechanic that advances the council without the player replaces it. Any such proposal needs Mathias's sign-off before it is built. §2.11's full text lands with `docs/DESIGN-patch-2026-09-25-holdings.md`; CLAUDE.md carries its short form.
+**Do not restore it.** No idle round, calendar floor, catch-up or other mechanic that advances the council without the player replaces this; any such proposal needs Mathias's sign-off before it is built.
 
+This section read, from 2026-09-15: *"If no round has run in N real hours, an idle round runs automatically: opponents act, the player does not."* It ran up to 7 rounds on load (`calendarFloorHours` 24, `idleRoundsMaxCatchUp` 7) to close what was then called the exploit of never convening.
+
+⚠ *Code, since #13 (merged 2026-09-28):* the idle round, `calendarFloorHours`, `idleRoundsMaxCatchUp` and every surface that spoke of them are removed. A save loaded after any absence is at the round it was left at; old saves drop the idle round's bookkeeping on load, and rounds that already ran without the player keep their mark in Reports. Nothing yet moves the world while the player is away (tribes, unclaimed sites, Rome's requests, houses' intentions), and there is no return digest of world events — only the Village tab's return strip of what the village clock did (§3.1). *Doc, flagged not reconciled:* "the world still moves" has tribes, Rome and the houses acting outside a round, where Pillar 2 and §3.2 make every act by another actor turn-based (Rome's founding letter is the one recorded exception); and a Rome request that expires has no counterpart in §6, which gives requests no term, or in `data/requests.json` and `src/rome/`, which have none.
 
 ### 3.4 Tuning
 
@@ -109,44 +121,81 @@ One number. Needs housing and grain upkeep. Grows with buildings. More populatio
 
 ### 4.4 Buildings ✅
 
-- ~12 buildings in v0, three visible tiers each (36 sprites). Tier 3 animates (§10).
+- Three visible tiers each. Tier 3 animates (§10).
 - Construction is timed. Finishing early costs denarii per Pillar 3.
-- **Concurrency:** one building and one resource field may be under construction at the same time — Travian's actual Roman-faction rule ✅. No build queue beyond that.
-- Resource buildings sit on their site: the clay works on the clay bank, the mine on the iron seam.
-- **The wall is a building of its own, not the castellum.** ✅ 2026-09-22, decided by Mathias. They are two things. The castellum stays in the centre and garrisons the colony — militia pool, bodyguards — and its tier drives only its own sprite. The **Wall** is the circuit, and it is raised separately: it stands on a **perimeter slot**, which belongs to no ring and sits at the gate, and it counts as a building for the concurrency rule above, so the colony chooses between raising its walls and raising anything else. Its tier is the *walls* term of §8.2 defence strength. The circuit at each tier: **none** is the ditch and bank a colonia throws up on arrival; **I** a timber palisade on that bank; **II** coursed stone with towers; **III** the full crenellated circuit, which flies the colony's standard over the gate as its §10 tier-3 animation. Adding it to the list below needed this decision because that list is ✅ confirmed.
+- **Concurrency:** one building and one resource field may be under construction at the same time — Travian's actual Roman-faction rule ✅. No build queue beyond that. (A holding may also be under construction, §5.3.)
+- Resource buildings sit on their site: the clay works on the clay bank, the mine on the iron seam (§4.5 C.2).
+- **The wall is a building of its own, not the castellum.** ✅ 2026-09-22, decided by Mathias. They are two things. The castellum garrisons the colony — militia pool, bodyguards — and its tier drives only its own sprite. The **Wall** is the circuit, raised separately; it counts as a building for the concurrency rule above, so the colony chooses between raising its walls and raising anything else. Its tier is the *walls* term of §8.2 defence strength and, since 2026-09-27, also the size of the enclosure (§4.5 C.1). The circuit at each tier: **none** is the ditch and bank a colonia throws up on arrival; **I** a timber palisade on that bank; **II** coursed stone with towers; **III** the full crenellated circuit, which flies the colony's standard over the gate as its §10 tier-3 animation.
 
-**v0 building list ✅** — confirmed 2026-09-16; edit freely as the doc evolves:
+#### The seat ✅ *(confirmed by Mathias in session, 2026-09-27)*
 
-| Building | Ring | Role |
+- **Praetorium** — the governor's residence and the seat of the player's family. Its tier is the colony's tier. It is the centre of the town. Footprint 2×2. Unique.
+- **Forum** — the civic and market building: basilica, curia and market stalls. Trade with tribes and Rome happens here; the council convenes here. Footprint 2×2. Unique. **The separate Market building is removed**; its role folds into the Forum.
+
+The building count stays at fourteen.
+
+#### Repeatable and unique buildings ✅
+
+Buildings are no longer one-each.
+
+| Unique (one per colony) | Repeatable (as many as plots allow) |
+|---|---|
+| Praetorium, Forum, Castellum, Wall, Temple, Library, Waystation | Insulae, Warehouse, Granary, Cellars, Farm, Lumber camp, Clay works, Iron mine |
+
+Repeatables are where the colony's shape is decided: more farms is a trade colony, more barracks-adjacent buildings is a military one, more libraries later a learned one. Costs may rise per copy 🟡 (`_tuning`). Resource buildings still require their site (§4.5).
+
+#### Footprints ✅
+
+Every building has a footprint in grid cells. 🟡 starting values: Praetorium, Forum, Castellum, Temple 2×2; Harbour 2×1 on a coast edge (arrives with the harbour drop); everything else 1×1. In `data/buildings.json`.
+
+**Building list** (roles; the 2026-09-16 v0 list as amended 2026-09-22 and 2026-09-27):
+
+| Building | Kind | Role |
 |---|---|---|
-| Forum (with basilica) | centre | seat of the council; its tier is the colony's tier |
-| Castellum | centre | garrison, militia pool, bodyguard pool |
-| Wall | perimeter | the circuit; its tier is the walls term of §8.2 defence strength |
-| Warehouse | inner | storage |
-| Granary | inner | storage |
-| Cellars | inner | hidden storage |
-| Insulae (housing) | inner | population cap |
-| Market | inner | trade with tribes and Rome |
-| Temple | inner | gods (§9.8), piety, gravitas |
-| Waystation | inner | Rome requests; road link |
-| Lumber camp | outer | wood site |
-| Clay works | outer | clay site |
-| Iron mine | outer | iron site |
-| Farm | outer | grain site |
+| Praetorium | unique | seat of the player's family; its tier is the colony's tier |
+| Forum (basilica, curia, market) | unique | the council convenes here; trade with tribes and Rome |
+| Castellum | unique | garrison, militia pool, bodyguard pool |
+| Wall | unique | the circuit; its tier is the walls term of §8.2 and the size of the enclosure |
+| Temple | unique | gods (§9.8), piety, gravitas |
+| Library | unique | research (§4.6); its tier gates how far the tree opens |
+| Waystation | unique | Rome requests; road link |
+| Warehouse | repeatable | storage |
+| Granary | repeatable | storage |
+| Cellars | repeatable | hidden storage |
+| Insulae (housing) | repeatable | population cap |
+| Lumber camp | repeatable | wood site |
+| Clay works | repeatable | clay site |
+| Iron mine | repeatable | iron site |
+| Farm | repeatable | grain site |
 
-Wall ✅ added 2026-09-22 (see the rule above). Library (research, §4.6). ✅ Built 2026-09-20: inner ring, three tiers, and an eighth inner plot added to §4.5's layout to stand on. Its tier is the gate on how far the tree opens, and it reads faster at each tier.
+⚠ *Flagged 2026-09-27, not reconciled:* the patch says "the building count stays at fourteen", but its own unique/repeatable table lists fifteen — the list above, Library included. "Barracks-adjacent buildings" names a building that is not on the list. The Harbour appears only as a footprint. *Code:* the Forum is the seat — `forumTier()` is the colony's tier and 46 tiers in `data/buildings.json` carry `requiresForumTier`. The Market is a building that trade reads (`src/tribes/envoys.ts`: no Market, no trade; its tier sets the trade rate). There is no Praetorium, and every building is one to a fixed slot. None of this is changed in this pass.
 
 ### 4.5 Layout ✅
 
-Three fixed rings, expanding outward as the colony grows:
+*Rewritten 2026-09-27.* The concentric rings are replaced.
 
-1. **Centre:** Forum and Castellum, side by side.
-2. **Inner ring:** buildings. Fixed slots; the player chooses which building fills which slot.
-3. **Outer ring:** fields, mines, lumber. Fixed slots tied to resource sites.
+#### C.1 The town grid ✅
 
-Outside the three rings there is one **perimeter slot**, `w1`, pinned to the Wall ✅ 2026-09-22. It is not a plot: it carries no ground plate, it stands on the circuit itself at the gate, and it exists so the wall can be selected and raised like any other building.
+- The town is a **rectangular grid of cells inside a rectangular wall** — the Roman colonial plan: streets on a grid, gates on the axes. The circular wall and ring slots are gone.
+- **Free placement:** the player places any building on any free cells that fit its footprint. Placement is a decision, not a menu.
+- The number of cells is finite and always fewer than the player would like. 🟡 Starting values (`_tuning`): wall tier 0 (ditch and bank) 6×6 = 36 cells; tier I 7×7; tier II 8×8; tier III 9×9 = 81. One of every building costs about 23 cells, so tier 0 leaves room for roughly a dozen extras and no more.
+- **The wall's tier grows the enclosure.** Raising the wall is how the town gets bigger. This ties expansion to defence and gives the Wall building its second purpose.
 
-This is Travian's fixed-slot model with player-chosen placement, and it preserves the concentric-rings idea from the earlier castle-builder design.
+#### C.2 Three zones ✅
+
+1. **Inside the wall:** buildings on the grid.
+2. **Immediately outside the wall:** resource sites on the terrain — fields, clay bank, iron seam, forest — each with its resource building on it. These are placed by the map, not the player, and are the first things a raid reaches.
+3. **The hex map beyond:** holdings (§5).
+
+#### C.3 Adjacency ❓
+
+Free placement exists so that placement can matter. Adjacency effects — a granary beside farms, a temple beside insulae, a warehouse beside the forum — are the intended source of supply-chain skill and are **deferred until the grid exists**. ❓ Rules and numbers in a later patch. In-town roads 🟡 likewise.
+
+#### C.4 View ✅
+
+The town view zooms, to roughly 3× its current extent at most. The wall and grid are drawn in code; buildings are painted sprites (§10).
+
+⚠ *Flagged 2026-09-27:* repeatable resource buildings "still require their site" (§4.4), but the sites outside the wall are placed by the map (C.2), so the number of farms, camps and mines is bounded by how many sites the map gives — not by plots. *Code:* the town is three rings of fixed slots with a circular wall and the perimeter slot `w1` (`data/layout.json`, `src/render/environment.ts`); CLAUDE.md's Conventions still describe them. None of C is implemented in this pass; the grid session follows.
 
 ### 4.6 Research ✅ (system) / ❓ (contents)
 
@@ -158,24 +207,71 @@ Built 2026-09-20 (`src/village/research.ts`). A study runs on the village clock 
 
 ---
 
-## 5. World map
+## 5. World map — holdings ✅
 
-### 5.1 Structure
+*Rewritten 2026-09-25 (decided by Mathias; applied 2026-09-27).* The colonia is the only city. Everything else on the map is a **holding**: a place the colony works, watches or garrisons. Holdings differ in kind, not only in yield, so the choice of which to take and which to defend is a real one.
 
-- Hex grid. ❓ Size — proposed ~25 across.
-- The player's town map is fully visible. World-map terrain is visible from the start; **sites are hidden as "?"** until scouted. A scouted "?" resolves to treasure, a bonus site, or a barbarian camp that punishes the scout.
-- Tribal villages are never shown on the map. Tribes are present through envoys, raids and contested sites.
+### 5.1 Structure ✅
 
-### 5.2 Sites ✅
+- Hex grid, 21 across.
+- Terrain is visible from the start. **Sites are hidden as "?"** until scouted. A scouted "?" resolves to a site, a treasure, or a barbarian camp that punishes the scout.
+- Tribal villages are never shown. Tribes are present through envoys, raids and contested holdings.
+- The map is a top-level view, not a panel tab.
 
-All of these are in, arriving over versions: forest, quarry, clay bank, iron seam, salt spring, river ford (trade route — non-resource effect), shrine (gravitas — non-resource effect), ruins (research scrolls).
+### 5.2 Site kinds ✅
 
-### 5.3 Claiming and holding ✅
+A holding is defined by what it gives, and the kinds are deliberately unlike each other.
 
-- **Claim:** a council action plus denarii.
-- **Hold:** a small denarii upkeep. Defending a site is the expensive part: garrisoning it draws from the militia pool (§8.1). The player is meant to be forced to prioritise which sites get real protection.
-- **Distance matters:** exposure to raids rises with distance from the colonia.
-- **Lose:** a tribal raid on the site, or a contest at council.
+| Kind | Gives | Notes |
+|---|---|---|
+| Forest | wood | plain yield |
+| Clay bank | clay | plain yield |
+| Iron seam | iron | plain yield |
+| Farmland | grain | plain yield |
+| Quarry | stone | arrives with the stone content drop (§4.1); until then it is scoutable and claimable but idle 🟡 |
+| Salt spring | salt | as above |
+| Troop field | militia | adds to the militia pool (§8.1) **without drawing on population** — the one way to grow the pool other than the castellum |
+| Watchtower | warning | reveals a ring of hexes around it, and raids against anything inside that ring are telegraphed one round earlier |
+| Ford / junction | movement | envoys and trade resolve faster; the trade effect applies at the market |
+| Shrine | gravitas | a small standing gravitas income to the house holding the post of temple |
+| Ruin | research scrolls | a **one-time** yield when first claimed, then inert. It is a prize, not an income |
+
+All yields, costs, upkeep and probabilities live in `data/map.json`, flagged `_tuning`.
+
+### 5.3 Holding tiers ✅
+
+Every holding has three tiers of its own — camp, station, fort — on the same model as buildings: built in place, each tier visibly more substantial, each raising yield and defence.
+
+**Holdings are drawn in SVG on the hex grid, not as painted isometric sprites.** This is deliberate: the map's whole progression costs no generated art. A camp is a mark, a station is a walled mark, a fort is a walled mark with a tower.
+
+Holding construction uses the same concurrency rule as the colony (§4.4): one holding may be under construction at a time, in addition to the one building and one field.
+
+### 5.4 Roads ✅
+
+Roads are the colony's long-term project and the connective tissue of the map.
+
+- Built **segment by segment**, hex to hex, from the colonia outward. Each segment is timed and costs resources.
+- A holding connected to the colonia by an unbroken road: **raid exposure falls**, **envoys and trade resolve faster**, and **its yield rises**.
+- 🟡 **Cost in v0:** denarii and wood, since stone is not a v0 resource (§4.1). When the stone drop lands, a **paved** road upgrade costs stone and improves the same three effects further. CC to propose starting numbers as `_tuning`.
+- Roads are visible on the map as a growing network. This is the thing a player builds toward over weeks.
+
+### 5.5 Claiming, holding and contest ✅
+
+- **Claim:** a council action plus denarii, at the next round.
+- **Hold:** a small denarii upkeep. Garrisoning draws from the militia pool (§8.1), which cannot cover everything.
+- **Distance matters:** raid exposure rises with distance from the colonia and falls with a road connection (§5.4).
+
+**The contest rule, which follows from §2.11:**
+
+- An **unclaimed** site may be taken by a tribe at any time, including while the player is away. That is a missed opportunity and is permitted.
+- A site the player **holds** can only change hands in a round the player is present for. A tribe may move against it, but the resolution — including the player's chance to allocate the militia pool against it — happens when the player next convenes.
+- A holding is therefore never lost unattended. It may be lost in front of the player, badly, having been under-garrisoned. That is the player's decision and it stands.
+
+### 5.6 Why one city ✅
+
+The colonia is the only place that builds, houses population and holds a council. Holdings never become cities. This keeps the political layer singular — one council, one set of families, one seat to fight over — and prevents the game from turning into a management problem of many towns.
+
+⚠ *Code as of 2026-09-27 — none of §5 is implemented in this pass; the v0.1 map session follows.* The map is 25 across (`data/map.json` `radius` 12), not 21. It is a panel tab, not a top-level view. The site kinds in data are `timber`, `clay_bank`, `iron_seam`, `meadow`, `ford`, `shrine`, `ruins` and `camp`: there are no quarry, salt spring, troop field or watchtower sites, and no holding tiers, roads or holding concurrency. A claim is applied as the player's move, before the round that follows it. A held site's raid resolves in the round with its standing garrison; there is no step for the player to allocate the militia pool against it.
 
 ---
 
@@ -298,15 +394,24 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 
 ❓ One temple with a chosen dedication, or a temple per god (more buildings, more art). Piety stat governs the effect.
 
+**The gods act** *(direction, 2026-09-27)*. Each temple dedication gives a standing effect and an answered sacrifice — Mars a defence blessing, Ceres a harvest, Mercury a trade windfall, Venus fertility for the house, Jupiter gravitas, the cult of Augustus Roman favour. Piety governs how often and how well. ❓ Contents, costs and cooldowns in a later patch; this section records only that magic in Rome III means the gods, and nothing else (Pillar 9). The ❓ above — one temple or one per god — stays open, as does §15.8.
+
 ---
 
-## 10. Art direction ✅
+## 10. Art direction ✅ *(rewritten 2026-09-27, the pivot)*
 
-- **Buildings:** ✅ 2026-09-16 — raster PNG sprites with alpha, generated from a style anchor (`assets/style/anchor-v1.jpg`; prompts in `assets/style/PROMPTS.md`) and processed by `tools/artgen/` (key the white background, trim, find the ground plate, anchor, scale, manifest). Each sprite is one structure standing on its ground plate, the base diamond; the anchor is the plate centre, the midpoint of the plate's left and right corners; the plate's width equals the tile width. Roman grammar as before: rectangular footprints, columns and porticos, terracotta roofs. isobuild is retired for buildings. SVG remains for the world map, the UI and animated overlays.
-- **Animation:** tier 3 only. A small reusable set (smoke, a moving crane, a water wheel, a swinging sign) drawn as SVG overlays on top of the PNG sprite, via CSS keyframes and the Web Animations API, positioned from the same anchor. ✅ 2026-09-16.
-- **Portraits:** monochrome ink-and-wash busts, one accent colour per family. Generated as a batch from one fixed style prompt and committed to the repo.
-- **World map:** SVG hex grid in the same palette.
-- **Nothing lifted** from Rome II, Travian, Anno or any other game. Reference, never copy.
+- **Style:** stylised, hand-painted, exaggerated — chunky proportions, oversized roof tiles, thick walls, heavy warm outlines, saturated terracotta against cool cream stone, painted texture on every surface, lively clutter (vines, lanterns, awnings, crates). Cozy and adventurous. The register of a hand-painted MMO building, not a historical illustration.
+- **Anchor:** `assets/style/anchor-v2.jpg` (the stylised praetorium). Every building sprite is an edit of it. `anchor-v1.jpg` and every sprite derived from it are retired.
+- **Content stays Roman.** Eagles, red-and-gold vexilla, oil-lamp and brazier flame, Latin inscriptions. Nothing from any game's heraldry, palette or magic. Nothing lifted from Warcraft, Rome II, Travian, Anno or any other game.
+- **Palette:** re-sampled from anchor-v2; the design-system tokens are re-derived from it.
+- **Base map:** regenerated in the new style, after the grid and zones exist, so it is painted to the layout rather than the layout fitted to it.
+- **Sprites, plates, anchors, tier-3 animation and the pipeline:** unchanged from the previous §10, kept below.
+  - **Sprites:** raster PNG with alpha, processed by `tools/artgen/` (key the white background, trim, find the ground plate, anchor, scale, manifest); prompts in `assets/style/PROMPTS.md`. Each sprite is one structure standing on its ground plate, the base diamond; the anchor is the plate centre, the midpoint of the plate's left and right corners. isobuild is retired for buildings. SVG remains for the world map, the UI and animated overlays. ✅ 2026-09-16.
+  - **Animation:** tier 3 only. A small reusable set (smoke, a moving crane, a water wheel, a swinging sign) drawn as SVG overlays on top of the PNG sprite, via CSS keyframes and the Web Animations API, positioned from the same anchor. ✅ 2026-09-16.
+- **Portraits:** monochrome ink-and-wash busts, one accent colour per family. Generated as a batch from one fixed style prompt and committed to the repo. Unchanged.
+- **World map:** SVG hex grid in the same palette. Unchanged.
+
+⚠ *Flagged 2026-09-27:* `assets/style/anchor-v2.jpg` does not exist in the repo. The upload that carried this patch added `docs/rome_anchor_1.jpg`, a 2760×1504 stylised Roman complex whose pediment inscription reads, to the eye, *FORVM COL. FELICIS* — a forum by its lettering, where this section calls the anchor the praetorium (🟡 read by eye, not verified). It has not been moved, renamed or processed — that belongs to the art session. The old sentence "the plate's width equals the tile width" is dropped: since the plot-size change a plate is `plateTiles` (1.75) layout tiles wide (CLAUDE.md, Conventions), and §4.5's footprints (1×1 to 3×3 cells) will redefine it again. `tools/artgen/palette.json` and `docs/PALETTE-NOTES-isobuild.md` hold the palette the re-sample replaces.
 
 ---
 
@@ -343,22 +448,22 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 
 ## 14. Banked ✅ (defer, don't drop)
 
-Processed goods beyond the first drop · citizen tiers · mobile layout · Latin building names with English tooltips (the forum is always the forum) · offensive combat · Rome ordering attacks on tribes · character traits (Rome II style) · a fifth family emerging · a Teutoburg-scale late-game event · weather · named events for real Germanic leaders · counsel beyond the opening, a standing "what matters now" card (2026-09-24, "not for now") · milestones, the colony's firsts as a reward-free record (2026-09-24).
+Processed goods beyond the first drop · citizen tiers · mobile layout · Latin building names with English tooltips (the forum is always the forum) · offensive combat · Rome ordering attacks on tribes · character traits (Rome II style) · a fifth family emerging · a Teutoburg-scale late-game event · weather · named events for real Germanic leaders · counsel beyond the opening, a standing "what matters now" card (2026-09-24, "not for now") · milestones, the colony's firsts as a reward-free record (2026-09-24) · two great factions in a cold war, later — the Alliance/Horde idea, to be designed fresh under its own name when the time comes (2026-09-27) · in-town roads (2026-09-27) · adjacency rules, ❓ see §4.5 C.3 (2026-09-27) · festivals as a council action 🟡 (2026-09-27, Pillar 9).
 
 ---
 
 ## 15. Open questions ❓
 
 1. ~~Town name.~~ ✅ Resolved 2026-09-16: Arctown.
-2. ~~Calendar floor interval N (§3.3) and the age-per-round lifespan (§3.4).~~ ✅ Resolved 2026-09-15: N = 24 hours; lifespan 120 → 200 rounds. The calendar floor itself was removed 2026-09-25 (§3.3).
+2. ~~Calendar floor interval N (§3.3) and the age-per-round lifespan (§3.4).~~ ✅ Resolved 2026-09-15: N = 24 hours; lifespan 120 → 200 rounds. The calendar floor itself was removed 2026-09-25 (§2.11, §3.3).
 3. Whether a flavour calendar is displayed and what it counts.
 4. Final resource list beyond v0 and the two-step chains.
 5. ~~Which five council posts are in v0.~~ ✅ Resolved 2026-09-15: treasury, garrison, works, granary, market.
 6. ~~Title of the top office.~~ ✅ Resolved 2026-09-15: *praefectus*.
 7. Rounds from birth to adulthood.
-8. One temple or a temple per god.
+8. One temple or a temple per god. (Direction recorded in §9.8, 2026-09-27: the gods act; still open.)
 9. ~~Tribe names and personalities.~~ ✅ Resolved 2026-09-15 for v0: the Chatti, raider. The other two are 🟡 pending v0.1 (§7).
-10. Map size.
+10. ~~Map size.~~ ✅ Resolved 2026-09-25 by §5.1: 21 hexes across. (`data/map.json` still has radius 12, 25 across; changed in the map session.)
 11. Research tree contents. 🟡 First pass in `data/research.json` 2026-09-20 — eleven nodes, three ranks. Awaiting confirmation.
 12. Whether Rome's request to attack a tribe can exist before offence does (recommend no).
 
@@ -385,5 +490,7 @@ v0.2.12 — 2026-09-23 — §3.2, §3.3, §8.2, §11 built as UX: the reports ar
 v0.2.13 — 2026-09-23 — §12, §3.1, §4.2, §4.4, §4.5 as UX: the town-and-loop surfaces. The Village tab opens on a Due block — every job under way with its time left, everything landing at the next round, everything at a named round, and the hours to the idle round, each once in rounded words and each a link — from one collector the round card's "Before you go" footer shares. A summary card under it: the Forum's tier as the colony's, the wall, plots raised of eighteen (the wall named, not counted, per §4.5), population from its founding number, holdings with their yield, sites seen, the four houses' standing with the player's marked, Rome, the Library, and the walls against the strongest tribe; no tier total and no chart. The header's muted line gains the wall, the plots and the holdings. A player who returns finds a strip of what the village clock did — amounts, a tier that now stands, a study known, citizens gained — and what full stores turned away, counted in `overflowSinceSeen` and stated on the round card until Continue resets it; no elapsed duration is printed. Tab badges mark a duty and never a spend: Houses (a demand, a house talking of leaving, one ready to return), Tribe (massing), Council (a vote pending; 🟡 not merely out of office), Rome (a letter unanswered).
 v0.2.14 — 2026-09-24 — rulings on the Tribal Wars patch. §6: declining a request moves no favour (it had cost 5, against "no punishment"); the report names the aid forgone and the loyalist house's regard. §3.1: no time estimates, ever — horizon times are refused, not banked. §14: counsel beyond the opening and milestones banked. §6 says the loyalist house's regard falls, not its standing (§9.1). §3.1: a job's own length before it starts stays.
 v0.2.15 — 2026-09-24 — §6, §3.2: Rome's first letter stands at the founding, issued at round 0; the first round no longer brings it. The one act by another actor outside a round, as part of the founding. Its 80 wood against the castellum's is kept as an opening decision. A round the player calls that brings no news raises a short card saying the council met and nothing was decided.
-v0.2.16 — 2026-09-25 — §3.3 reversed: no round runs unattended. The idle round, its two config values and every surface that spoke of it are gone; a save loaded after any absence is at the round it was left at, and the dev multiplier scales the village clock only. The UI no longer redraws on the village tick: header, panel, dev bar and news card are patched in place, so the tick never replaces the element under the pointer, the button being clicked or the section being scrolled.
-v0.2.17 — 2026-09-26 — §3.3: the absence pillar (§2.11) recorded as the reason the idle round is gone; the 'exploit' ruled not an exploit; no replacement mechanic without Mathias's sign-off. §3.1: the "Since you were last here" strip is anchored to when the player last saw the colony (`lastSeen`) and shows only after `returnStrip.minGapMinutes` (30, a tuning default).
+v0.3.0 — 2026-09-25, applied 2026-09-27 — the holdings patch (`docs/DESIGN-patch-2026-09-25-holdings.md`). §2.11 is new: absence costs opportunity, never assets, and it governs every other section. §3.3 is amended: the idle round and the calendar floor are gone *because of* §2.11 — a later session must not restore them, and a replacement needs Mathias's sign-off; a player who never convenes is not playing, not exploiting. §3.1, §3.2 and §15.2 lose their idle-round mentions. §5 is rewritten as holdings: 21 hexes across and a top-level view, site kinds that differ in kind, three holding tiers drawn in SVG with one holding under construction alongside the colony's lanes, roads, and the contest rule — a held site changes hands only in a round the player convenes (§15.10 resolved). Doc only — none of §5 is implemented, and the idle round's removal from code and `data/config.json` is in PR #13, not in this change. Flags recorded in §3.3 and §5, not reconciled.
+v0.3.1 — 2026-09-27 — the pivot patch (`docs/DESIGN-patch-2026-09-27-pivot.md`). Pillar 9 amended: mythic Rome — the gods act; no wizards, spells or mana; festivals 🟡. §4.4: the Praetorium is the seat and its tier is the colony's; the Forum absorbs the Market — ✅ confirmed by Mathias in session, 2026-09-27; unique and repeatable buildings; footprints. §4.5 rewritten: the town grid, three zones, adjacency ❓, a zooming view. §10 rewritten: stylised hand-painted art from `anchor-v2`, content still Roman, palette and base map re-derived; sprites, plates, anchors, animation and pipeline unchanged. §9.8: the gods act, contents ❓. §14: two great factions in a cold war, in-town roads, adjacency rules and festivals banked. Doc only — none of §4.4's seat change, §4.5 or §10 is implemented. **Invalidated by this patch, listed and not deleted** (later sessions replace them): the rings and perimeter slot `w1` in `data/layout.json`; the circular wall geometry in `src/render/environment.ts` (`createWall`, its isometric circle, `wallLight`); `assets/style/anchor-v1.jpg` and `anchor-v1.png`; the 43 building sprites in `assets/buildings/` derived from anchor-v1; `assets/src/lumber-camp-t1.jpg`, `lumber-camp-t3.jpg` and `lumber-camp-t3-trees.mp4`; the base map `assets/src/base-map-v1.jpg`; and the palette sample, which is `tools/artgen/palette.json` 🟡 (identified by this session, not named by the patch). Flags recorded in §4.4, §4.5 and §10, not reconciled: the building count (fourteen stated, fifteen listed), barracks and the Harbour, the Forum as seat and the Market as trade in code, repeatable resource buildings bounded by map sites, and `anchor-v2.jpg` missing from the repo.
+v0.3.2 — 2026-09-25, merged 2026-09-28 (#13) — §3.3 reversed: no round runs unattended. The idle round, its two config values and every surface that spoke of it are gone; a save loaded after any absence is at the round it was left at, and the dev multiplier scales the village clock only. The UI no longer redraws on the village tick: header, panel, dev bar and news card are patched in place, so the tick never replaces the element under the pointer, the button being clicked or the section being scrolled.
+v0.3.3 — 2026-09-26, merged 2026-09-28 (#14) — §3.3: the absence pillar (§2.11) recorded as the reason the idle round is gone; the 'exploit' ruled not an exploit; no replacement mechanic without Mathias's sign-off. §3.1: the "Since you were last here" strip is anchored to when the player last saw the colony (`lastSeen`) and shows only after `returnStrip.minGapMinutes` (30, a tuning default).

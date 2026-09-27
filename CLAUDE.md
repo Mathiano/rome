@@ -22,9 +22,9 @@ From `docs/DESIGN.md` §2. Short form:
 6. Population is opportunity, not a chore.
 7. Never unrecoverable. Research persists through everything.
 8. Defer, don't drop — bank in `docs/DESIGN.md` §14.
-9. Keep it real — Roman names, Roman gods, Roman practice.
+9. Keep it real — mythic Rome. Roman names, Roman gods, Roman practice; the gods act — no wizards, spells or mana.
 10. PC first, landscape.
-11. Absence: no round runs unattended. Rounds advance only when the player acts; while they are away only the village works — no ageing, no rival moves, no raids. A player who never convenes is not playing, not exploiting (§2.11, §3.3).
+11. Absence costs opportunity, never assets: nothing the player holds is taken while they are away; absence costs only what they would have gained. No round runs unattended — a player who never convenes is not playing, not exploiting (§2.11, §3.3).
 
 ## Stack
 
