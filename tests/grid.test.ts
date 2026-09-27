@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
-import { createInitialState, deserialise, serialise } from '../src/state/store';
+import { createInitialState, deserialise, migrate, serialise } from '../src/state/store';
 import { Game } from '../src/game';
 import { building, buildings, layout, type BuildingDef } from '../src/data';
 import {
@@ -27,7 +27,7 @@ function stand(s: GameState, id: string, now = 0): string {
 function withHarbour<T>(fn: () => T): T {
   const harbour = {
     id: 'test_harbour', name: 'Harbour', zone: 'town', footprint: [2, 1], placement: 'riverbank', kind: 'building', role: 'test',
-    tiers: [{ cost: {}, buildSeconds: 60, requiresForumTier: 0, effects: {} }],
+    tiers: [{ cost: {}, buildSeconds: 60, requiresColonyTier: 0, effects: {} }],
   } as BuildingDef;
   buildings.push(harbour);
   try { return fn(); } finally { buildings.splice(buildings.indexOf(harbour), 1); }
@@ -49,10 +49,10 @@ describe('the enclosure (DESIGN §4.5 C.1)', () => {
     }
   });
 
-  it('counts its free cells, and the founding forum takes four of them', () => {
+  it('counts its free cells, and the founding praetorium takes four of them', () => {
     const s = createInitialState(0, 1);
     expect(freeCells(s)).toBe(cellCount(enclosure(s)) - 4);
-    expect(cellsOf(s.slots.find((x) => x.building === 'forum')!)).toHaveLength(4);
+    expect(cellsOf(s.slots.find((x) => x.building === 'praetorium')!)).toHaveLength(4);
   });
 });
 
@@ -64,8 +64,8 @@ describe('placing a building (DESIGN §4.4, §4.5 C.1)', () => {
     // not outside the wall, not across its edge, not over the forum
     expect(placeProblem(s, 'warehouse', e.x0 - 1, e.y0)).toBe('Outside the wall');
     expect(placeProblem(s, 'castellum', e.x1, e.y0)).toBe('Outside the wall');
-    const forum = s.slots.find((x) => x.building === 'forum')!;
-    expect(placeProblem(s, 'warehouse', forum.x!, forum.y!)).toBe('Those cells are taken');
+    const seat = s.slots.find((x) => x.building === 'praetorium')!;
+    expect(placeProblem(s, 'warehouse', seat.x!, seat.y!)).toBe('Those cells are taken');
     // every anchor offered is a place it fits, and together they are all of them
     for (const a of anchors(s, 'castellum')) expect(placeProblem(s, 'castellum', a.x, a.y)).toBeNull();
   });
@@ -90,7 +90,8 @@ describe('placing a building (DESIGN §4.4, §4.5 C.1)', () => {
     expect(checkPlace(s, 'temple').gates).toEqual(['unique']);
     const room = freeCells(s);
     let n = 0;
-    while (checkPlace(s, 'barracks').ok) { stand(s, 'barracks'); n++; }
+    // costs rise per copy (§4.4), so the treasury is refilled: only room may stop it here
+    while (rich(s) && checkPlace(s, 'barracks').ok) { stand(s, 'barracks'); n++; }
     // every free cell took one: only room stops a repeatable
     expect(n).toBe(room);
     expect(freeCells(s)).toBe(0);
@@ -150,33 +151,39 @@ describe('the barracks (2026-09-27)', () => {
 });
 
 describe('a save from the ring layout', () => {
-  /** The colony as a ring-layout save held it: slots by ring, the castellum pinned to c2. */
+  /**
+   * The colony as a ring-layout save held it: slots by ring, the castellum
+   * pinned to c2. Written with today's building ids: under the save rule no
+   * format-1 save reaches this code through `deserialise` any more (format 3
+   * resets it), and the migration is kept, as Mathias ruled, and tested here
+   * through `migrate` directly.
+   */
   function ringSave(): string {
     const raw = JSON.parse(serialise(createInitialState(0, 1)));
     const outer = layout.sites.map((d) => ({ id: d.id, ring: 'outer', site: d.site, building: null as string | null, tier: 0 }));
     outer.find((o) => o.id === 'o1')!.building = 'lumber_camp'; outer.find((o) => o.id === 'o1')!.tier = 2;
     raw.slots = [
-      { id: 'c1', ring: 'centre', building: 'forum', tier: 2 },
+      { id: 'c1', ring: 'centre', building: 'praetorium', tier: 2 },
       { id: 'c2', ring: 'centre', building: 'castellum', tier: 0 },
       { id: 'i1', ring: 'inner', building: 'warehouse', tier: 1 },
       { id: 'i2', ring: 'inner', building: null, tier: 0 },
       { id: 'i3', ring: 'inner', building: 'temple', tier: 2 },
-      { id: 'i4', ring: 'inner', building: 'market', tier: 0 },
+      { id: 'i4', ring: 'inner', building: 'forum', tier: 0 },
       { id: 'i8', ring: 'inner', building: 'library', tier: 1 },
       ...outer,
       { id: 'w1', ring: 'perimeter', building: 'wall', tier: 1 },
     ];
-    raw.constructions = [{ slotId: 'i4', buildingId: 'market', toTier: 1, kind: 'building', startedAt: 0, finishAt: 60_000 }];
+    raw.constructions = [{ slotId: 'i4', buildingId: 'forum', toTier: 1, kind: 'building', startedAt: 0, finishAt: 60_000 }];
     raw.version = 1;
     return JSON.stringify(raw);
   }
 
   it('sets every building down on the grid, keeps its id and tier, and loses nothing it held', () => {
-    const s = deserialise(ringSave());
+    const s = migrate(JSON.parse(ringSave()));
     const town = s.slots.filter((x) => x.zone === 'town');
-    expect(town.map((x) => `${x.id}:${x.building}:${x.tier}`).sort()).toEqual(['c1:forum:2', 'i1:warehouse:1', 'i3:temple:2', 'i4:market:0', 'i8:library:1']);
-    // the forum on its founding cells
-    const start = layout.startBuilt.find((b) => 'id' in b && b.building === 'forum') as { x: number; y: number };
+    expect(town.map((x) => `${x.id}:${x.building}:${x.tier}`).sort()).toEqual(['c1:praetorium:2', 'i1:warehouse:1', 'i3:temple:2', 'i4:forum:0', 'i8:library:1']);
+    // the seat on its founding cells
+    const start = layout.startBuilt.find((b) => 'id' in b && b.building === 'praetorium') as { x: number; y: number };
     expect(s.slots.find((x) => x.id === 'c1')).toMatchObject({ x: start.x, y: start.y });
     // nothing overlaps and everything is inside the wall
     const e = enclosure(s);
@@ -186,7 +193,7 @@ describe('a save from the ring layout', () => {
       expect(seen.has(`${c.x},${c.y}`), `${slot.id} overlaps`).toBe(false);
       seen.add(`${c.x},${c.y}`);
     }
-    // the market still rising keeps its slot, so its construction still names it
+    // the forum still rising keeps its slot, so its construction still names it
     expect(s.constructions[0].slotId).toBe('i4');
     // an empty plot and a castellum nobody raised hold nothing, and are gone
     expect(s.slots.some((x) => x.id === 'i2' || x.id === 'c2')).toBe(false);
@@ -198,8 +205,8 @@ describe('a save from the ring layout', () => {
     expect(deserialise(serialise(s)).slots).toEqual(s.slots);
   });
 
-  it('plays on after the move: the market finishes where it was set down', () => {
-    const g = new Game(deserialise(ringSave()));
+  it('plays on after the move: the forum finishes where it was set down', () => {
+    const g = new Game(migrate(JSON.parse(ringSave())));
     g.tick(61_000);
     expect(g.state.slots.find((x) => x.id === 'i4')!.tier).toBe(1);
   });

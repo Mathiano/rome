@@ -25,7 +25,7 @@
     "id": "w1"
   },
   "startBuilt": [
-    { "id": "c1", "building": "forum", "x": 1, "y": 0, "tier": 1 },
+    { "id": "c1", "building": "praetorium", "x": 1, "y": 0, "tier": 1 },
     { "slot": "o1", "building": "lumber_camp", "tier": 1 },
     { "slot": "o3", "building": "clay_works", "tier": 1 },
     { "slot": "o7", "building": "farm", "tier": 1 }

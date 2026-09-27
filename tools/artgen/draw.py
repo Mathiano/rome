@@ -1695,14 +1695,69 @@ def barracks(sc, tier):
         sc.anim("flag", 6.8, 6.7, 2.8, 0.9)
 
 
+def praetorium(sc, tier):
+    """The governor's residence: a house round a courtyard, the seat of the player's family."""
+    paving(sc, 2.4, 5.4, 5.6, 6.9, 0, 4, 2)
+    if tier == 1:
+        with sc.group(6.3 + 3.2):
+            box(sc, 1.7, 1.7, 6.3, 3.2, 0, 0.85, "timberdark")
+            plank_lines(sc, 1.7, 1.7, 6.3, 3.2, 0, 0.85, 9)
+            gable(sc, 1.7, 1.7, 6.3, 3.2, 0.85, 0.55, "x", gable_mat="timberdark")
+        with sc.group(2.9 + 5.4):
+            box(sc, 1.7, 3.2, 2.9, 5.4, 0, 0.75, "timber")
+            gable(sc, 1.7, 3.2, 2.9, 5.4, 0.75, 0.45, "y", gable_mat="timber")
+        palisade(sc, 2.9, 5.4, 6.3, 5.4, 0, 0.5, 9)
+        palisade(sc, 6.3, 3.2, 6.3, 5.4, 0, 0.5, 6)
+        banner(sc, 4.3, 6.2, 1.5, 0.75)
+        crate(sc, 6.6, 6.2)
+    elif tier == 2:
+        with sc.group(6.4 + 3.3):
+            box(sc, 1.5, 1.5, 6.4, 3.3, 0, 0.3, "stone")
+            box(sc, 1.5, 1.5, 6.4, 3.3, 0.3, 1.25, "plaster")
+            for gx in (2.6, 4.0, 5.4):
+                archway(sc, gx, 3.3, 0.3, 1.0, 0.5)
+            gable(sc, 1.5, 1.5, 6.4, 3.3, 1.25, 0.6, "x")
+        with sc.group(3.0 + 5.8):
+            box(sc, 1.5, 3.3, 3.0, 5.8, 0, 1.1, "plaster")
+            gable(sc, 1.5, 3.3, 3.0, 5.8, 1.1, 0.5, "y")
+        with sc.group(6.4 + 5.8):
+            box(sc, 5.0, 3.3, 6.4, 5.8, 0, 1.1, "plaster")
+            gable(sc, 5.0, 3.3, 6.4, 5.8, 1.1, 0.5, "y")
+        box(sc, 3.0, 5.6, 5.0, 5.8, 0, 0.55, "stone")
+        banner(sc, 4.0, 6.4, 1.6, 0.8)
+    else:
+        with sc.group(6.5 + 3.4):
+            box(sc, 1.3, 1.3, 6.5, 3.4, 0, 0.4, "stone")
+            box(sc, 1.3, 1.3, 6.5, 3.4, 0.4, 2.0, "plaster")
+            stone_blocks(sc, 1.3, 1.3, 6.5, 3.4, 0, 2.0, 6)
+            for gx in (2.3, 3.4, 4.5, 5.6):
+                archway(sc, gx, 3.4, 0.4, 1.3, 0.5)
+            hip_roof(sc, 1.3, 1.3, 6.5, 3.4, 2.0, 0.75, inset=1.6)
+        with sc.group(3.0 + 6.0):
+            box(sc, 1.3, 3.4, 3.0, 6.0, 0, 1.5, "stone")
+            stone_blocks(sc, 1.3, 3.4, 3.0, 6.0, 0, 1.5, 5)
+            gable(sc, 1.3, 3.4, 3.0, 6.0, 1.5, 0.55, "y")
+        with sc.group(6.5 + 6.0):
+            box(sc, 4.8, 3.4, 6.5, 6.0, 0, 1.5, "stone")
+            stone_blocks(sc, 4.8, 3.4, 6.5, 6.0, 0, 1.5, 5)
+            gable(sc, 4.8, 3.4, 6.5, 6.0, 1.5, 0.55, "y")
+        for gx in (3.3, 3.9, 4.5):
+            column(sc, gx, 5.9, 0, 1.2)
+        box(sc, 3.0, 5.7, 4.8, 6.0, 1.2, 1.4, "stone")
+        banner(sc, 2.2, 6.6, 2.0, 0.9)
+        banner(sc, 5.8, 6.6, 2.0, 0.9)
+        sc.anim("flag", 2.2, 6.6, 2.9, 0.9)
+        sc.anim("flag", 5.8, 6.6, 2.9, 0.9)
+
+
 BUILDINGS = {
     "forum": forum, "castellum": castellum, "warehouse": warehouse, "granary": granary,
-    "cellars": cellars, "insulae": insulae, "market": market, "temple": temple,
+    "cellars": cellars, "insulae": insulae, "temple": temple, "praetorium": praetorium,
     "library": library, "waystation": waystation, "lumber-camp": lumber_camp,
     "clay-works": clay_works, "iron-mine": iron_mine, "farm": farm,
     "barracks": barracks,
 }
-PAVED = {"forum", "market", "temple", "library", "waystation", "insulae", "warehouse", "barracks"}
+PAVED = {"forum", "praetorium", "temple", "library", "waystation", "insulae", "warehouse", "barracks"}
 
 
 def compose(name, tier):

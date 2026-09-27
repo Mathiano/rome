@@ -141,8 +141,8 @@ describe('the wall is its own building, and it sorts with the others', () => {
     const gate = index((k) => k.classList.contains('gate'));
     const farthest = index((k) => k.getAttribute('data-edge') === 'north-east');
     expect(forum).toBeGreaterThan(-1);
-    expect(farthest, 'the far wall is painted before the forum').toBeLessThan(forum);
-    expect(gate, 'the gate is painted over the forum').toBeGreaterThan(forum);
+    expect(farthest, 'the far wall is painted before the praetorium').toBeLessThan(forum);
+    expect(gate, 'the gate is painted over the praetorium').toBeGreaterThan(forum);
     // and the order is exactly the depth order
     const depthOf = (k: Element) => Number(k.getAttribute('data-depth'));
     const depths = kids.map(depthOf);
@@ -171,7 +171,7 @@ describe('the wall is its own building, and it sorts with the others', () => {
     view.update(state, 2000, null);
     expect(view.root.querySelectorAll('.tower').length).toBeGreaterThan(before);
     expect(view.root.querySelector('.town-floor .floor')!.getAttribute('points'), 'the enclosure grew').not.toBe(floorBefore);
-    expect(view.root.querySelector('.slot[data-slot="c1"]')!.getAttribute('transform'), 'the forum stays where it stood').toBe(forumAt);
+    expect(view.root.querySelector('.slot[data-slot="c1"]')!.getAttribute('transform'), 'the praetorium stays where it stood').toBe(forumAt);
   });
 });
 

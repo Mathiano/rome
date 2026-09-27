@@ -26,9 +26,12 @@ export type Cost = Partial<Record<ResourceId, number>>;
 export interface BuildingTier {
   cost: Cost;
   buildSeconds: number;
-  requiresForumTier: number;
+  /** The colony's tier (the Praetorium's) this tier needs (DESIGN §4.4, the seat). */
+  requiresColonyTier: number;
   effects: Record<string, number>;
 }
+/** One adjacency rule: `effects` gained per standing neighbour of kind `beside`. */
+export interface AdjacencyDef { beside: string; effects: Record<string, number> }
 export interface BuildingDef {
   id: string;
   name: string;
@@ -42,6 +45,12 @@ export interface BuildingDef {
    * its footprint read as [along the bank, away from it] (§4.5, the harbour).
    */
   placement?: 'riverbank';
+  /**
+   * What this building gains beside others (DESIGN §4.5 C.3): each rule's
+   * effects once for every standing neighbour of kind `beside`. The engine and
+   * the panel read it; no building defines one yet — the rules are ❓.
+   */
+  adjacency?: AdjacencyDef[];
   kind: 'building' | 'field';
   site?: string;
   produces?: ResourceId;

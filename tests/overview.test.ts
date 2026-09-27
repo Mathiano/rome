@@ -3,12 +3,12 @@ import { describe, it, expect } from 'vitest';
 import { createInitialState } from '../src/state/store';
 import { Game } from '../src/game';
 import { building, buildings, config, layout, RESOURCE_IDS, type ResourceId } from '../src/data';
-import { checkBuild, completeFinished, openedByForumTier, startBuild, slotById } from '../src/village/construction';
+import { checkBuild, completeFinished, openedByColonyTier, startBuild, slotById } from '../src/village/construction';
 import { netPerHour, productionPerHour, slotProductionPerHour, postBonus, yieldMultiplier } from '../src/village/economy';
 import { site } from '../src/map/world';
 import { playerFamily } from '../src/politics/characters';
 import { bindPanel, durationText, remainingText, renderPanel, type PanelHandlers } from '../src/render/panel';
-import { effectNowNext, forumOpensWords, ledgerFor, lockWords, renderLanes, renderOverview } from '../src/render/overview';
+import { effectNowNext, colonyOpensWords, ledgerFor, lockWords, renderLanes, renderOverview } from '../src/render/overview';
 import type { GameState } from '../src/state/types';
 import { plot } from './helpers';
 
@@ -62,13 +62,13 @@ describe('effects in words, now → next', () => {
   it('reads absolute values from data/effects.json, not a running total', () => {
     expect(effectNowNext(building('warehouse'), 1, 2)).toBe('kept per material 600 → 2000 (+1400)');
     expect(effectNowNext(building('lumber_camp'), 0, 1)).toBe('yield 30/h');
-    expect(effectNowNext(building('market'), 1, 2)).toBe('tax 15 → 35% (+20), trade rate 3 → 2.5 (−0.5)');
+    expect(effectNowNext(building('forum'), 1, 2)).toBe('tax 15 → 35% (+20), trade rate 3 → 2.5 (−0.5)');
     expect(effectNowNext(building('library'), 1, 2)).toContain('gravitas 1 a round');
   });
 });
 
 describe('locked, and why (every failing gate)', () => {
-  function forumOneWithLibraryAndABusyLane(): GameState {
+  function praetoriumOneWithLibraryAndABusyLane(): GameState {
     const s = rich(createInitialState(0, 1));
     plot(s, 'library', 'i1');
     startBuild(s, 'i1', 'library', 0);
@@ -80,13 +80,13 @@ describe('locked, and why (every failing gate)', () => {
   }
 
   it('keeps ok, reason and the first-gate order, and lists the rest', () => {
-    const s = forumOneWithLibraryAndABusyLane();
+    const s = praetoriumOneWithLibraryAndABusyLane();
     const check = checkBuild(s, 'i1', 'library');
     expect(check.ok).toBe(false);
     expect(check.reason).toBe('A building is already under construction');
     expect(check.reasons[0]).toBe(check.reason);
-    expect(check.gates).toEqual(['lane', 'forum', 'resources']);
-    expect(check.reasons).toEqual(['A building is already under construction', 'Needs forum tier 2', 'Not enough resources']);
+    expect(check.gates).toEqual(['lane', 'colony', 'resources']);
+    expect(check.reasons).toEqual(['A building is already under construction', 'Needs praetorium tier 2', 'Not enough resources']);
     const cost = building('library').tiers[1].cost;
     expect(check.short).toEqual({ wood: cost.wood! - 100, clay: cost.clay! - 100, iron: cost.iron! - 50 });
     expect(startBuild.bind(null, s, 'i1', 'library', 0)).toThrow(check.reason);
@@ -101,42 +101,42 @@ describe('locked, and why (every failing gate)', () => {
     expect(check.short).toEqual({});
   });
 
-  it('says the Forum first and greyed, then the lane and the shortfall', () => {
-    const s = forumOneWithLibraryAndABusyLane();
+  it('says the Praetorium first and greyed, then the lane and the shortfall', () => {
+    const s = praetoriumOneWithLibraryAndABusyLane();
     const words = lockWords(checkBuild(s, 'i1', 'library'));
-    expect(words).toContain('<span class="gate">needs Forum II</span>');
+    expect(words).toContain('<span class="gate">needs Praetorium II</span>');
     expect(words).toMatch(/<span class="muted">lane busy · short 200 wood, 180 clay, 60 iron<\/span>/);
-    expect(words.indexOf('needs Forum')).toBeLessThan(words.indexOf('lane busy'));
+    expect(words.indexOf('needs Praetorium')).toBeLessThan(words.indexOf('lane busy'));
   });
 
   it('puts the same list on the plot card and on the overview row', () => {
-    const g = new Game(forumOneWithLibraryAndABusyLane());
+    const g = new Game(praetoriumOneWithLibraryAndABusyLane());
     const card = renderPanel(g, 'village', 'i1', 1);
     expect(card).toContain('data-build="i1" data-building="library" disabled');
-    expect(card).toContain('needs Forum II');
+    expect(card).toContain('needs Praetorium II');
     expect(card).toContain('lane busy · short');
     const row = renderPanel(g, 'village', null, 1);
-    expect(row).toContain('needs Forum II');
+    expect(row).toContain('needs Praetorium II');
   });
 });
 
-describe('what the next Forum tier opens (derived, never authored)', () => {
+describe('what the next Praetorium tier opens (derived, never authored)', () => {
   it('matches a walk over data/buildings.json', () => {
     for (const t of [1, 2, 3]) {
       const expected: string[] = [];
       for (const b of buildings) {
-        if (b.id === 'forum') continue;
-        b.tiers.forEach((tier, i) => { if (tier.requiresForumTier === t) expected.push(`${b.id}:${i + 1}`); });
+        if (b.id === 'praetorium') continue;
+        b.tiers.forEach((tier, i) => { if (tier.requiresColonyTier === t) expected.push(`${b.id}:${i + 1}`); });
       }
-      expect(openedByForumTier(t).map((o) => `${o.building.id}:${o.tier}`)).toEqual(expected);
+      expect(openedByColonyTier(t).map((o) => `${o.building.id}:${o.tier}`)).toEqual(expected);
     }
-    expect(openedByForumTier(3).map((o) => `${o.building.id}:${o.tier}`)).toEqual(['library:3']);
-    expect(openedByForumTier(9)).toEqual([]);
+    expect(openedByColonyTier(3).map((o) => `${o.building.id}:${o.tier}`)).toEqual(['library:3']);
+    expect(openedByColonyTier(9)).toEqual([]);
   });
 
-  it('is grouped on the Forum row', () => {
-    expect(forumOpensWords(2)).toBe('tier III of everything but the Library, and Library II');
-    expect(forumOpensWords(3)).toBe('Library III');
+  it('is grouped on the Praetorium row', () => {
+    expect(colonyOpensWords(2)).toBe('tier III of everything but the Library, and Library II');
+    expect(colonyOpensWords(3)).toBe('Library III');
     const g = new Game(rich(createInitialState(0, 1)));
     expect(strip(renderPanel(g, 'village', null, 1))).toContain('opens tier III of everything but the Library, and Library II');
   });
@@ -162,7 +162,7 @@ describe('production per building, and the ledger behind the header', () => {
     const total = productionPerHour(s);
     for (const id of RESOURCE_IDS.filter((r) => r !== 'denarii')) {
       let sum = 0;
-      for (const slot of s.slots) sum += building(slot.building ?? 'forum').produces === id ? slotProductionPerHour(s, slot) : 0;
+      for (const slot of s.slots) sum += building(slot.building ?? 'praetorium').produces === id ? slotProductionPerHour(s, slot) : 0;
       // Held sites take the same multiplier the fields do.
       for (const c of s.map.claimed) sum += (site(c.siteId).produces?.[id] ?? 0) * yieldMultiplier(s, id);
       expect(sum, id).toBeCloseTo(total[id], 9);
@@ -275,7 +275,7 @@ describe('the colony overview', () => {
     const lumber = building('lumber_camp').tiers[1];
     expect(html).toContain('data-build="o1" data-building="lumber_camp"');
     expect(strip(html)).toContain(`30 wood/h now → 80/h at II (+50) ${lumber.cost.wood} wood , ${lumber.cost.clay} clay , ${lumber.cost.iron} iron ${durationText(lumber.buildSeconds)} Upgrade`);
-    expect(strip(html)).toContain('Forum I II: gravitas 1 → 2 a round (+1)');
+    expect(strip(html)).toContain('Praetorium I II: gravitas 1 → 2 a round (+1)');
   });
 
   it('marks a job under way with its time left and the rush button, and a top tier as at its height', () => {
@@ -285,7 +285,7 @@ describe('the colony overview', () => {
     const html = renderOverview(s, 1000);
     expect(html).toContain(`tier II under way — ${remainingText(c.finishAt - 1000)}`);
     expect(html).toMatch(/data-slot="o1">[\s\S]*?data-rush="o1"/);
-    expect(strip(html)).toContain('Forum III at its height');
+    expect(strip(html)).toContain('Praetorium III at its height');
     expect(html).not.toContain('data-build="c1"');
   });
 

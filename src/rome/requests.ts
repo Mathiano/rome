@@ -3,7 +3,7 @@ import type { GameState, ActiveRequest } from '../state/types';
 import { log } from '../state/store';
 import { report } from '../state/reports';
 import { pick } from '../state/rng';
-import { buildingTier, forumTier, sumEffect } from '../village/storage';
+import { buildingTier, colonyTier, sumEffect } from '../village/storage';
 import { canAfford, pay } from '../village/economy';
 import { militiaPool } from '../combat/militia';
 import { gainGravitas, leaderOf, playerFamily } from '../politics/characters';
@@ -45,7 +45,7 @@ export function issueNext(state: GameState): void {
     req = { ...progressionNext, delivered: {}, fulfilled: false, issuedRound: state.round };
     r.progressionIndex += 1;
   } else {
-    const tier = Math.max(1, forumTier(state));
+    const tier = Math.max(1, colonyTier(state));
     const f = pick(state, requestFiller);
     const deliver: Partial<Record<ResourceId, number>> = {};
     for (const [k, v] of Object.entries(f.deliverPerTier ?? {})) deliver[k as ResourceId] = (v ?? 0) * tier;

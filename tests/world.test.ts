@@ -63,7 +63,7 @@ describe('tribe envoys', () => {
     // +warnFear then -decay in the same round
     expect(TRIBE(g.state).fear).toBeCloseTo(fear + config.tribe.warnFear - config.tribe.fearDecayPerRound);
   });
-  it('tribute needs fear; trade needs a market; alliance needs trust', () => {
+  it('tribute needs fear; trade needs a forum, which holds the market; alliance needs trust', () => {
     const s = createInitialState(0, 1);
     TRIBE(s).fear = 0;
     dispatchEnvoy(s, TRIBE_ID, 'demand_tribute');
@@ -73,7 +73,7 @@ describe('tribe envoys', () => {
     dispatchEnvoy(s, TRIBE_ID, 'offer_trade');
     resolveEnvoy(s, TRIBE(s));
     expect(TRIBE(s).tradeOpen).toBe(false);
-    raise(s, 'market', 1);
+    raise(s, 'forum', 1);
     dispatchEnvoy(s, TRIBE_ID, 'offer_trade');
     resolveEnvoy(s, TRIBE(s));
     expect(TRIBE(s).tradeOpen).toBe(true);

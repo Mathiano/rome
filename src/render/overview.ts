@@ -13,9 +13,9 @@
  */
 import { building, buildings, config, effectVocabulary, post as postDef, unlocks, RESOURCE_IDS, type BuildingDef, type Cost, type ResourceId, type Reward, type Zone } from '../data';
 import type { ActiveRequest, GameState, Slot } from '../state/types';
-import { checkBuild, checkPlace, openedByForumTier, progress, rushPrice, type BuildCheck } from '../village/construction';
+import { checkBuild, checkPlace, copyFactor, nextCopy, openedByColonyTier, progress, rushPrice, type BuildCheck } from '../village/construction';
 import { denariiIncomePerHour, grainUpkeepPerHour, netPerHour, postBonus, slotProductionPerHour } from '../village/economy';
-import { buildingTier, researchEffect, sumEffect } from '../village/storage';
+import { adjacencyGains, buildingTier, researchEffect, sumEffect } from '../village/storage';
 import { holderOf } from '../politics/posts';
 import { site as siteDef } from '../map/world';
 
@@ -119,6 +119,32 @@ export function effectNowNext(def: BuildingDef, fromTier: number, toTier: number
   }).join(', ');
 }
 
+/** An effect record in words: "gravitas 1 a round, piety 2". */
+export function effectsWords(effects: Record<string, number>): string {
+  return Object.entries(effects).map(([k, v]) => `${effectVocabulary[k]?.noun ?? k} ${effectValue(k, v)}`).join(', ');
+}
+
+/**
+ * What a building gains from its neighbours (DESIGN §4.5 C.3), in words, or ''
+ * for a building whose data declares no adjacency — which is every building
+ * until the rules are written. On a standing building it names how many of
+ * each neighbour are beside it now and what that gives; with no slot (a
+ * building being placed) it states the rules alone.
+ */
+export function adjacencyWords(state: GameState, def: BuildingDef, slot?: Slot): string {
+  const rules = def.adjacency ?? [];
+  if (!rules.length) return '';
+  const gains = slot ? adjacencyGains(state, slot) : [];
+  const items = rules.map((r, i) => {
+    const each = `beside ${esc(building(r.beside).name)}: ${esc(effectsWords(r.effects))} for each`;
+    if (!slot) return `<li>${each}</li>`;
+    const g = gains[i];
+    const now = g && g.count ? ` — ${g.count} beside it now, ${esc(effectsWords(g.effects))}` : ' — none beside it now';
+    return `<li>${each}${now}</li>`;
+  });
+  return `<div class="adjacency" data-adjacency="${def.id}"><b>Beside it</b><ul>${items.join('')}</ul></div>`;
+}
+
 /** Rome's reward in words, as the Rome tab says it. */
 export function rewardWords(r: Reward): string {
   return [
@@ -147,8 +173,8 @@ export function romeAsksFor(state: GameState, buildingId: string): ActiveRequest
 
 /**
  * Every failing gate in words: the structural one first and greyed ("needs
- * Forum II"), then the transient ones as plain text ("lane busy · short 120
- * clay"), so the player can tell "not until the Forum" from "in a while".
+ * Praetorium II"), then the transient ones as plain text ("lane busy · short 120
+ * clay"), so the player can tell "not until the Praetorium" from "in a while".
  */
 export function lockWords(check: BuildCheck): string {
   if (check.ok) return '';
@@ -156,7 +182,7 @@ export function lockWords(check: BuildCheck): string {
   const transient: string[] = [];
   check.gates.forEach((g, i) => {
     switch (g) {
-      case 'forum': structural.push(`needs Forum ${ROMAN[Number(check.reasons[i].replace(/\D/g, ''))] ?? check.reasons[i]}`); break;
+      case 'colony': structural.push(`needs Praetorium ${ROMAN[Number(check.reasons[i].replace(/\D/g, ''))] ?? check.reasons[i]}`); break;
       case 'lane': transient.push('lane busy'); break;
       case 'slot_busy': transient.push('under way'); break;
       case 'resources': transient.push(`short ${Object.entries(check.short).map(([k, v]) => `${v} ${k}`).join(', ')}`); break;
@@ -200,11 +226,11 @@ export function renderLanes(state: GameState, now: number): string {
 // ---------------------------------------------------------------------------
 // The rows
 
-/** What the Forum's next tier opens, grouped so thirteen names do not scroll. */
-export function forumOpensWords(t: number): string {
-  const opened = openedByForumTier(t);
+/** What the Praetorium's next tier opens, grouped so thirteen names do not scroll. */
+export function colonyOpensWords(t: number): string {
+  const opened = openedByColonyTier(t);
   if (!opened.length) return '';
-  const others = buildings.filter((b) => b.id !== 'forum');
+  const others = buildings.filter((b) => b.id !== 'praetorium');
   const byTier = new Map<number, BuildingDef[]>();
   for (const o of opened) byTier.set(o.tier, [...(byTier.get(o.tier) ?? []), o.building]);
   const parts: string[] = [];
@@ -252,8 +278,8 @@ function buildingRow(state: GameState, slot: Slot, now: number): string {
       ? `${n(nowYield)} ${def.produces}/h now → ${n(nextYield)}/h at ${ROMAN[check.toTier]} (+${n(nextYield - nowYield)})`
       : `+${n(nextYield)} ${def.produces}/h`;
   }
-  if (def.id === 'forum') {
-    const opens = forumOpensWords(check.toTier);
+  if (def.id === 'praetorium') {
+    const opens = colonyOpensWords(check.toTier);
     if (opens) effect += `; opens ${opens}`;
   }
   const action = check.ok
@@ -287,7 +313,9 @@ function placeRow(state: GameState, def: BuildingDef): string {
   const check = checkPlace(state, def.id);
   const standing = state.slots.filter((s) => s.building === def.id).length;
   const [w, h] = def.footprint ?? [1, 1];
-  const size = `<span class="muted">${w}×${h}${standing ? `, ${standing} standing` : ''}</span>`;
+  // costs rise per copy (§4.4): say so on the row, so the price is never a surprise
+  const dearer = Math.round((copyFactor(def.id, nextCopy(state, def.id)) - 1) * 100);
+  const size = `<span class="muted">${w}×${h}${standing ? `, ${standing} standing` : ''}${dearer ? `, this one ${dearer}% dearer` : ''}</span>`;
   const blocked = check.gates.some((g) => g === 'room' || g === 'unique');
   return `<li data-unplaced="${def.id}"><div class="l1"><b>${esc(def.name)} I</b> ${size}${romeMark(state, def.id)}</div>
     <div class="l2"><span class="effect">${esc(effectNowNext(def, 0, 1))}</span> <span>${costTxt(check.cost, state)}</span> <span>${esc(durationText(check.seconds))}</span>
@@ -351,7 +379,7 @@ export function ledgerFor(state: GameState, id: ResourceId): LedgerLine[] {
     const tax = state.population * config.population.taxPerHeadPerHour;
     lines.push({ label: `tax: ${Math.floor(state.population)} heads × ${config.population.taxPerHeadPerHour}`, value: tax });
     const market = sumEffect(state, 'taxMultiplier') - researchEffect(state, 'taxMultiplier');
-    if (market) lines.push({ label: `market: ${pct(market)}`, value: tax * market });
+    if (market) lines.push({ label: `forum: ${pct(market)}`, value: tax * market });
     const research = researchEffect(state, 'taxMultiplier');
     if (research) lines.push({ label: `research: ${pct(research)}`, value: tax * research });
     const aedile = postBonus(state, 'market');

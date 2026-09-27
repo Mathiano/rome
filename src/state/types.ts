@@ -12,6 +12,11 @@ export interface Slot {
   y?: number;
   building: string | null;
   tier: number;
+  /**
+   * Which copy of a repeatable building this is, 0 for the first, fixed when
+   * it is first built (DESIGN §4.4: costs rise per copy). Absent reads as 0.
+   */
+  copy?: number;
 }
 
 export interface Construction {
@@ -147,7 +152,7 @@ export interface RoundReport {
   toLogId?: number;
   /** Cheap derivations at round end, for the history table on the Save tab. */
   standing?: number;
-  forumTier?: number;
+  colonyTier?: number;
   buildingsRaised?: number;
   claimed?: number;
 }

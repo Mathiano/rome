@@ -75,9 +75,9 @@ export function resolveEnvoy(state: GameState, t: TribeState): void {
       }
       break;
     case 'offer_trade':
-      if (buildingTier(state, 'market') < 1) {
+      if (buildingTier(state, 'forum') < 1) {
         outcome = 'no_market';
-        text = `${def.name} would trade, but you have no ${building('market').name}.`;
+        text = `${def.name} would trade, but you have no ${building('forum').name}.`;
       } else {
         t.tradeOpen = true;
         t.trust = clamp(t.trust + c.tradeTrust);
@@ -134,8 +134,8 @@ export function resolveEnvoy(state: GameState, t: TribeState): void {
 /** Trade at the market once a trade agreement exists: give `wants`, receive `gives` at the tribe's ratio, improved by market tier. */
 export function tradeRate(state: GameState, tribeId: string): number {
   const def = tribeDef(tribeId);
-  const market = buildingTier(state, 'market');
-  const marketRate = market > 0 ? building('market').tiers[market - 1].effects.tradeRate : def.trade.ratio;
+  const market = buildingTier(state, 'forum');
+  const marketRate = market > 0 ? building('forum').tiers[market - 1].effects.tradeRate : def.trade.ratio;
   // Holding the ford sharpens the rate beyond what the market alone can do.
   return Math.max(1, Math.max(def.trade.ratio, marketRate) + claimedEffect(state, 'tradeRate') + researchEffect(state, 'tradeRate'));
 }

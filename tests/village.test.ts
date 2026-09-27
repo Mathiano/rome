@@ -83,7 +83,7 @@ describe('construction', () => {
     // and nothing goes down across cells that are taken
     expect(checkPlace(s, 'granary', at).gates).toEqual(['room']);
   });
-  it('gates tiers on the forum tier', () => {
+  it('gates tiers on the colony tier, which is the praetorium\'s', () => {
     const s = createInitialState(0, 1);
     s.resources = { wood: 9999, clay: 9999, iron: 9999, grain: 9999, denarii: 9999 };
     plot(s, 'warehouse', 'i1');
@@ -91,7 +91,7 @@ describe('construction', () => {
     completeFinished(s, 1e9);
     startBuild(s, 'i1', 'warehouse', 0);
     completeFinished(s, 1e9);
-    expect(checkBuild(s, 'i1', 'warehouse').reason).toMatch(/forum tier 2/);
+    expect(checkBuild(s, 'i1', 'warehouse').reason).toMatch(/praetorium tier 2/);
   });
   it('rush price never exceeds what the colony earns in the remaining time (Pillar 3)', () => {
     const s = createInitialState(0, 1);
@@ -213,7 +213,7 @@ describe('the colony index', () => {
   it('lists every pinned building, raised or not, and selects it', () => {
     const g = new Game(createInitialState(0, 1));
     const html = renderPanel(g, 'village', null, 1);
-    for (const id of ['forum', 'castellum', 'wall']) {
+    for (const id of ['praetorium', 'forum', 'castellum', 'wall']) {
       expect(html, id).toContain(building(id).name);
     }
     expect(html, 'the wall is a button that selects its slot').toContain('data-select-slot="w1"');

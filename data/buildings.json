@@ -1,14 +1,14 @@
 {
-  "_comment": "Three tiers per building. buildSeconds is real time. requiresForumTier gates each tier. Effects are read by src/village and src/combat; nothing here is duplicated in code. zone (DESIGN §4.5 C.2): 'town' stands on the grid inside the wall, 'site' on a resource site outside it, 'wall' is the circuit. footprint is [along x, along y] in grid cells (§4.4, 🟡 starting values). unique: one per colony; every other building is repeatable (§4.4).",
+  "_comment": "Three tiers per building. buildSeconds is real time. requiresColonyTier gates each tier: the colony's tier is the Praetorium's (DESIGN §4.4, the seat). Effects are read by src/village and src/combat; nothing here is duplicated in code. zone (DESIGN §4.5 C.2): 'town' stands on the grid inside the wall, 'site' on a resource site outside it, 'wall' is the circuit. footprint is [along x, along y] in grid cells (§4.4, 🟡 starting values). unique: one per colony; every other building is repeatable (§4.4). adjacency (DESIGN §4.5 C.3, scaffolding only): a building may list [{ \"beside\": <building id>, \"effects\": { <effect>: <value> } }], each effect gained once for every standing neighbour of that kind sharing an edge. None is defined; the rules are ❓.",
   "buildings": [
     {
-      "id": "forum",
-      "name": "Forum",
+      "id": "praetorium",
+      "name": "Praetorium",
       "zone": "town",
       "footprint": [2, 2],
       "unique": true,
       "kind": "building",
-      "role": "Seat of the council. Its tier is the colony's tier.",
+      "role": "The governor's residence and the seat of your house. Its tier is the colony's tier.",
       "tiers": [
         {
           "cost": {
@@ -18,7 +18,7 @@
             "grain": 20
           },
           "buildSeconds": 300,
-          "requiresForumTier": 0,
+          "requiresColonyTier": 0,
           "effects": {
             "gravitasPerRound": 1
           }
@@ -31,7 +31,7 @@
             "grain": 120
           },
           "buildSeconds": 3600,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "gravitasPerRound": 2
           }
@@ -44,9 +44,59 @@
             "grain": 400
           },
           "buildSeconds": 14400,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "gravitasPerRound": 4
+          }
+        }
+      ]
+    },
+    {
+      "id": "forum",
+      "name": "Forum",
+      "zone": "town",
+      "footprint": [2, 2],
+      "unique": true,
+      "kind": "building",
+      "role": "Basilica, curia and market. The council meets here, and trade with the tribes and Rome passes through it. Raises denarii income.",
+      "tiers": [
+        {
+          "cost": {
+            "wood": 80,
+            "clay": 60,
+            "iron": 20
+          },
+          "buildSeconds": 300,
+          "requiresColonyTier": 1,
+          "effects": {
+            "taxMultiplier": 0.15,
+            "tradeRate": 3
+          }
+        },
+        {
+          "cost": {
+            "wood": 300,
+            "clay": 260,
+            "iron": 80
+          },
+          "buildSeconds": 2700,
+          "requiresColonyTier": 1,
+          "effects": {
+            "taxMultiplier": 0.35,
+            "tradeRate": 2.5
+          }
+        },
+        {
+          "cost": {
+            "wood": 900,
+            "clay": 800,
+            "iron": 300
+          },
+          "buildSeconds": 9600,
+          "requiresColonyTier": 2,
+          "effects": {
+            "taxMultiplier": 0.7,
+            "tradeRate": 2
           }
         }
       ]
@@ -67,7 +117,7 @@
             "iron": 40
           },
           "buildSeconds": 240,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "militiaBonus": 5
           }
@@ -79,7 +129,7 @@
             "iron": 220
           },
           "buildSeconds": 3000,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "militiaBonus": 15
           }
@@ -91,7 +141,7 @@
             "iron": 800
           },
           "buildSeconds": 12000,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "militiaBonus": 35
           }
@@ -113,7 +163,7 @@
             "clay": 60
           },
           "buildSeconds": 420,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "defence": 12
           }
@@ -125,7 +175,7 @@
             "iron": 120
           },
           "buildSeconds": 3600,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "defence": 24
           }
@@ -137,7 +187,7 @@
             "iron": 400
           },
           "buildSeconds": 13500,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "defence": 36
           }
@@ -158,7 +208,7 @@
             "clay": 30
           },
           "buildSeconds": 180,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "warehouseCapacity": 600
           }
@@ -170,7 +220,7 @@
             "iron": 40
           },
           "buildSeconds": 1800,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "warehouseCapacity": 2000
           }
@@ -182,7 +232,7 @@
             "iron": 200
           },
           "buildSeconds": 7200,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "warehouseCapacity": 6000
           }
@@ -203,7 +253,7 @@
             "clay": 40
           },
           "buildSeconds": 180,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "granaryCapacity": 600
           }
@@ -215,7 +265,7 @@
             "iron": 30
           },
           "buildSeconds": 1800,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "granaryCapacity": 2000
           }
@@ -227,7 +277,7 @@
             "iron": 150
           },
           "buildSeconds": 7200,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "granaryCapacity": 6000
           }
@@ -248,7 +298,7 @@
             "clay": 50
           },
           "buildSeconds": 150,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "hiddenPerResource": 100
           }
@@ -260,7 +310,7 @@
             "iron": 30
           },
           "buildSeconds": 1500,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "hiddenPerResource": 350
           }
@@ -272,7 +322,7 @@
             "iron": 120
           },
           "buildSeconds": 6000,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "hiddenPerResource": 1000
           }
@@ -293,7 +343,7 @@
             "clay": 50
           },
           "buildSeconds": 240,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "populationCap": 40
           }
@@ -305,7 +355,7 @@
             "iron": 40
           },
           "buildSeconds": 2400,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "populationCap": 120
           }
@@ -317,59 +367,9 @@
             "iron": 200
           },
           "buildSeconds": 9000,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "populationCap": 300
-          }
-        }
-      ]
-    },
-    {
-      "id": "market",
-      "name": "Market",
-      "zone": "town",
-      "footprint": [1, 1],
-      "unique": true,
-      "kind": "building",
-      "role": "Trade with the tribes and Rome. Raises denarii income.",
-      "tiers": [
-        {
-          "cost": {
-            "wood": 80,
-            "clay": 60,
-            "iron": 20
-          },
-          "buildSeconds": 300,
-          "requiresForumTier": 1,
-          "effects": {
-            "taxMultiplier": 0.15,
-            "tradeRate": 3
-          }
-        },
-        {
-          "cost": {
-            "wood": 300,
-            "clay": 260,
-            "iron": 80
-          },
-          "buildSeconds": 2700,
-          "requiresForumTier": 1,
-          "effects": {
-            "taxMultiplier": 0.35,
-            "tradeRate": 2.5
-          }
-        },
-        {
-          "cost": {
-            "wood": 900,
-            "clay": 800,
-            "iron": 300
-          },
-          "buildSeconds": 9600,
-          "requiresForumTier": 2,
-          "effects": {
-            "taxMultiplier": 0.7,
-            "tradeRate": 2
           }
         }
       ]
@@ -390,7 +390,7 @@
             "iron": 20
           },
           "buildSeconds": 300,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "gravitasPerRound": 1,
             "pietyBonus": 1
@@ -403,7 +403,7 @@
             "iron": 100
           },
           "buildSeconds": 3000,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "gravitasPerRound": 2,
             "pietyBonus": 2
@@ -416,7 +416,7 @@
             "iron": 400
           },
           "buildSeconds": 10800,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "gravitasPerRound": 4,
             "pietyBonus": 3
@@ -440,7 +440,7 @@
             "iron": 20
           },
           "buildSeconds": 300,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "researchSpeed": 0.05,
             "researchRank": 1
@@ -453,7 +453,7 @@
             "iron": 110
           },
           "buildSeconds": 3000,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "researchSpeed": 0.18,
             "researchRank": 2,
@@ -467,7 +467,7 @@
             "iron": 420
           },
           "buildSeconds": 10800,
-          "requiresForumTier": 3,
+          "requiresColonyTier": 3,
           "effects": {
             "researchSpeed": 0.32,
             "researchRank": 3,
@@ -492,7 +492,7 @@
             "iron": 30
           },
           "buildSeconds": 240,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "romeRewardMultiplier": 0.1
           }
@@ -504,7 +504,7 @@
             "iron": 120
           },
           "buildSeconds": 2400,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "romeRewardMultiplier": 0.25
           }
@@ -516,7 +516,7 @@
             "iron": 400
           },
           "buildSeconds": 9000,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "romeRewardMultiplier": 0.5
           }
@@ -539,7 +539,7 @@
             "iron": 20
           },
           "buildSeconds": 240,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "militiaBonus": 3
           }
@@ -551,7 +551,7 @@
             "iron": 90
           },
           "buildSeconds": 1800,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "militiaBonus": 7
           }
@@ -563,7 +563,7 @@
             "iron": 300
           },
           "buildSeconds": 7200,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "militiaBonus": 12
           }
@@ -586,7 +586,7 @@
             "iron": 10
           },
           "buildSeconds": 120,
-          "requiresForumTier": 0,
+          "requiresColonyTier": 0,
           "effects": {
             "productionPerHour": 30
           }
@@ -598,7 +598,7 @@
             "iron": 40
           },
           "buildSeconds": 900,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "productionPerHour": 80
           }
@@ -610,7 +610,7 @@
             "iron": 160
           },
           "buildSeconds": 4800,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "productionPerHour": 200
           }
@@ -633,7 +633,7 @@
             "iron": 10
           },
           "buildSeconds": 120,
-          "requiresForumTier": 0,
+          "requiresColonyTier": 0,
           "effects": {
             "productionPerHour": 30
           }
@@ -645,7 +645,7 @@
             "iron": 40
           },
           "buildSeconds": 900,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "productionPerHour": 80
           }
@@ -657,7 +657,7 @@
             "iron": 160
           },
           "buildSeconds": 4800,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "productionPerHour": 200
           }
@@ -680,7 +680,7 @@
             "iron": 5
           },
           "buildSeconds": 150,
-          "requiresForumTier": 0,
+          "requiresColonyTier": 0,
           "effects": {
             "productionPerHour": 18
           }
@@ -692,7 +692,7 @@
             "iron": 30
           },
           "buildSeconds": 1100,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "productionPerHour": 50
           }
@@ -704,7 +704,7 @@
             "iron": 120
           },
           "buildSeconds": 5400,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "productionPerHour": 130
           }
@@ -727,7 +727,7 @@
             "iron": 5
           },
           "buildSeconds": 100,
-          "requiresForumTier": 0,
+          "requiresColonyTier": 0,
           "effects": {
             "productionPerHour": 35
           }
@@ -739,7 +739,7 @@
             "iron": 30
           },
           "buildSeconds": 800,
-          "requiresForumTier": 1,
+          "requiresColonyTier": 1,
           "effects": {
             "productionPerHour": 90
           }
@@ -751,7 +751,7 @@
             "iron": 120
           },
           "buildSeconds": 4200,
-          "requiresForumTier": 2,
+          "requiresColonyTier": 2,
           "effects": {
             "productionPerHour": 230
           }

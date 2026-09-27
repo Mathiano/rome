@@ -3,7 +3,7 @@ import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
 import { checkBuild, checkPlace, eligibleBuildings, progress, rushPrice, slotById } from '../village/construction';
 import { canAfford, netPerHour } from '../village/economy';
-import { capacity, hiddenPerResource, populationCap, forumTier, buildingTier } from '../village/storage';
+import { capacity, hiddenPerResource, populationCap, colonyTier, buildingTier } from '../village/storage';
 import { gravitasRank, leaderOf, livingMembers, playerFamily, rivalFamilies, standing } from '../politics/characters';
 import { holderOf, lesserEffect, lesserHolderOf, meetsRank, postsHeldBy } from '../politics/posts';
 import { militiaPool, homeMilitia } from '../combat/militia';
@@ -24,7 +24,7 @@ import {
   availableResearch, checkResearch, isResearched, researchProgress, researchRank,
   researchRushPrice, researchSpeed, resourcesOf,
 } from '../village/research';
-import { costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
+import { adjacencyWords, costTxt, durationText, effectNowNext, effectWords, esc, lockWords, n, remainingText, renderOverview, ROMAN } from './overview';
 import { blockedBy, currentAdvice, foundingParagraphs, resolveGoto } from './advisor';
 import { rememberOpen, renderHistoryTable, renderNewsRecord, renderReports, reportsUnread, setReportFilter } from './reports';
 import { dueItems, overflowWords, renderDue, renderReturnStrip } from './due';
@@ -177,7 +177,7 @@ export function renderHeader(state: GameState): string {
     return `<span class="${rate < 0 ? 'neg' : ''}"><b>${n(state.resources[id])}${capTxt}</b><small>${id} ${rate >= 0 ? '+' : ''}${n(rate)}/h</small></span>`;
   }).join('');
   const admin = state.rome.administeringUntilRound > state.round ? ' · <em>Rome administers</em>' : '';
-  return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Forum ${ROMAN[forumTier(state)]}${colonyLine(state)}${admin}</span><div class="res">${res}</div>`;
+  return `<h1>${esc(config.townName)}</h1><span class="muted">Round ${state.round} · Pop ${Math.floor(state.population)}/${populationCap(state)} · Praetorium ${ROMAN[colonyTier(state)]}${colonyLine(state)}${admin}</span><div class="res">${res}</div>`;
 }
 
 /**
@@ -262,7 +262,7 @@ function renderVillage(s: GameState, selected: string | null, now: number, placi
     const [w, h] = def.footprint ?? [1, 1];
     const where = def.placement === 'riverbank' ? 'on the riverbank' : 'inside the wall';
     out += `<div class="card placing" data-placing="${placing}"><b>Placing the ${esc(def.name.toLowerCase())} ${ROMAN[1]}</b> <span class="muted">${w}×${h}</span>
-      <p class="muted">${esc(def.role)}</p><p>${esc(effectNowNext(def, 0, 1))}</p><p>Cost: ${costTxt(check.cost, s)} · ${esc(durationText(check.seconds))}</p>
+      <p class="muted">${esc(def.role)}</p><p>${esc(effectNowNext(def, 0, 1))}</p>${adjacencyWords(s, def)}<p>Cost: ${costTxt(check.cost, s)} · ${esc(durationText(check.seconds))}</p>
       <p>Choose its cells ${where}: every place it fits is marked.</p>
       ${check.ok ? '' : `<p>${lockWords(check)}</p>`}
       <button class="act secondary" data-place="">Put it back</button></div>`;
@@ -277,7 +277,7 @@ function renderVillage(s: GameState, selected: string | null, now: number, placi
   const slot = slotById(s, selected);
   const c = s.constructions.find((x) => x.slotId === slot.id);
   out += `<h3>${slot.building ? esc(building(slot.building).name) : slot.site ? esc(slot.site.replace('_', ' ')) : 'Empty plot'} ${slot.tier ? ROMAN[slot.tier] : ''}</h3>`;
-  if (slot.building) out += `<p class="muted">${esc(building(slot.building).role)}</p>`;
+  if (slot.building) out += `<p class="muted">${esc(building(slot.building).role)}</p>` + adjacencyWords(s, building(slot.building), slot);
   if (c) {
     const price = rushPrice(s, c, now);
     const pct = Math.round(progress(c, now) * 100);
