@@ -1,15 +1,15 @@
-import { config } from '../data';
 import type { GameState } from '../state/types';
 import { accrue } from './economy';
 import { completeFinished } from './construction';
 import { completeResearch } from './research';
 import { clampToCapacity } from './storage';
-import { runIdleRounds } from '../politics/rounds';
 
 /**
  * The invisible village clock (DESIGN §3.1). Advances the economy by wall-clock
- * time since the last tick, completes finished constructions, and applies the
- * calendar floor (§3.3). Safe to call with any `now` >= lastTick; larger gaps
+ * time since the last tick and completes finished constructions and studies.
+ * It never runs a political round: rounds advance only when the player acts
+ * (§3.2, §3.3 as ruled 2026-09-25), however long the gap and whatever the dev
+ * clock's multiplier. Safe to call with any `now` >= lastTick; larger gaps
  * (the game was closed) are handled in one step because accrual is linear and
  * capped by storage.
  */
@@ -35,5 +35,4 @@ export function tick(state: GameState, now: number): void {
   completeResearch(state, now);
   clampToCapacity(state);
   state.lastTick = now;
-  runIdleRounds(state, now, config.calendarFloorHours * 3_600_000, config.idleRoundsMaxCatchUp);
 }
