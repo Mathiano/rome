@@ -1,20 +1,25 @@
-import { layout, building } from '../data';
+import { building, layout } from '../data';
 import type { GameState, Slot } from '../state/types';
 import { progress } from '../village/construction';
 import { buildingTier } from '../village/storage';
+import { anchors, cellSize, centreOf, enclosure, enclosureOfSize, extentOf, riverbank } from '../village/grid';
 import { remainingText } from './panel';
 import { currentAdvice, resolveGoto } from './advisor';
 import { sprite, type AnimPlacement, type LoopPlacement } from './sprites';
-import { createGround, createWall, GATE_HIT, type ScenePiece } from './environment';
+import { createGround, createTownFloor, createWall, gateAt, GATE_HIT, project as projectXY, type ScenePiece } from './environment';
 
 const NS = 'http://www.w3.org/2000/svg';
 
-export interface VillageView { root: SVGSVGElement; update(state: GameState, now: number, selected: string | null): void; }
+export interface VillageView {
+  root: SVGSVGElement;
+  /** `placing` is a town building being put down: the view offers every cell it fits. */
+  update(state: GameState, now: number, selected: string | null, placing?: string | null): void;
+}
 
-/** Isometric projection of layout grid coordinates. */
+/** Isometric projection of grid units to scene units. */
 export function project(x: number, y: number): { sx: number; sy: number } {
-  const { w, h } = layout.tile;
-  return { sx: ((x - y) * w) / 2, sy: ((x + y) * h) / 2 };
+  const [sx, sy] = projectXY(x, y);
+  return { sx, sy };
 }
 
 function el<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, string | number> = {}): SVGElementTagNameMap[K] {
@@ -23,83 +28,183 @@ function el<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, 
   return e;
 }
 
-export function createVillageView(onSelect: (slotId: string) => void): VillageView {
-  const VIEW = { x: -330, y: -190, w: 660, h: 360 };
+/** Where a slot stands, in grid units: a footprint's centre, a site's cell centre, the wall's gate. */
+export function slotCentre(state: GameState, slot: Slot): { x: number; y: number } {
+  if (slot.zone === 'wall') return gateAt(enclosure(state));
+  if (slot.zone === 'town') return centreOf(slot);
+  return { x: (slot.x ?? 0) + 0.5, y: (slot.y ?? 0) + 0.5 };
+}
+
+/** A diamond of w×h cells centred on the origin, in scene units. */
+function plate(w: number, h: number): string {
+  const c = cellSize();
+  const hw = c.w / 2;
+  const hh = c.h / 2;
+  // the corners of [−w/2, w/2] × [−h/2, h/2] in grid units, projected
+  const p = (x: number, y: number) => `${(((x - y) * hw)).toFixed(1)},${(((x + y) * hh)).toFixed(1)}`;
+  return [p(-w / 2, -h / 2), p(w / 2, -h / 2), p(w / 2, h / 2), p(-w / 2, h / 2)].join(' ');
+}
+
+/**
+ * Everything the view can show, in grid units: the largest enclosure, its
+ * riverbank and the river past it, and every site outside the wall.
+ */
+function sceneBounds(): { x: number; y: number; w: number; h: number } {
+  const big = enclosureOfSize(Math.max(...layout.grid.sizeByWallTier));
+  const pts: [number, number][] = [
+    [big.x0, big.y0], [big.x1 + 1 + layout.grid.riverbankDepth + 1, big.y0], [big.x0, big.y1 + 1], [big.x1 + 1 + layout.grid.riverbankDepth + 1, big.y1 + 1],
+    ...layout.sites.flatMap((s) => [[s.x, s.y], [s.x + 1, s.y + 1]] as [number, number][]),
+  ];
+  const sx = pts.map(([x, y]) => project(x, y).sx);
+  const sy = pts.map(([x, y]) => project(x, y).sy);
+  const pad = cellSize().w * 0.6;
+  const x0 = Math.min(...sx) - pad;
+  const y0 = Math.min(...sy) - pad * 1.6; // sprites stand taller than their plates
+  return { x: x0, y: y0, w: Math.max(...sx) + pad - x0, h: Math.max(...sy) + pad * 0.6 - y0 };
+}
+
+/**
+ * The view's zoom (DESIGN §4.5 C.4): it opens on the whole country and zooms
+ * in by the wheel as far as the old frame — so at its widest it shows roughly
+ * three times what the round town did, and never more than the scene holds.
+ */
+export const ZOOM = { closestWidth: 660, aspect: 360 / 660 };
+
+export function createVillageView(onSelect: (slotId: string) => void, onPlace: (x: number, y: number) => void = () => {}): VillageView {
+  const SCENE = sceneBounds();
+  const VIEW = { ...SCENE };
   const root = el('svg', { viewBox: `${VIEW.x} ${VIEW.y} ${VIEW.w} ${VIEW.h}`, preserveAspectRatio: 'xMidYMid meet' });
   const world = el('g');
   root.appendChild(world);
-  // The ground — painting, roads, square — lies under everything and never
-  // changes (DESIGN §10). The wall does not: it has depth, and it is a building
-  // of its own, so it is rebuilt when its tier is raised.
+  // The country lies under everything and never changes.
   world.appendChild(createGround(VIEW));
+  // The town floor and grid change with the wall's tier; the scene above it
+  // holds every slot and every piece of wall, appended in depth order.
+  const floorLayer = el('g', { class: 'floor-layer' });
+  const scene = el('g', { class: 'scene' });
+  const placeLayer = el('g', { class: 'place-layer' });
+  world.append(floorLayer, scene, placeLayer);
   // Labels live above every plot: a plot drawn later would otherwise cover its
-  // neighbour's name now that the plates touch.
+  // neighbour's name.
   const labelLayer = el('g', { class: 'labels' });
   const hoverLabel = el('text', { class: 'label', x: 0, y: 0 });
   labelLayer.appendChild(hoverLabel);
   root.appendChild(labelLayer);
   let hovered: string | null = null;
-  const groups = new Map<string, { g: SVGGElement; spriteG: SVGGElement; key: string; bar: SVGRectElement; barBg: SVGRectElement; label: SVGTextElement }>();
-  const { w, h } = layout.tile;
+  const groups = new Map<string, { g: SVGGElement; spriteG: SVGGElement; key: string; bar: SVGRectElement; barBg: SVGRectElement; depth: number; pos: string }>();
+  const { h } = cellSize();
 
-  const ordered = [...layout.slots].sort((a, b) => a.x + a.y - (b.x + b.y));
-  for (const def of ordered) {
-    const { sx, sy } = project(def.x, def.y);
-    const g = el('g', { class: `slot ring-${def.ring}${def.site ? ' site-' + def.site : ''}`, 'data-slot': def.id, transform: `translate(${sx},${sy})` });
-    // The wall stands on no plate: its own circuit is its sprite, and a ground
-    // diamond at the gate would only draw a tile across the road. It still
-    // needs something to click, so its `tile` is the gate's own span.
-    const perimeter = def.ring === 'perimeter';
-    const tile = perimeter
+  // --- zoom: the wheel scales the frame about the pointer, clamped to the scene
+  function setView(x: number, y: number, w: number): void {
+    const hh = w * (SCENE.h / SCENE.w);
+    VIEW.w = w;
+    VIEW.h = hh;
+    VIEW.x = Math.max(SCENE.x, Math.min(SCENE.x + SCENE.w - w, x));
+    VIEW.y = Math.max(SCENE.y, Math.min(SCENE.y + SCENE.h - hh, y));
+    root.setAttribute('viewBox', `${VIEW.x.toFixed(1)} ${VIEW.y.toFixed(1)} ${VIEW.w.toFixed(1)} ${VIEW.h.toFixed(1)}`);
+  }
+  root.addEventListener('wheel', (ev) => {
+    ev.preventDefault();
+    const rect = root.getBoundingClientRect();
+    const fx = rect.width ? (ev.clientX - rect.left) / rect.width : 0.5;
+    const fy = rect.height ? (ev.clientY - rect.top) / rect.height : 0.5;
+    const w = Math.max(ZOOM.closestWidth, Math.min(SCENE.w, VIEW.w * (ev.deltaY > 0 ? 1.15 : 1 / 1.15)));
+    const hh = w * (SCENE.h / SCENE.w);
+    setView(VIEW.x + (VIEW.w - w) * fx, VIEW.y + (VIEW.h - hh) * fy, w);
+  }, { passive: false });
+
+  function makeGroup(state: GameState, slot: Slot) {
+    const g = el('g', { class: `slot zone-${slot.zone}${slot.site ? ' site-' + slot.site : ''}`, 'data-slot': slot.id });
+    // The wall stands on no plate: its circuit is its sprite. It still needs
+    // something to click, so its `tile` is the gate's own span.
+    const tile = slot.zone === 'wall'
       ? el('polygon', { class: 'tile', points: `${-GATE_HIT.w / 2},2 ${GATE_HIT.w / 2},2 ${GATE_HIT.w / 2},${-GATE_HIT.h} ${-GATE_HIT.w / 2},${-GATE_HIT.h}` })
-      : el('polygon', { class: 'tile', points: `${-w / 2},0 0,${h / 2} ${w / 2},0 0,${-h / 2}` });
+      : el('polygon', { class: 'tile', points: slot.zone === 'town' ? plate(...extentOf(building(slot.building!))) : plate(1, 1) });
     g.appendChild(tile);
-    if (!perimeter) {
+    if (slot.zone === 'site') {
+      const { w } = cellSize();
       const empty = el('g', { class: 'empty-marks' });
       for (const [sx, sy] of [[-w / 2, 0], [0, h / 2], [w / 2, 0], [0, -h / 2]] as [number, number][]) {
         empty.appendChild(el('line', { x1: sx * 0.86, y1: sy * 0.86, x2: sx * 0.86, y2: sy * 0.86 - 7, class: 'stake' }));
       }
-      if (def.site) empty.appendChild(siteGlyph(def.site));
+      if (slot.site) empty.appendChild(siteGlyph(slot.site));
       g.appendChild(empty);
     }
     const spriteG = el('g', { class: 'sprite' });
     g.appendChild(spriteG);
     const barBg = el('rect', { class: 'progress', x: -20, y: h / 2 + 2, width: 40, height: 4, rx: 1, visibility: 'hidden' });
     const bar = el('rect', { class: 'progress-bar', x: -20, y: h / 2 + 2, width: 0, height: 4, rx: 1, visibility: 'hidden' });
-    const label = el('text', { class: 'label', x: 0, y: h / 2 + 14 });
     g.append(barBg, bar);
-    g.addEventListener('click', () => onSelect(def.id));
-    // The label is painted in update(), which runs on the village tick — so a
-    // hover took up to a second to answer. Paint it on the spot instead.
-    g.addEventListener('mouseenter', () => { hovered = def.id; paintLabel(); });
-    g.addEventListener('mouseleave', () => { if (hovered === def.id) hovered = null; paintLabel(); });
-    world.appendChild(g);
-    groups.set(def.id, { g, spriteG, key: '', bar, barBg, label });
+    g.addEventListener('click', () => onSelect(slot.id));
+    // Paint the label on the spot rather than on the next village tick.
+    g.addEventListener('mouseenter', () => { hovered = slot.id; paintLabel(); });
+    g.addEventListener('mouseleave', () => { if (hovered === slot.id) hovered = null; paintLabel(); });
+    const entry = { g, spriteG, key: '', bar, barBg, depth: 0, pos: '' };
+    groups.set(slot.id, entry);
+    placeGroup(state, slot, entry);
+    return entry;
+  }
+
+  function placeGroup(state: GameState, slot: Slot, entry: { g: SVGGElement; depth: number; pos: string }): void {
+    const c = slotCentre(state, slot);
+    const pos = `${c.x},${c.y}`;
+    if (pos === entry.pos) return;
+    entry.pos = pos;
+    const { sx, sy } = project(c.x, c.y);
+    entry.g.setAttribute('transform', `translate(${sx},${sy})`);
+    entry.depth = c.x + c.y;
   }
 
   /**
-   * Paint the wall in with the plots rather than behind them.
-   *
-   * The ring runs from depth -8.7 due north to +8.7 due south and the plots
-   * from -7 to +7, so one arc of the wall belongs behind a given building and
-   * another in front of it. Appending everything in depth order is the whole
-   * of the fix: SVG paints in document order.
+   * The wall and the floor under it follow the wall's tier; the slots follow
+   * the colony. The scene is re-sorted only when one of those changes — never
+   * on a plain tick, so nothing under the pointer is rebuilt (the steady UI).
    */
-  let wallTier = -1;
-  function composeWall(tier: number): void {
-    if (tier === wallTier) return;
-    wallTier = tier;
-    for (const old of Array.from(world.querySelectorAll('.wall-seg, .gate, .tower'))) old.remove();
-    const pieces: ScenePiece[] = createWall(tier);
-    const slotDepth = (id: string) => {
-      const d = layout.slots.find((s) => s.id === id)!;
-      return d.x + d.y;
-    };
-    for (const piece of pieces) {
-      // the first plot that sits nearer the viewer than this piece
-      const after = ordered.find((d) => slotDepth(d.id) > piece.depth);
-      if (after) world.insertBefore(piece.g, groups.get(after.id)!.g);
-      else world.appendChild(piece.g);
+  let shape = '';
+  let wallPieces: ScenePiece[] = [];
+  function compose(state: GameState): void {
+    const wallTier = buildingTier(state, 'wall');
+    const e = enclosure(state);
+    const ids = state.slots.map((s) => s.id).join(' ');
+    const next = `${wallTier}|${ids}`;
+    if (next === shape) return;
+    const tierChanged = shape.split('|')[0] !== String(wallTier);
+    shape = next;
+    if (tierChanged) {
+      floorLayer.replaceChildren(createTownFloor(e, riverbank(state)));
+      for (const p of wallPieces) p.g.remove();
+      wallPieces = createWall(wallTier, e);
+    }
+    const live = new Set(state.slots.map((s) => s.id));
+    for (const [id, gr] of groups) if (!live.has(id)) { gr.g.remove(); groups.delete(id); }
+    for (const slot of state.slots) {
+      const gr = groups.get(slot.id) ?? makeGroup(state, slot);
+      placeGroup(state, slot, gr);
+    }
+    const pieces: ScenePiece[] = [...wallPieces, ...Array.from(groups.values()).map((gr) => ({ depth: gr.depth, g: gr.g }))];
+    pieces.sort((a, b) => a.depth - b.depth);
+    // Appending an element already in the scene moves it; the order is the depth.
+    for (const p of pieces) {
+      p.g.setAttribute('data-depth', p.depth.toFixed(3));
+      scene.appendChild(p.g);
+    }
+  }
+
+  /** The cells a building can go on, drawn as its footprint at every anchor that fits. */
+  let placeKey = '';
+  function drawPlacing(state: GameState, placing: string | null): void {
+    const k = placing ? `${placing}|${shape}` : '';
+    if (k === placeKey) return;
+    placeKey = k;
+    placeLayer.replaceChildren();
+    root.classList.toggle('placing', !!placing);
+    if (!placing) return;
+    const [w, hh] = extentOf(building(placing));
+    for (const a of anchors(state, placing)) {
+      const { sx, sy } = project(a.x + w / 2, a.y + hh / 2);
+      const spot = el('polygon', { class: 'place-spot', points: plate(w, hh), transform: `translate(${sx},${sy})`, 'data-place-at': `${a.x},${a.y}` });
+      spot.addEventListener('click', (ev) => { ev.stopPropagation(); onPlace(a.x, a.y); });
+      placeLayer.appendChild(spot);
     }
   }
 
@@ -109,25 +214,24 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
   function paintLabel(): void {
     if (!last) return;
     const named = hovered ?? last.selected;
-    if (!named) { hoverLabel.textContent = ''; return; }
-    const def = layout.slots.find((s) => s.id === named)!;
-    const slot = last.state.slots.find((s) => s.id === named)!;
-    const { sx, sy } = project(def.x, def.y);
-    // The gate sits on the south edge of the frame, so the wall's name goes
-    // above it rather than off the bottom.
-    const dy = def.ring === 'perimeter' ? -h * 1.1 : h * 1.1;
+    const slot = named ? last.state.slots.find((s) => s.id === named) : undefined;
+    if (!slot) { hoverLabel.textContent = ''; return; }
+    const c = slotCentre(last.state, slot);
+    const { sx, sy } = project(c.x, c.y);
+    // The gate is on the near edge of the town, so the wall's name goes above it.
+    const dy = slot.zone === 'wall' ? -h * 0.9 : h * 0.9;
     hoverLabel.setAttribute('transform', `translate(${sx},${sy + dy})`);
-    const work = last.state.constructions.find((x) => x.slotId === named);
+    const work = last.state.constructions.find((x) => x.slotId === slot.id);
     hoverLabel.textContent = work
       ? `${labelFor(slot)} — ${remainingText(work.finishAt - last.now)}`
       : labelFor(slot);
   }
 
-  function update(state: GameState, now: number, selected: string | null): void {
+  function update(state: GameState, now: number, selected: string | null, placing: string | null = null): void {
     last = { state, now, selected };
-    composeWall(buildingTier(state, 'wall'));
-    // The counsel's plot is marked the way the selected one is, so a step that
-    // names a slot can be found without hunting for it.
+    compose(state);
+    drawPlacing(state, placing);
+    // The counsel's plot is marked the way the selected one is.
     const step = currentAdvice(state);
     const counsel = step ? resolveGoto(state, step).slot ?? null : null;
     for (const slot of state.slots) {
@@ -141,9 +245,13 @@ export function createVillageView(onSelect: (slotId: string) => void): VillageVi
         if (slot.building && slot.tier > 0) {
           const s = sprite(slot.building, slot.tier);
           if (s) {
+            // A sprite's plate is one cell; a larger footprint scales it to fill.
+            const k = slot.zone === 'town' ? Math.min(...extentOf(building(slot.building))) : 1;
+            const holder = k === 1 ? gr.spriteG : el('g', { transform: `scale(${k})` });
+            if (holder !== gr.spriteG) gr.spriteG.appendChild(holder);
             const img = el('image', { href: s.url, x: s.x, y: s.y, width: s.width, height: s.height, 'data-ax': s.ax, 'data-ay': s.ay });
-            gr.spriteG.appendChild(img);
-            for (const o of s.overlays) gr.spriteG.appendChild(o.kind === 'loop' ? loopOverlay(o) : animOverlay(o));
+            holder.appendChild(img);
+            for (const o of s.overlays) holder.appendChild(o.kind === 'loop' ? loopOverlay(o) : animOverlay(o));
           }
         }
       }
@@ -223,5 +331,5 @@ function labelFor(slot: Slot): string {
   if (slot.building && slot.tier > 0) return `${building(slot.building).name} ${ROMAN[slot.tier] ?? slot.tier}`;
   if (slot.building) return building(slot.building).name;
   if (slot.site) return slot.site.replace('_', ' ');
-  return 'empty plot';
+  return 'open ground';
 }

@@ -1,12 +1,15 @@
 import type { LastSeen } from '../village/away';
-import type { ResourceId, StatId, Ring } from '../data';
+import type { ResourceId, StatId, Zone } from '../data';
 
 export type Resources = Record<ResourceId, number>;
 
 export interface Slot {
   id: string;
-  ring: Ring;
+  zone: Zone;
   site?: string;
+  /** A town slot's anchor cell, its footprint's corner of least x and y (§4.5 C.1). */
+  x?: number;
+  y?: number;
   building: string | null;
   tier: number;
 }

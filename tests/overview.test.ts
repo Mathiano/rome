@@ -10,6 +10,7 @@ import { playerFamily } from '../src/politics/characters';
 import { bindPanel, durationText, remainingText, renderPanel, type PanelHandlers } from '../src/render/panel';
 import { effectNowNext, forumOpensWords, ledgerFor, lockWords, renderLanes, renderOverview } from '../src/render/overview';
 import type { GameState } from '../src/state/types';
+import { plot } from './helpers';
 
 const PLENTY = { wood: 9999, clay: 9999, iron: 9999, grain: 9999, denarii: 9999 };
 const rich = (s: GameState) => { s.resources = { ...PLENTY }; return s; };
@@ -24,7 +25,7 @@ function playerMan(s: GameState): string {
 function noHandlers(): PanelHandlers {
   return {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-    onSelectSlot: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
+    onSelectSlot: () => {}, onPlace: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
     onExport: () => {}, onImport: () => {}, onReset: () => {},
     onSelectHex: () => {}, onDismissAdvisor: () => {},
@@ -46,14 +47,14 @@ describe('a build time stated before you commit (DESIGN §3.1, amended)', () => 
     }
   });
 
-  it('is on the plot card beside the cost, with the effect in words', () => {
+  it('is on the placing card beside the cost, with the effect in words', () => {
     const g = new Game(rich(createInitialState(0, 1)));
-    const html = strip(renderPanel(g, 'village', 'i1', 1));
+    const html = strip(renderPanel(g, 'village', null, 1, null, 'warehouse'));
     const wh = building('warehouse').tiers[0];
     expect(html).toContain(`Cost: ${wh.cost.wood} wood , ${wh.cost.clay} clay · ${durationText(wh.buildSeconds)}`);
     expect(html).toContain('kept per material 600');
     expect(html).not.toMatch(/warehouse capacity|production per hour|piety bonus/);
-    expect(html).toContain('back to the colony');
+    expect(html).toContain('Put it back');
   });
 });
 
@@ -69,8 +70,10 @@ describe('effects in words, now → next', () => {
 describe('locked, and why (every failing gate)', () => {
   function forumOneWithLibraryAndABusyLane(): GameState {
     const s = rich(createInitialState(0, 1));
+    plot(s, 'library', 'i1');
     startBuild(s, 'i1', 'library', 0);
     completeFinished(s, 1e9);
+    plot(s, 'castellum', 'c2');
     startBuild(s, 'c2', 'castellum', 0);
     s.resources = { wood: 100, clay: 100, iron: 50, grain: 100, denarii: 100 };
     return s;
@@ -91,6 +94,7 @@ describe('locked, and why (every failing gate)', () => {
 
   it('reports nothing when the build is allowed', () => {
     const s = rich(createInitialState(0, 1));
+    plot(s, 'warehouse', 'i1');
     const check = checkBuild(s, 'i1', 'warehouse');
     expect(check.ok).toBe(true);
     expect(check.reasons).toEqual([]);
@@ -222,6 +226,7 @@ describe('production per building, and the ledger behind the header', () => {
 describe('the two lanes (DESIGN §4.4: one building, one field, no queue)', () => {
   it('shows the job in each lane, or that it is free', () => {
     const s = rich(createInitialState(0, 1));
+    plot(s, 'castellum', 'c2');
     const c = startBuild(s, 'c2', 'castellum', 0);
     const html = renderLanes(s, 60_000);
     expect(html).toContain('data-lane="building"');
@@ -247,18 +252,19 @@ describe('the two lanes (DESIGN §4.4: one building, one field, no queue)', () =
 });
 
 describe('the colony overview', () => {
-  it('lists every slot that carries a building, grouped centre, inner, outer, then the perimeter', () => {
+  it('lists every slot that carries a building, grouped inside the wall, outside it, then the wall', () => {
     const s = rich(createInitialState(0, 1));
+    plot(s, 'temple', 'i3');
     startBuild(s, 'i3', 'temple', 0);
     completeFinished(s, 1e9);
     const html = renderOverview(s, 1);
     for (const slot of s.slots.filter((x) => x.building)) expect(html, slot.id).toContain(`data-slot="${slot.id}"`);
     for (const slot of s.slots.filter((x) => !x.building)) expect(html, slot.id).not.toContain(`data-slot="${slot.id}"`);
     const at = (t: string) => html.indexOf(t);
-    expect(at('The centre')).toBeLessThan(at('The inner ring'));
-    expect(at('The inner ring')).toBeLessThan(at('The outer ring'));
-    expect(at('The outer ring')).toBeLessThan(at('The perimeter'));
-    expect(at('data-slot="w1"')).toBeGreaterThan(at('The perimeter'));
+    expect(at('Inside the wall')).toBeLessThan(at('Outside the wall'));
+    expect(at('Outside the wall')).toBeLessThan(at('The wall<'));
+    expect(at('data-slot="i3"')).toBeLessThan(at('Outside the wall'));
+    expect(at('data-slot="w1"')).toBeGreaterThan(at('The wall<'));
     expect(html).toContain('data-select-slot="w1"');
     expect(html).toContain('not yet raised');
   });
@@ -283,22 +289,25 @@ describe('the colony overview', () => {
     expect(html).not.toContain('data-build="c1"');
   });
 
-  it('lists the inner buildings not yet placed as exactly the complement, and the open plots by site', () => {
+  it('offers every town building but a unique one that stands, repeatables always, and the open sites', () => {
     const s = rich(createInitialState(0, 1));
+    plot(s, 'temple', 'i3');
     startBuild(s, 'i3', 'temple', 0);
     completeFinished(s, 1e9);
+    plot(s, 'warehouse');
     const html = renderOverview(s, 1);
-    const placed = new Set(s.slots.map((x) => x.building));
-    for (const b of buildings.filter((x) => x.ring === 'inner')) {
-      expect(html.includes(`data-unplaced="${b.id}"`), b.id).toBe(!placed.has(b.id));
+    const standing = new Set(s.slots.map((x) => x.building));
+    for (const b of buildings.filter((x) => x.zone === 'town')) {
+      const offered = !b.unique || !standing.has(b.id);
+      expect(html.includes(`data-unplaced="${b.id}"`), b.id).toBe(offered);
     }
-    // No build button on these rows; a link selects the first open plot instead.
-    const openInner = s.slots.find((x) => x.ring === 'inner' && !x.building)!;
-    expect(html).toMatch(new RegExp(`data-unplaced="warehouse">[\\s\\S]*?data-select-slot="${openInner.id}">choose a plot`));
+    // A town building is placed, not built on a plot: its row hands the choice to the village.
+    expect(html).toMatch(/data-unplaced="warehouse">[\s\S]*?1×1, 1 standing[\s\S]*?data-place="warehouse">Place another/);
+    expect(html).toMatch(/data-unplaced="barracks">[\s\S]*?data-place="barracks">Place</);
     expect(html).not.toMatch(/data-unplaced="warehouse">[\s\S]*?data-build=/);
     expect(strip(html)).toContain('farmland ×2: Farm I +35 grain/h');
     expect(strip(html)).toContain('iron seam ×1: Iron mine I +18 iron/h');
-    const firstFarmland = layout.slots.find((x) => x.site === 'farmland' && !s.slots.find((y) => y.id === x.id)!.building)!;
+    const firstFarmland = layout.sites.find((x) => x.site === 'farmland' && !s.slots.find((y) => y.id === x.id)!.building)!;
     expect(html).toMatch(new RegExp(`farmland ×2[\\s\\S]*?data-select-slot="${firstFarmland.id}"`));
     // o1 is built and o2 is not: one forest plot stays open.
     expect(strip(html)).toContain('forest ×1: Lumber camp I +30 wood/h');
@@ -321,8 +330,10 @@ describe('the colony overview', () => {
     panel.innerHTML = renderPanel(g, 'village', null, 1);
     panel.querySelector<HTMLButtonElement>('[data-build="o1"]')!.click();
     expect(built).toEqual(['o1:lumber_camp']);
-    panel.querySelector<HTMLButtonElement>('[data-unplaced="warehouse"] [data-select-slot]')!.click();
-    expect(picked.at(-1)).toBe('i1');
+    const placing: string[] = [];
+    bindPanel(panel, { ...noHandlers(), onPlace: (b) => placing.push(b) });
+    panel.querySelector<HTMLButtonElement>('[data-unplaced="warehouse"] [data-place]')!.click();
+    expect(placing).toEqual(['warehouse']);
   });
 });
 
@@ -348,6 +359,8 @@ describe("Rome's request marked on the row it asks for", () => {
 
   it('marks a standing building on its row, and clears once the tier stands or Rome has marked it fulfilled', () => {
     const s = asking(rich(createInitialState(0, 1)), 'castellum', 2);
+    plot(s, 'castellum', 'c2');
+    slotById(s, 'c2').tier = 1;
     expect(renderOverview(s, 1)).toMatch(/data-slot="c2">[\s\S]*?data-rome-asks="castellum"/);
     // Raised before Rome's turn has run: the ask is answered, so the row no longer carries it.
     slotById(s, 'c2').tier = 2;

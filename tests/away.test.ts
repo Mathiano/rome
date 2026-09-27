@@ -9,6 +9,7 @@ import { awayReport, isQuiet, takeSnapshot } from '../src/village/away';
 import { awayLines, overflowWords, renderReturnStrip, setReturnStrip } from '../src/render/due';
 import { renderPanel } from '../src/render/panel';
 import { building, researchNode } from '../src/data';
+import { plot } from './helpers';
 
 const H = 3_600_000;
 /** Any printed duration: hours, minutes, seconds, a clock stamp. The strip states amounts only. */
@@ -70,6 +71,7 @@ describe('since you were last here', () => {
     const s = createInitialState(0, 1);
     s.resources = { wood: 500, clay: 500, iron: 500, grain: 500, denarii: 500 };
     const before = takeSnapshot(s);
+    plot(s, 'warehouse', 'i1');
     const c = startBuild(s, 'i1', 'warehouse', 0);
     completeFinished(s, c.finishAt);
     s.resources.wood = 740;
@@ -146,7 +148,7 @@ describe('since you were last here', () => {
     const strip = html.slice(html.indexOf('data-away'), html.indexOf('data-menu="due"'));
     expect(strip).not.toMatch(DURATION);
     // the plot card carries it too: the strip is about the colony, not the overview
-    expect(renderPanel(g, 'village', 'i1', 1)).toContain('data-away');
+    expect(renderPanel(g, 'village', 'o2', 1)).toContain('data-away');
     setReturnStrip([]);
     expect(renderPanel(g, 'village', null, 1)).not.toContain('data-away');
   });

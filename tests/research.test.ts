@@ -2,7 +2,7 @@
 import { describe, it, expect } from 'vitest';
 import { createInitialState, deserialise, serialise } from '../src/state/store';
 import { Game } from '../src/game';
-import { config, layout, researchNodes } from '../src/data';
+import { config, researchNodes } from '../src/data';
 import type { GameState } from '../src/state/types';
 import {
   availableResearch, checkResearch, completeResearch, isResearched, researchEffect,
@@ -12,15 +12,14 @@ import { sumEffect } from '../src/village/storage';
 import { buildTimeMultiplier, productionPerHour } from '../src/village/economy';
 import { defenceStrength } from '../src/combat/raids';
 import { renderPanel, type Tab } from '../src/render/panel';
+import { raise } from './helpers';
 
 const H = 3_600_000;
 
 /** A colony with a Library of `tier` standing and the means to use it. */
 function withLibrary(tier: number, seed = 3): Game {
   const g = new Game(createInitialState(0, seed));
-  const slot = g.state.slots.find((s) => s.id === 'i8')!;
-  slot.building = 'library';
-  slot.tier = tier;
+  raise(g.state, 'library', tier);
   g.state.resources.denarii = 5000;
   g.state.rome.scrolls = 20;
   return g;
@@ -146,15 +145,15 @@ describe('research (DESIGN §4.6)', () => {
     expect(isResearched(g2.state, 'groma')).toBe(true);
   });
 
-  it('an old save gains the Library plot instead of losing its own', () => {
+  it('an old save gains research, and any site the layout has gained, without losing its own', () => {
     const g = new Game(createInitialState(0, 2));
     const raw = JSON.parse(serialise(g.state));
     delete raw.research;
-    raw.slots = raw.slots.filter((s: { id: string }) => s.id !== 'i8');
+    raw.slots = raw.slots.filter((s: { id: string }) => s.id !== 'o8');
     const migrated = deserialise(JSON.stringify(raw));
     expect(migrated.research).toEqual({ active: [], completed: [] });
-    expect(migrated.slots.map((s) => s.id).sort()).toEqual(layout.slots.map((s) => s.id).sort());
-    expect(migrated.slots.find((s) => s.id === 'i8')!.building).toBeNull();
+    expect(migrated.slots.map((s) => s.id).sort()).toEqual(g.state.slots.map((s) => s.id).sort());
+    expect(migrated.slots.find((s) => s.id === 'o8')!.building).toBeNull();
   });
 
   it('the tree is finishable, and finishing it takes real time', () => {

@@ -23,10 +23,14 @@ const villageEl = document.getElementById('village')!;
 const mapEl = document.getElementById('map')!;
 const panelEl = document.getElementById('panel')!;
 
-let game = new Game(loadFromLocalStorage(saveKey) ?? createInitialState(dev.now()));
+// A save from an older format is set aside, not loaded (the save rule, CLAUDE.md).
+let retiredFormat: number | null = null;
+let game = new Game(loadFromLocalStorage(saveKey, (v) => { retiredFormat = v; }) ?? createInitialState(dev.now()));
 let tab: Tab = 'village';
 let selected: string | null = null;
 let selectedHex: string | null = null;
+/** A town building being put down: the village marks every place it fits (DESIGN §4.5 C.1). */
+let placing: string | null = null;
 let lastPanelHtml = '';
 let lastPanelKey = '';
 let lastTab: Tab | null = null;
@@ -35,9 +39,21 @@ const STAGE_FADE_MS = 280;
 let fadingUntil = 0;
 
 const view = createVillageView((id) => {
+  if (placing) return; // a click while placing chooses cells, never a plot
   selected = id;
   tab = 'village';
   render(true);
+}, (x, y) => {
+  const b = placing;
+  if (!b) return;
+  guard(() => {
+    selected = game.place(b, x, y, dev.now());
+    placing = null;
+  });
+});
+// Escape puts the building back down unplaced.
+document.addEventListener('keydown', (ev) => {
+  if (ev.key === 'Escape' && placing) { placing = null; render(true); }
 });
 villageEl.appendChild(view.root);
 
@@ -48,12 +64,12 @@ const mapView = createMapView((hex) => {
 });
 mapEl.appendChild(mapView.root);
 
-function toast(msg: string): void {
+function toast(msg: string, ms = 3500): void {
   const t = document.createElement('div');
   t.className = 'toast';
   t.textContent = msg;
   villageEl.appendChild(t);
-  setTimeout(() => t.remove(), 3500);
+  setTimeout(() => t.remove(), ms);
 }
 
 /** The first action or tab change puts the return strip away, and the colony has been seen. */
@@ -115,7 +131,7 @@ function panelKey(now: number): string {
     ...st.research.active.map((r) => `${r.id}:${mins(r.finishAt)}`),
     `r${st.research.completed.length}`, `s${st.rome.scrolls}`,
   ].join(',');
-  return [tab, selected, selectedHex, st.round, st.logSeq, res, work, Math.floor(st.population),
+  return [tab, selected, selectedHex, placing, st.round, st.logSeq, res, work, Math.floor(st.population),
     Math.round(st.corruption), st.map.claimed.length, st.map.scouted.length, st.map.pendingScout,
     Object.values(st.tribes).map((t) => `${t.pendingEnvoy}${t.massingForRound}${Math.round(t.trust)}${Math.round(t.fear)}`).join(''),
     st.rome.activeRequestId, st.office, st.challenge?.voteRound ?? '',
@@ -159,13 +175,13 @@ function render(force = false): void {
   }
   const crossFading = Date.now() < fadingUntil;
   if (onMap || crossFading) mapView.update(game.state, selectedHex);
-  if (!onMap || crossFading) view.update(game.state, now, selected);
+  if (!onMap || crossFading) view.update(game.state, now, selected, placing);
 
   const pk = panelKey(now);
   if (!force && pk === lastPanelKey) return;
   lastPanelKey = pk;
 
-  const html = renderPanel(game, tab, selected, now, selectedHex);
+  const html = renderPanel(game, tab, selected, now, selectedHex, placing);
   if (force || html !== lastPanelHtml) {
     // Never clobber a select or textarea the player is using mid-interaction.
     const active = document.activeElement;
@@ -184,7 +200,8 @@ function render(force = false): void {
 
 bindPanel(panelEl, {
   onTab: (t) => { tab = t; putStripAway(); render(true); },
-  onSelectSlot: (id) => { selected = id; tab = 'village'; render(true); },
+  onSelectSlot: (id) => { selected = id; placing = null; tab = 'village'; render(true); },
+  onPlace: (b) => { placing = b || null; selected = null; tab = 'village'; render(true); },
   onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; render(true); },
   onDismissAdvisor: () => guard(() => game.dismissAdvisor()),
   onChoice: (id) => guard(() => game.choose(id, dev.now())),
@@ -258,6 +275,9 @@ const sinceSeen = arrive(game.state, dev.now());
 if (sinceSeen) setReturnStrip(awayLines(sinceSeen));
 persist();
 render(true);
+if (retiredFormat !== null) {
+  toast(`This colony was saved by an older version of the game (format ${retiredFormat}) and could not be carried over, so a new one is founded. The old save is kept in this browser.`, 12_000);
+}
 // The village tick: the economy advances (never a round, §3.3), then only
 // what changed is drawn. It never forces a redraw of what the player is using.
 setInterval(() => {

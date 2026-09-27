@@ -2,23 +2,101 @@
   "tileWidth": 112,
   "ppu": 4,
   "sprites": {
-    "castellum-t1": {
-      "file": "castellum-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+    "barracks-t1": {
+      "file": "barracks-t1.png",
+      "width": 452,
+      "height": 278,
+      "ax": 226.22,
+      "ay": 171.35,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/castellum-t1.png",
+      "source": "assets/src/barracks_t1.jpg",
+      "trimOffset": [
+        234,
+        0
+      ],
+      "sourceScale": 0.184742,
+      "slopes": {
+        "left": 0.4704,
+        "right": -0.4789
+      },
+      "overhangPx": [
+        4.0,
+        3.0
+      ]
+    },
+    "barracks-t2": {
+      "file": "barracks-t2.png",
+      "width": 455,
+      "height": 240,
+      "ax": 227.5,
+      "ay": 124.57,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmp9gmkaiau/barracks-t2.png",
       "trimOffset": [
         119,
-        495
+        482
       ],
       "sourceScale": 0.437073,
       "slopes": {
         "left": 0.4995,
         "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "barracks-t3": {
+      "file": "barracks-t3.png",
+      "width": 455,
+      "height": 266,
+      "ax": 227.5,
+      "ay": 150.35,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmp9gmkaiau/barracks-t3.png",
+      "trimOffset": [
+        119,
+        423
+      ],
+      "sourceScale": 0.437073,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ],
+      "overlays": [
+        {
+          "type": "anim",
+          "kind": "flag",
+          "x": 3.01,
+          "y": -16.69,
+          "scale": 0.9
+        }
+      ]
+    },
+    "castellum-t1": {
+      "file": "castellum-t1.png",
+      "width": 452,
+      "height": 266,
+      "ax": 225.56,
+      "ay": 153.06,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "assets/src/Castellium tier 1.jpg",
+      "trimOffset": [
+        279,
+        137
+      ],
+      "sourceScale": 0.194613,
+      "slopes": {
+        "left": 0.4904,
+        "right": -0.517
       },
       "overhangPx": [
         0.0,
@@ -89,25 +167,25 @@
     },
     "cellars-t1": {
       "file": "cellars-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 452,
+      "height": 266,
+      "ax": 225.95,
+      "ay": 158.89,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/cellars-t1.png",
+      "source": "assets/src/cellars_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        135,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.176935,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.4659,
+        "right": -0.4902
       },
       "overhangPx": [
-        0.0,
-        0.0
+        3.0,
+        1.0
       ]
     },
     "cellars-t2": {
@@ -174,25 +252,25 @@
     },
     "clay-works-t1": {
       "file": "clay-works-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 452,
+      "height": 253,
+      "ax": 225.85,
+      "ay": 148.49,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/clay-works-t1.png",
+      "source": "assets/src/clay_pit_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        64,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.168168,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.4627,
+        "right": -0.4682
       },
       "overhangPx": [
-        0.0,
-        0.0
+        3.0,
+        4.0
       ]
     },
     "clay-works-t2": {
@@ -259,24 +337,24 @@
     },
     "farm-t1": {
       "file": "farm-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 450,
+      "height": 259,
+      "ax": 226.06,
+      "ay": 152.91,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/farm-t1.png",
+      "source": "assets/src/farm_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        139,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.171911,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.4643,
+        "right": -0.4773
       },
       "overhangPx": [
-        0.0,
+        4.0,
         0.0
       ]
     },
@@ -337,25 +415,25 @@
     },
     "forum-t1": {
       "file": "forum-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 453,
+      "height": 305,
+      "ax": 226.43,
+      "ay": 192.61,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/forum-t1.png",
+      "source": "assets/src/Forum tier 1.jpg",
       "trimOffset": [
-        119,
-        495
+        342,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.202532,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.4996,
+        "right": -0.4986
       },
       "overhangPx": [
-        0.0,
-        0.0
+        4.0,
+        3.0
       ]
     },
     "forum-t2": {
@@ -415,24 +493,24 @@
     },
     "granary-t1": {
       "file": "granary-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 453,
+      "height": 380,
+      "ax": 226.53,
+      "ay": 264.83,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/granary-t1.png",
+      "source": "assets/src/granary_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        512,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.252822,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.5068,
+        "right": -0.5124
       },
       "overhangPx": [
-        0.0,
+        2.0,
         0.0
       ]
     },
@@ -493,25 +571,25 @@
     },
     "insulae-t1": {
       "file": "insulae-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 454,
+      "height": 391,
+      "ax": 227.4,
+      "ay": 267.91,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/insulae-t1.png",
+      "source": "assets/src/insulae_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        549,
+        2
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.261377,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.5319,
+        "right": -0.5463
       },
       "overhangPx": [
-        0.0,
-        0.0
+        5.0,
+        1.0
       ]
     },
     "insulae-t2": {
@@ -571,25 +649,25 @@
     },
     "iron-mine-t1": {
       "file": "iron-mine-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 452,
+      "height": 257,
+      "ax": 226.08,
+      "ay": 152.89,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/iron-mine-t1.png",
+      "source": "assets/src/iron_mine_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        136,
+        23
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.173643,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.4533,
+        "right": -0.4765
       },
       "overhangPx": [
-        0.0,
-        0.0
+        4.0,
+        2.0
       ]
     },
     "iron-mine-t2": {
@@ -741,25 +819,25 @@
     },
     "lumber-camp-t1": {
       "file": "lumber-camp-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 452,
+      "height": 316,
+      "ax": 226.31,
+      "ay": 203.83,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/lumber-camp-t1.png",
+      "source": "assets/src/lumber_camp_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        343,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.210131,
       "slopes": {
-        "left": 0.4995,
+        "left": 0.5005,
         "right": -0.4995
       },
       "overhangPx": [
-        0.0,
-        0.0
+        3.0,
+        1.0
       ]
     },
     "lumber-camp-t2": {
@@ -826,24 +904,24 @@
     },
     "market-t1": {
       "file": "market-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 452,
+      "height": 304,
+      "ax": 226.42,
+      "ay": 191.7,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/market-t1.png",
+      "source": "assets/src/market_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        298,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.201893,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.5005,
+        "right": -0.4973
       },
       "overhangPx": [
-        0.0,
+        4.0,
         0.0
       ]
     },
@@ -911,25 +989,25 @@
     },
     "temple-t1": {
       "file": "temple-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 452,
+      "height": 334,
+      "ax": 226.22,
+      "ay": 217.78,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/temple-t1.png",
+      "source": "assets/src/shrine_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        456,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.222002,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.5048,
+        "right": -0.5274
       },
       "overhangPx": [
-        0.0,
-        0.0
+        2.0,
+        1.0
       ]
     },
     "temple-t2": {
@@ -996,25 +1074,31 @@
     },
     "warehouse-t1": {
       "file": "warehouse-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 452,
+      "height": 331,
+      "ax": 226.2,
+      "ay": 214.86,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/warehouse-t1.png",
+      "source": "assets/src/warehouse_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        482,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.220147,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.5138,
+        "right": -0.5215
       },
       "overhangPx": [
-        0.0,
+        2.0,
         0.0
+      ],
+      "crop": [
+        0,
+        0,
+        16,
+        0
       ]
     },
     "warehouse-t2": {
@@ -1074,25 +1158,25 @@
     },
     "waystation-t1": {
       "file": "waystation-t1.png",
-      "width": 455,
-      "height": 235,
-      "ax": 227.5,
-      "ay": 118.88,
+      "width": 453,
+      "height": 265,
+      "ax": 226.29,
+      "ay": 154.72,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/waystation-t1.png",
+      "source": "assets/src/waystation_t1.jpg",
       "trimOffset": [
-        119,
-        495
+        131,
+        0
       ],
-      "sourceScale": 0.437073,
+      "sourceScale": 0.176517,
       "slopes": {
-        "left": 0.4995,
-        "right": -0.4995
+        "left": 0.4864,
+        "right": -0.5012
       },
       "overhangPx": [
-        0.0,
-        0.0
+        5.0,
+        5.0
       ]
     },
     "waystation-t2": {

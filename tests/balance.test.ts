@@ -3,9 +3,10 @@ import { createInitialState } from '../src/state/store';
 import { Game } from '../src/game';
 import { defenceStrength, raidStrength } from '../src/combat/raids';
 import { grainUpkeepPerHour, netPerHour, outputValuePerHour, productionPerHour } from '../src/village/economy';
-import { checkBuild, rushPrice } from '../src/village/construction';
+import { checkBuild, checkPlace, rushPrice } from '../src/village/construction';
 import { config } from '../src/data';
 import type { GameState } from '../src/state/types';
+import { anchors } from '../src/village/grid';
 /** v0.1 woke the other two tribes; these tests speak to the raider. */
 const TRIBE_ID = 'chatti';
 const TRIBE = (s: GameState) => s.tribes[TRIBE_ID];
@@ -14,12 +15,20 @@ const H = 3_600_000;
 const SEEDS = 12;
 const ROUNDS = 40;
 
-const WANTED = [['w1', 'wall'], ['c2', 'castellum'], ['o5', 'iron_mine'], ['i1', 'warehouse']] as const;
+/** A slot to raise, or null for a town building to place on the grid where it first fits. */
+const WANTED = [['w1', 'wall'], [null, 'castellum'], ['o5', 'iron_mine'], [null, 'warehouse']] as const;
 
-/** Raise the first affordable thing on the list. */
+/** Raise the first affordable thing on the list: upgrade what stands, place what does not. */
 function buildSomething(g: Game, t: number) {
   for (const [slot, want] of WANTED) {
-    if (checkBuild(g.state, slot, want).ok) { g.build(slot, want, t); return; }
+    const standing = slot ?? g.state.slots.find((s) => s.building === want)?.id;
+    if (standing) {
+      if (checkBuild(g.state, standing, want).ok) { g.build(standing, want, t); return; }
+    } else if (checkPlace(g.state, want).ok) {
+      const at = anchors(g.state, want)[0];
+      g.place(want, at.x, at.y, t);
+      return;
+    }
   }
 }
 
@@ -184,8 +193,8 @@ describe('balance: haste and hunger', () => {
     expect(outputValuePerHour(s)).toBeGreaterThan(netPerHour(s).denarii * 4);
 
     const quotes: number[] = [];
-    for (const [slot, b] of [['c2', 'castellum'], ['i1', 'warehouse'], ['c1', 'forum']] as const) {
-      const c = checkBuild(s, slot, b);
+    for (const [slot, b] of [['', 'castellum'], ['', 'warehouse'], ['c1', 'forum']] as const) {
+      const c = slot ? checkBuild(s, slot, b) : checkPlace(s, b);
       const work = { slotId: slot, buildingId: b, toTier: c.toTier, kind: 'building' as const, startedAt: 0, finishAt: c.seconds * 1000 };
       const price = rushPrice(s, work, 0);
       quotes.push(price);

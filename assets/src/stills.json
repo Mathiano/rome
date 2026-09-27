@@ -1,0 +1,24 @@
+{
+  "_comment": "The new-style stills in assets/src/ (DESIGN §10) and the sprite each becomes, for `npm run assets:stills`. A still whose file name is not its sprite's key is mapped here rather than renamed. `crop` trims source pixels [left, top, right, bottom] before keying, for a defect in the render itself; the file is never edited. `sprite: null` is a still with no building to stand for, kept unplaced. A still that fails the plate assertion is reported and not written, and its building keeps the sprite it had.",
+  "stills": [
+    { "src": "Castellium tier 1.jpg", "sprite": "castellum-t1" },
+    { "src": "Forum tier 1.jpg", "sprite": "forum-t1" },
+    { "src": "barracks_t1.jpg", "sprite": "barracks-t1" },
+    { "src": "cellars_t1.jpg", "sprite": "cellars-t1" },
+    { "src": "clay_pit_t1.jpg", "sprite": "clay-works-t1", "_note": "clay pit is the clay works (🟡 mapped by Claude, 2026-09-27)" },
+    { "src": "farm_t1.jpg", "sprite": "farm-t1" },
+    { "src": "granary_t1.jpg", "sprite": "granary-t1" },
+    { "src": "insulae_t1.jpg", "sprite": "insulae-t1" },
+    { "src": "iron_mine_t1.jpg", "sprite": "iron-mine-t1" },
+    { "src": "library_t1.jpg", "sprite": "library-t1" },
+    { "src": "lumber_camp_t1.jpg", "sprite": "lumber-camp-t1" },
+    { "src": "market_t1.jpg", "sprite": "market-t1" },
+    { "src": "shrine_t1.jpg", "sprite": "temple-t1", "_note": "the shrine is the temple's first tier (🟡 mapped by Claude, 2026-09-27)" },
+    { "src": "warehouse_t1.jpg", "sprite": "warehouse-t1", "crop": [0, 0, 16, 0], "_crop": "the render carries a 15×112 px black bar on its top-right edge (x 2743–2757, y 0–111); Mathias chose to crop it in the pipeline, 2026-09-27" },
+    { "src": "waystation_t1.jpg", "sprite": "waystation-t1" },
+    { "src": "blacksmith_t1.jpg", "sprite": null, "_note": "banked, DESIGN §14" },
+    { "src": "iron_works_t1.jpg", "sprite": null, "_note": "banked, DESIGN §14" },
+    { "src": "stables_t1.jpg", "sprite": null, "_note": "banked, DESIGN §14" },
+    { "src": "../../docs/rome_anchor_1.jpg", "sprite": null, "_note": "the praetorium anchor (DESIGN §10). No praetorium building yet, and it fails the plate assertion (slopes +0.286 / −0.294)." }
+  ]
+}

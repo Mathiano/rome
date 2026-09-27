@@ -5,13 +5,21 @@ import { Game } from '../src/game';
 import { advisor, building, layout, posts } from '../src/data';
 import { blockedBy, CONDITION_WORDS, currentAdvice, foundingParagraphs, holds, nextStep, resolveGoto, stepDone } from '../src/render/advisor';
 import { capacity } from '../src/village/storage';
-import { checkBuild, startBuild } from '../src/village/construction';
+import { checkBuild, checkPlace, startBuild } from '../src/village/construction';
 import { isScouted, nearestUnknown, ringOf, scoutCost, siteAt } from '../src/map/sites';
 import { bindPanel, leavingCounsel, pendingNews, renderNews, renderPanel, type PanelHandlers, type Tab } from '../src/render/panel';
+import { anchors } from '../src/village/grid';
 import { createVillageView } from '../src/render/village';
 import { config } from '../src/data';
 
 const TABS: Tab[] = ['village', 'map', 'library', 'council', 'family', 'tribe', 'rome', 'log', 'save'];
+
+
+/** Put the castellum down where it first fits and start it, as the counsel's second step asks. */
+function castellum(g: Game, now: number): string {
+  const at = anchors(g.state, 'castellum')[0];
+  return g.place('castellum', at.x, at.y, now);
+}
 
 describe('the counsel line as data', () => {
   it('is a finite line of steps the code can read, pointing at real places', () => {
@@ -20,11 +28,15 @@ describe('the counsel line as data', () => {
     for (const step of advisor.steps) {
       expect(step.text.length, step.id).toBeGreaterThan(20);
       expect(TABS, step.id).toContain(step.goto.tab);
-      if (step.goto.slot) expect(layout.slots.some((s) => s.id === step.goto.slot), `${step.id} slot`).toBe(true);
+      if (step.goto.slot) expect(layout.sites.some((s) => s.id === step.goto.slot), `${step.id} slot`).toBe(true);
+      if (step.goto.place) expect(building(step.goto.place).zone, `${step.id} place`).toBe('town');
       if (step.goto.hex) expect(step.goto.hex).toBe('nearestUnknown');
       if (step.action?.build) {
         expect(() => building(step.action!.build!.building), step.id).not.toThrow();
-        expect(layout.slots.some((s) => s.id === step.action!.build!.slot), `${step.id} action slot`).toBe(true);
+        // a build names a site, or none when the building is to be placed on the grid
+        const slot = step.action!.build!.slot;
+        if (slot) expect(layout.sites.some((s) => s.id === slot), `${step.id} action slot`).toBe(true);
+        else expect(building(step.action!.build!.building).zone, `${step.id} action`).toBe('town');
       }
       expect(step.done.length, step.id).toBeGreaterThan(0);
       for (const c of step.done) {
@@ -72,7 +84,7 @@ describe('the condition vocabulary', () => {
     g.build('o5', 'iron_mine', 1000);
     expect(t({ underWay: { building: 'iron_mine' } })).toBe(true);
     s.resources.wood = 0;
-    expect(t({ affordable: { slot: 'c2', building: 'castellum' } })).toBe(false);
+    expect(t({ affordable: { building: 'castellum' } })).toBe(false);
     s.resources.wood = capacity(s, 'wood');
     expect(t({ storeAtCap: { resource: 'wood' } })).toBe(true);
     Object.values(s.tribes)[0].pendingEnvoy = 'trade';
@@ -127,8 +139,8 @@ describe('the counsel line against a fresh colony', () => {
     // 2: the castellum is affordable with the mine still being dug — a field
     // and a building at once (DESIGN §4.4), and it takes the last of the wood
     expect(blockedBy(s, currentAdvice(s)!)).toBeNull();
-    expect(checkBuild(s, 'c2', 'castellum').ok).toBe(true);
-    g.build('c2', 'castellum', 1000);
+    expect(checkPlace(s, 'castellum').ok).toBe(true);
+    castellum(g, 1000);
     expect(s.resources.wood).toBeGreaterThanOrEqual(0);
     expect(s.constructions).toHaveLength(2);
     expect(currentAdvice(s)!.id).toBe('scouts');
@@ -242,7 +254,7 @@ describe('putting the counsel away', () => {
 function noHandlers(): PanelHandlers {
   return {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-    onSelectSlot: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
+    onSelectSlot: () => {}, onPlace: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
     onExport: () => {}, onImport: () => {}, onReset: () => {},
     onSelectHex: () => {}, onDismissAdvisor: () => {},
@@ -269,7 +281,7 @@ describe('the counsel card', () => {
   it('the Show-me button lands on the plot, the hex or the tab the step names', () => {
     const g = new Game(createInitialState(0, 5));
     g.build('o5', 'iron_mine', 1000);
-    g.build('c2', 'castellum', 1000);
+    castellum(g, 1000);
     const hex = nearestUnknown(g.state)!;
     let html = renderPanel(g, 'village', null, 1);
     expect(html).toContain('data-advisor-step="scouts"');
@@ -302,7 +314,7 @@ describe('the counsel card', () => {
     panel.querySelector<HTMLButtonElement>('aside.counsel [data-advisor-dismiss]')!.click();
     expect(dismissed).toBe(1);
     g.build('o5', 'iron_mine', 1000);
-    g.build('c2', 'castellum', 1000);
+    castellum(g, 1000);
     panel.innerHTML = renderPanel(g, 'village', null, 1);
     panel.querySelector<HTMLButtonElement>('aside.counsel [data-select-hex]')!.click();
     expect(hexes).toEqual([nearestUnknown(g.state)]);
@@ -316,7 +328,10 @@ describe('the counsel card', () => {
     expect(marked).toEqual(['o5']);
     g.build('o5', 'iron_mine', 1000);
     view.update(g.state, 1000, null);
-    expect([...view.root.querySelectorAll('.slot.counsel')].map((e) => e.getAttribute('data-slot'))).toEqual(['c2']);
+    // The castellum is to be placed, not built on a plot: no plot is marked,
+    // and Show me starts placing it instead.
+    expect(view.root.querySelectorAll('.slot.counsel')).toHaveLength(0);
+    expect(renderPanel(g, 'village', null, 1000)).toMatch(/aside class="counsel card" data-advisor-step="castellum"[\s\S]*?data-place="castellum">/);
     g.dismissAdvisor();
     view.update(g.state, 1000, null);
     expect(view.root.querySelectorAll('.slot.counsel')).toHaveLength(0);

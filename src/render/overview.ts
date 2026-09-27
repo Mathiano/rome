@@ -5,14 +5,15 @@
  * Every building, its tier, the next tier's effect, cost, time and gate on one
  * screen — the informational half of a Tribal Wars headquarters page, without
  * the queue (DESIGN §4.4: one building and one field, nothing beyond that).
- * Placement stays on the map (§4.5): an open plot here only selects one.
+ * Placement stays on the map (§4.5 C.1): a town building not yet standing
+ * offers to be placed, which hands the choice of cells to the village view.
  *
  * Nothing in this file is a rule. Every number comes from `checkBuild`,
  * `slotProductionPerHour` and the state; this file only says it in words.
  */
-import { building, buildings, config, effectVocabulary, post as postDef, unlocks, RESOURCE_IDS, type BuildingDef, type Cost, type ResourceId, type Reward, type Ring } from '../data';
+import { building, buildings, config, effectVocabulary, post as postDef, unlocks, RESOURCE_IDS, type BuildingDef, type Cost, type ResourceId, type Reward, type Zone } from '../data';
 import type { ActiveRequest, GameState, Slot } from '../state/types';
-import { checkBuild, openedByForumTier, progress, rushPrice, type BuildCheck } from '../village/construction';
+import { checkBuild, checkPlace, openedByForumTier, progress, rushPrice, type BuildCheck } from '../village/construction';
 import { denariiIncomePerHour, grainUpkeepPerHour, netPerHour, postBonus, slotProductionPerHour } from '../village/economy';
 import { buildingTier, researchEffect, sumEffect } from '../village/storage';
 import { holderOf } from '../politics/posts';
@@ -24,9 +25,9 @@ export const ROMAN = ['', 'I', 'II', 'III'];
 const pct = (v: number) => `${Math.round(v * 100)}%`;
 const signed = (v: number) => `${v >= 0 ? '+' : '−'}${n(Math.abs(v))}`;
 
-/** §4.5 order: the centre, the inner ring, the outer ring, then the perimeter. */
-const RING_ORDER: Ring[] = ['centre', 'inner', 'outer', 'perimeter'];
-const RING_NAMES: Record<Ring, string> = { centre: 'The centre', inner: 'The inner ring', outer: 'The outer ring', perimeter: 'The perimeter' };
+/** §4.5 C.2 order: inside the wall, outside it, then the wall itself. */
+const ZONE_ORDER: Zone[] = ['town', 'site', 'wall'];
+const ZONE_NAMES: Record<Zone, string> = { town: 'Inside the wall', site: 'Outside the wall', wall: 'The wall' };
 
 // ---------------------------------------------------------------------------
 // Time in words (DESIGN §3.1, as amended 2026-09-20)
@@ -262,40 +263,58 @@ function buildingRow(state: GameState, slot: Slot, now: number): string {
     <div class="l2"><span class="effect">${ROMAN[check.toTier]}: ${esc(effect)}</span> <span>${costTxt(check.cost, state)}</span> <span>${esc(durationText(check.seconds))}</span> ${action}</div></li>`;
 }
 
-/** A row for a building nobody has placed yet: cost, time and effect at tier I, and a link to a plot. */
+/** The gates a row still names once the cost beside it has said what is short. */
+const withoutCost = (check: BuildCheck): BuildCheck =>
+  ({ ...check, gates: check.gates.filter((g) => g !== 'resources'), reasons: check.reasons.filter((_, i) => check.gates[i] !== 'resources') });
+
+/** A site nobody has built on yet: cost, time and yield at tier I, and a link to the site. */
 function unplacedRow(state: GameState, def: BuildingDef, plot: Slot, count = 1): string {
   const check = checkBuild(state, plot.id, def.id);
-  let effect = effectNowNext(def, 0, 1);
-  if (def.produces) effect = `+${n(slotProductionPerHour(state, plot, 1, def.id))} ${def.produces}/h`;
+  const effect = `+${n(slotProductionPerHour(state, plot, 1, def.id))} ${def.produces}/h`;
   const where = plot.site ? `${esc(plot.site.replace('_', ' '))} ×${count}: ` : '';
   return `<li data-unplaced="${def.id}"><div class="l1">${where}<b>${esc(def.name)} I</b>${romeMark(state, def.id)}</div>
     <div class="l2"><span class="effect">${esc(effect)}</span> <span>${costTxt(check.cost, state)}</span> <span>${esc(durationText(check.seconds))}</span>
-    ${lockWords({ ...check, gates: check.gates.filter((g) => g !== 'resources'), reasons: check.reasons.filter((_, i) => check.gates[i] !== 'resources') })}
-    <button class="link" data-select-slot="${plot.id}">choose a plot</button></div></li>`;
+    ${lockWords(withoutCost(check))}
+    <button class="link" data-select-slot="${plot.id}">choose a site</button></div></li>`;
+}
+
+/**
+ * A town building to put down on the grid (§4.5 C.1): cost, time and effect
+ * at tier I, and a button that hands the choice of cells to the village. A
+ * repeatable building stays on this list however many already stand.
+ */
+function placeRow(state: GameState, def: BuildingDef): string {
+  const check = checkPlace(state, def.id);
+  const standing = state.slots.filter((s) => s.building === def.id).length;
+  const [w, h] = def.footprint ?? [1, 1];
+  const size = `<span class="muted">${w}×${h}${standing ? `, ${standing} standing` : ''}</span>`;
+  const blocked = check.gates.some((g) => g === 'room' || g === 'unique');
+  return `<li data-unplaced="${def.id}"><div class="l1"><b>${esc(def.name)} I</b> ${size}${romeMark(state, def.id)}</div>
+    <div class="l2"><span class="effect">${esc(effectNowNext(def, 0, 1))}</span> <span>${costTxt(check.cost, state)}</span> <span>${esc(durationText(check.seconds))}</span>
+    ${lockWords(withoutCost(check))}
+    <button class="act tiny" data-place="${def.id}"${blocked ? ' disabled' : ''}>${standing ? 'Place another' : 'Place'}</button></div></li>`;
 }
 
 export function renderOverview(state: GameState, now: number): string {
   let out = renderLanes(state, now);
   out += `<h3>In the colony</h3><ul class="index overview">`;
-  for (const ring of RING_ORDER) {
-    const rows = state.slots.filter((s) => s.ring === ring && s.building);
+  for (const zone of ZONE_ORDER) {
+    const rows = state.slots.filter((s) => s.zone === zone && s.building);
     if (!rows.length) continue;
-    out += `<li class="ring">${RING_NAMES[ring]}</li>` + rows.map((s) => buildingRow(state, s, now)).join('');
+    out += `<li class="ring">${ZONE_NAMES[zone]}</li>` + rows.map((s) => buildingRow(state, s, now)).join('');
   }
   out += `</ul>`;
 
-  // The inner buildings not yet placed: eight slots, eight buildings, so the
-  // set is exactly the complement of what stands. Rome's ask goes first.
-  const taken = new Set(state.slots.filter((s) => s.building).map((s) => s.building));
-  const openInner = state.slots.find((s) => s.ring === 'inner' && !s.building);
-  const unplaced = buildings.filter((b) => b.ring === 'inner' && !taken.has(b.id))
+  // What can still go up: every town building but a unique one that stands,
+  // and every open site. Rome's ask goes first.
+  const toPlace = buildings.filter((b) => b.zone === 'town' && !(b.unique && state.slots.some((s) => s.building === b.id)))
     .sort((a, b) => Number(!!romeAsksFor(state, b.id)) - Number(!!romeAsksFor(state, a.id)));
-  const openOuter = state.slots.filter((s) => s.ring === 'outer' && !s.building);
-  if ((unplaced.length && openInner) || openOuter.length) {
-    out += `<h3>Not yet placed</h3><p class="muted">Choose a plot on the map, or through the link, and raise it from the plot's card.</p><ul class="index overview">`;
-    if (openInner) out += unplaced.map((b) => unplacedRow(state, b, openInner)).join('');
+  const openSites = state.slots.filter((s) => s.zone === 'site' && !s.building);
+  if (toPlace.length || openSites.length) {
+    out += `<h3>Not yet placed</h3><p class="muted">Place a building and choose its cells inside the wall; a resource building goes on its site outside it.</p><ul class="index overview">`;
+    out += toPlace.map((b) => placeRow(state, b)).join('');
     const bySite = new Map<string, Slot[]>();
-    for (const s of openOuter) bySite.set(s.site!, [...(bySite.get(s.site!) ?? []), s]);
+    for (const s of openSites) bySite.set(s.site!, [...(bySite.get(s.site!) ?? []), s]);
     for (const [site, slots] of bySite) {
       const def = buildings.find((b) => b.site === site);
       if (def) out += unplacedRow(state, def, slots[0], slots.length);

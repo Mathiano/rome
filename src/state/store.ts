@@ -2,19 +2,18 @@ import { config, families as familyDefs, layout, startResources, posts, lesserPo
 import type { GameState, Family, Character, Slot, LogEntry, TribeState } from './types';
 import { takeSnapshot } from '../village/away';
 import { issueNext } from '../rome/requests';
+import { fixedSlots, migrateRingsToGrid } from '../village/grid';
 
 export function createInitialState(now: number = Date.now(), seed: number = (now ^ 0x9e3779b9) | 0): GameState {
-  const slots: Slot[] = layout.slots.map((s) => ({
-    id: s.id,
-    ring: s.ring,
-    site: s.site,
-    building: s.fixedBuilding ?? null,
-    tier: 0,
-  }));
+  const slots: Slot[] = fixedSlots();
   for (const b of layout.startBuilt) {
-    const slot = slots.find((s) => s.id === b.slot)!;
-    slot.building = b.building;
-    slot.tier = b.tier;
+    if ('slot' in b) {
+      const slot = slots.find((s) => s.id === b.slot)!;
+      slot.building = b.building;
+      slot.tier = b.tier;
+    } else {
+      slots.push({ id: b.id, zone: 'town', x: b.x, y: b.y, building: b.building, tier: b.tier });
+    }
   }
 
   const families: Record<string, Family> = {};
@@ -159,11 +158,30 @@ export function serialise(state: GameState): string {
   return JSON.stringify(state);
 }
 
+/**
+ * The save rule (CLAUDE.md): before 1.0, a save-format change bumps
+ * `saveVersion` and resets older saves instead of migrating them. The one
+ * exception is the ring-to-grid move, a kept one-off from format 1 to 2
+ * (`migrateRingsToGrid`); it applies only while the current format is 2.
+ */
+export const KEPT_MIGRATION = { from: 1, to: 2 } as const;
+
+/** A save from an older format that the rule does not carry forward. */
+export class SaveTooOld extends Error {
+  constructor(public readonly version: number) {
+    super(`This save is from an older version of the game (format ${version}) and cannot be loaded.`);
+    this.name = 'SaveTooOld';
+  }
+}
+
 export function deserialise(json: string): GameState {
   const raw = JSON.parse(json) as Partial<GameState>;
   if (typeof raw !== 'object' || raw === null || typeof raw.version !== 'number') {
     throw new Error('Not a save file');
   }
+  if (raw.version > config.saveVersion) throw new Error('This save is from a newer version of the game.');
+  const kept = raw.version === KEPT_MIGRATION.from && config.saveVersion === KEPT_MIGRATION.to;
+  if (raw.version < config.saveVersion && !kept) throw new SaveTooOld(raw.version);
   return migrate(raw as GameState);
 }
 
@@ -214,10 +232,14 @@ export function migrate(state: GameState): GameState {
   if (state.seenOpening === undefined) state.seenOpening = state.round > 0 || state.seenLogId > 0;
   // A colony that has already met its council has no use for the opening counsel.
   if (state.advisorDismissed === undefined) state.advisorDismissed = state.round > 0;
-  // Slots added to the layout after a save was made appear as empty ground.
-  for (const def of layout.slots) {
-    if (state.slots.some((s) => s.id === def.id)) continue;
-    state.slots.push({ id: def.id, ring: def.ring, site: def.site, building: def.fixedBuilding ?? null, tier: 0 });
+  // Saves from the ring layout are set down on the town grid (DESIGN §4.5 C.1).
+  migrateRingsToGrid(state);
+  // Sites added to the layout after a save was made appear as open ground, and
+  // every fixed slot takes the layout's position, so moving a site moves it.
+  for (const def of fixedSlots()) {
+    const have = state.slots.find((s) => s.id === def.id);
+    if (!have) state.slots.push(def);
+    else if (def.zone === 'site') { have.x = def.x; have.y = def.y; }
   }
   if (state.challenge === undefined) state.challenge = null;
   if (state.lastChallengeRound === undefined) state.lastChallengeRound = -999;
@@ -252,11 +274,24 @@ export function saveToLocalStorage(state: GameState, key: string = SAVE_KEY): bo
   }
 }
 
-export function loadFromLocalStorage(key: string = SAVE_KEY): GameState | null {
+/** Where a save the rule resets is set aside, so a reset never destroys it. */
+export const retiredKey = (key: string, version: number) => `${key}.retired.v${version}`;
+
+/**
+ * The stored game, or null. A save too old to load is copied aside under
+ * `retiredKey` before null is returned, so the new colony's first save cannot
+ * overwrite the only copy; `onRetired` hears its format.
+ */
+export function loadFromLocalStorage(key: string = SAVE_KEY, onRetired?: (version: number) => void): GameState | null {
+  let json: string | null | undefined;
   try {
-    const json = globalThis.localStorage?.getItem(key);
+    json = globalThis.localStorage?.getItem(key);
     return json ? deserialise(json) : null;
-  } catch {
+  } catch (e) {
+    if (e instanceof SaveTooOld && json) {
+      try { globalThis.localStorage?.setItem(retiredKey(key, e.version), json); } catch { /* nowhere to keep it */ }
+      onRetired?.(e.version);
+    }
     return null;
   }
 }

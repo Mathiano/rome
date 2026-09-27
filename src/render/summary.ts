@@ -6,12 +6,13 @@
  * a score: DESIGN has no score, and a colony-wide tier total would be one in
  * disguise. No chart either; the first chart in the game is Mathias's call.
  *
- * The wall's perimeter slot is not a plot (§4.5), so it is named beside the
- * count, never counted in it.
+ * The town is counted in cells (§4.5 C.1): how many of those inside the wall
+ * are built on. The wall is named beside the count, never counted in it.
  */
 import { config, researchNodes, tribeDef, type ResourceId } from '../data';
 import type { GameState } from '../state/types';
 import { buildingTier, forumTier, populationCap } from '../village/storage';
+import { cellCount, enclosure, freeCells } from '../village/grid';
 import { claimedProduction, siteAt } from '../map/sites';
 import { mapConfig } from '../map/world';
 import { playerFamily, rivalFamilies, standing } from '../politics/characters';
@@ -21,18 +22,18 @@ import { esc, n, ROMAN } from './overview';
 
 const plural = (count: number, word: string) => `${count} ${word}${count === 1 ? '' : 's'}`;
 
-/** Plots (every slot but the perimeter): how many are raised, of how many there are. */
-export function plotsRaised(state: GameState): { raised: number; total: number } {
-  const plots = state.slots.filter((s) => s.ring !== 'perimeter');
-  return { raised: plots.filter((s) => s.tier > 0).length, total: plots.length };
+/** Cells inside the wall that are built on, of how many the wall encloses. */
+export function cellsUsed(state: GameState): { used: number; total: number } {
+  const total = cellCount(enclosure(state));
+  return { used: total - freeCells(state), total };
 }
 
 /** The header's extra words: the wall, the plots, the holdings. */
 export function colonyLine(state: GameState): string {
   const wall = buildingTier(state, 'wall');
-  const p = plotsRaised(state);
+  const c = cellsUsed(state);
   const held = state.map.claimed.length;
-  return ` · ${wall ? `Wall ${ROMAN[wall]}` : 'no wall'} · ${p.raised} of ${p.total} plots raised · ${held ? plural(held, 'holding') : 'no holdings'}`;
+  return ` · ${wall ? `Wall ${ROMAN[wall]}` : 'no wall'} · ${c.used} of ${c.total} cells built on · ${held ? plural(held, 'holding') : 'no holdings'}`;
 }
 
 /** Scouted hexes that hold a site, against the sites the country has. */
@@ -50,7 +51,7 @@ const midName = (id: string) => tribeDef(id).name.replace(/^The /, 'the ');
 export function renderSummary(state: GameState): string {
   const forum = forumTier(state);
   const wall = buildingTier(state, 'wall');
-  const p = plotsRaised(state);
+  const c = cellsUsed(state);
   const cap = populationCap(state);
   const stalled = state.resources.grain <= 0 ? ` <span class="stalled">— growth stalled, no grain</span>` : '';
   const yields = Object.entries(claimedProduction(state)).filter(([, v]) => v).map(([k, v]) => `${n(v ?? 0)} ${k as ResourceId}/h`);
@@ -65,7 +66,7 @@ export function renderSummary(state: GameState): string {
   return `<div class="card summary" data-summary>`
     + row('Colony', `Forum ${ROMAN[forum]} <span class="muted">— the colony's tier</span>`)
     + row('Wall', wall ? ROMAN[wall] : 'none raised')
-    + row('Plots', `${p.raised} of ${p.total} raised${wall ? ', and the wall' : ''}`)
+    + row('Town', `${c.used} of ${c.total} cells built on, inside ${wall ? `a wall of tier ${ROMAN[wall]}` : 'the ditch and bank'}`)
     + row('Population', `${config.population.start} → ${Math.floor(state.population)} of ${cap}${stalled}`)
     + row('Holdings', held ? `${held}${yields.length ? `, yielding ${yields.join(', ')}` : ''}` : 'none')
     + row('Country', `${sitesSeen(state)} of ${mapConfig.siteCount} sites seen`)

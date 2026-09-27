@@ -4,13 +4,15 @@ artgen — turns rendered building images into game sprites.
 
 Input:  assets/src/<name>.jpg (or explicit paths). A single structure on a
         plain white background, standing on an isometric ground plate drawn as
-        a 2:1 diamond.
-Output: <out>/<name>.png (RGBA) and <out>/manifest.json.
+        a 2:1 diamond. `path=key` names the sprite `key` instead of the file's
+        own name, so a still called "Forum tier 1.jpg" lands as `forum-t1`.
+Output: <out>/<key>.png (RGBA) and <out>/manifest.json.
 
 Conventions (CLAUDE.md):
   * The ground plate is the base diamond.
   * Anchor = plate centre = midpoint of the plate's left and right corners.
-  * Plate width in the scene equals the tile width (data/layout.json). Pixels
+  * Plate width in the scene equals the manifest's tileWidth: the layout tile
+    (data/layout.json) times the manifest's `plateTiles`. Pixels
     are exported at `ppu` pixels per scene unit so the sprite keeps resolution;
     the renderer divides by ppu.
   * One structure per sprite.
@@ -196,9 +198,14 @@ def check_slopes(left, right, bottom):
 
 
 # ------------------------------------------------------------------ pipeline
-def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white: int) -> dict:
-    name = os.path.splitext(os.path.basename(path))[0]
+def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white: int, name: str = None, crop=None) -> dict:
+    name = name or os.path.splitext(os.path.basename(path))[0]
     img = Image.open(path).convert("RGB")
+    if crop:
+        # A defect in the render itself (a stray bar at an edge): trimmed here,
+        # before keying, so the source file is never edited.
+        l, t, r, b = crop
+        img = img.crop((l, t, img.width - r, img.height - b))
     rgb = np.asarray(img)
     alpha = key_background(rgb, white)
 
@@ -240,6 +247,8 @@ def process(path: str, out_dir: str, tile_width: int, ppu: int, pad: int, white:
         "slopes": {"left": round(s_left, 4), "right": round(s_right, 4)},
         "overhangPx": overhang,
     }
+    if crop:
+        entry["crop"] = list(crop)
     return name, entry
 
 
@@ -250,7 +259,8 @@ def write_manifest(out_dir: str, entries: dict, tile_width: int, ppu: int):
         with open(mpath) as f:
             old = json.load(f)
         if old.get("tileWidth") == tile_width and old.get("ppu") == ppu:
-            manifest["sprites"] = old.get("sprites", {})
+            # Keep every other sprite and top-level key (plateTiles) as it was.
+            manifest = {**old, "tileWidth": tile_width, "ppu": ppu, "sprites": old.get("sprites", {})}
     manifest["sprites"].update(entries)
     manifest["sprites"] = dict(sorted(manifest["sprites"].items()))
     with open(mpath, "w") as f:
@@ -262,6 +272,20 @@ def write_manifest(out_dir: str, entries: dict, tile_width: int, ppu: int):
 def tile_width_from_layout() -> int:
     with open(LAYOUT) as f:
         return int(json.load(f)["tile"]["w"])
+
+
+def default_tile_width(out_dir: str) -> int:
+    """The layout tile times the manifest's plateTiles, as draw.py writes it.
+
+    Using the bare layout tile when the manifest spans more than one tile would
+    mismatch the manifest's tileWidth, and write_manifest would drop every
+    sprite already in it."""
+    tiles = 1.0
+    mpath = os.path.join(out_dir, "manifest.json")
+    if os.path.exists(mpath):
+        with open(mpath) as f:
+            tiles = float(json.load(f).get("plateTiles", 1.0))
+    return int(round(tile_width_from_layout() * tiles))
 
 
 # ------------------------------------------------------------------ self-test
@@ -313,6 +337,34 @@ def selftest() -> int:
         m = write_manifest(os.path.join(td, "out"), {name: e}, 64, 4)
         with open(m) as f:
             assert json.load(f)["sprites"]["test-t1"]["ax"] == e["ax"]
+        # A still whose file name is not its key lands under the key it is given,
+        # and rewriting the manifest keeps its other sprites and plateTiles.
+        with open(m) as f:
+            data = json.load(f)
+        data["plateTiles"] = 1.75
+        with open(m, "w") as f:
+            json.dump(data, f)
+        named = os.path.join(td, "Forum tier 1.jpg")
+        synth_plate(named)
+        key, e2 = process(named, os.path.join(td, "out"), 64, 4, 8, 232, name="forum-t1")
+        assert key == "forum-t1" and e2["file"] == "forum-t1.png"
+        assert os.path.exists(os.path.join(td, "out", "forum-t1.png"))
+        write_manifest(os.path.join(td, "out"), {key: e2}, 64, 4)
+        with open(m) as f:
+            data = json.load(f)
+        assert set(data["sprites"]) == {"test-t1", "forum-t1"}, data["sprites"].keys()
+        assert data["plateTiles"] == 1.75, "rewriting the manifest dropped plateTiles"
+        # A black bar on the render's edge would ride into the sprite; cropped, it does not.
+        barred = os.path.join(td, "barred.png")
+        Lb, Eb, Sb = synth_plate(barred)
+        img = Image.open(barred)
+        ImageDraw.Draw(img).rectangle([img.width - 15, 0, img.width - 1, 111], fill=(2, 2, 2))
+        img.save(barred)
+        _, e_bar = process(barred, os.path.join(td, "out3"), 64, 4, 8, 232, name="barred")
+        _, e_clean = process(barred, os.path.join(td, "out3"), 64, 4, 8, 232, name="clean", crop=(0, 0, 16, 0))
+        assert e_bar["overhangPx"][1] > 100, e_bar["overhangPx"]
+        assert e_clean["overhangPx"] == [0.0, 0.0] or max(e_clean["overhangPx"]) < 6, e_clean["overhangPx"]
+        assert e_clean["crop"] == [0, 0, 16, 0]
         # A silhouette overhanging its plate (foliage, an eave) must not drag the corner out.
         over = os.path.join(td, "over-t1.jpg")
         Lo, Eo, So = synth_plate(over)
@@ -338,27 +390,64 @@ def main(argv=None) -> int:
     p.add_argument("--pad", type=int, default=8)
     p.add_argument("--white", type=int, default=232, help="min channel value counted as background")
     p.add_argument("--selftest", action="store_true")
+    p.add_argument("--stills", help="a stills list (assets/src/stills.json): place every still that passes, report the rest")
     a = p.parse_args(argv)
     if a.selftest:
         return selftest()
-    tile_width = a.tile_width or tile_width_from_layout()
+    tile_width = a.tile_width or default_tile_width(a.out)
+    if a.stills:
+        return run_stills(a.stills, a, tile_width)
     inputs = a.inputs or sorted(
         os.path.join(DEFAULT_SRC, f) for f in os.listdir(DEFAULT_SRC) if f.lower().endswith((".jpg", ".jpeg", ".png"))
     ) if os.path.isdir(DEFAULT_SRC) else a.inputs
     if not inputs:
         print("no inputs", file=sys.stderr)
         return 2
-    entries = {}
-    for path in inputs:
+    entries, failed = {}, 0
+    for arg in inputs:
+        path, _, key = arg.partition("=")
         try:
-            name, e = process(path, a.out, tile_width, a.ppu, a.pad, a.white)
+            name, e = process(path, a.out, tile_width, a.ppu, a.pad, a.white, name=key or None)
         except PlateError as err:
             print(f"FAIL {path}: {err}", file=sys.stderr)
-            return 1
+            failed += 1
+            continue
         entries[name] = e
         print(f"{name}: {e['width']}×{e['height']} px, anchor ({e['ax']}, {e['ay']}), slopes {e['slopes']}")
+    if failed:
+        # All or nothing: a batch with a failing plate writes no manifest.
+        print(f"{failed} failed; manifest not written", file=sys.stderr)
+        return 1
     m = write_manifest(a.out, entries, tile_width, a.ppu)
     print(f"wrote {len(entries)} sprite(s) and {os.path.relpath(m, ROOT)}")
+    return 0
+
+
+def run_stills(listing: str, a, tile_width: int) -> int:
+    """Every still that passes becomes its sprite; one that fails is reported with
+    its measured slopes and not written, so its building keeps the sprite it had."""
+    with open(listing) as f:
+        stills = json.load(f)["stills"]
+    base = os.path.dirname(os.path.abspath(listing))
+    entries, failed = {}, []
+    for s in stills:
+        if not s.get("sprite"):
+            print(f"unplaced {s['src']}: {s.get('_note', 'no building')}")
+            continue
+        try:
+            name, e = process(os.path.join(base, s["src"]), a.out, tile_width, a.ppu, a.pad, a.white, name=s["sprite"], crop=s.get("crop"))
+        except PlateError as err:
+            failed.append(s["src"])
+            print(f"FAIL {s['src']}: {err}", file=sys.stderr)
+            continue
+        entries[name] = e
+        print(f"{name} <- {s['src']}: {e['width']}×{e['height']} px, anchor ({e['ax']}, {e['ay']}), slopes {e['slopes']}")
+    if entries:
+        m = write_manifest(a.out, entries, tile_width, a.ppu)
+        print(f"wrote {len(entries)} sprite(s) and {os.path.relpath(m, ROOT)}")
+    if failed:
+        print(f"{len(failed)} still(s) failed the plate assertion and were not placed: {', '.join(failed)}", file=sys.stderr)
+        return 3
     return 0
 
 

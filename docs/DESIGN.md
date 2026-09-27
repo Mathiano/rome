@@ -140,13 +140,15 @@ Buildings are no longer one-each.
 
 | Unique (one per colony) | Repeatable (as many as plots allow) |
 |---|---|
-| Praetorium, Forum, Castellum, Wall, Temple, Library, Waystation | Insulae, Warehouse, Granary, Cellars, Farm, Lumber camp, Clay works, Iron mine |
+| Praetorium, Forum, Castellum, Wall, Temple, Library, Waystation | Insulae, Warehouse, Granary, Cellars, Barracks, Farm, Lumber camp, Clay works, Iron mine |
 
 Repeatables are where the colony's shape is decided: more farms is a trade colony, more barracks-adjacent buildings is a military one, more libraries later a learned one. Costs may rise per copy 🟡 (`_tuning`). Resource buildings still require their site (§4.5).
 
 #### Footprints ✅
 
 Every building has a footprint in grid cells. 🟡 starting values: Praetorium, Forum, Castellum, Temple 2×2; Harbour 2×1 on a coast edge (arrives with the harbour drop); everything else 1×1. In `data/buildings.json`.
+
+✅ *2026-09-27, Mathias:* one edge of the town grid is reserved as a **riverbank** for the future harbour — 2×1, placed only on that edge (§4.5 C.1). No harbour building yet.
 
 **Building list** (roles; the 2026-09-16 v0 list as amended 2026-09-22 and 2026-09-27):
 
@@ -163,12 +165,13 @@ Every building has a footprint in grid cells. 🟡 starting values: Praetorium, 
 | Granary | repeatable | storage |
 | Cellars | repeatable | hidden storage |
 | Insulae (housing) | repeatable | population cap |
+| Barracks | repeatable | the military counterpart to farms: each one adds to the militia pool (§8.1). ✅ *Added by Mathias, 2026-09-27.* 1×1; costs and militia per tier are `_tuning` defaults in `data/buildings.json` |
 | Lumber camp | repeatable | wood site |
 | Clay works | repeatable | clay site |
 | Iron mine | repeatable | iron site |
 | Farm | repeatable | grain site |
 
-⚠ *Flagged 2026-09-27, not reconciled:* the patch says "the building count stays at fourteen", but its own unique/repeatable table lists fifteen — the list above, Library included. "Barracks-adjacent buildings" names a building that is not on the list. The Harbour appears only as a footprint. *Code:* the Forum is the seat — `forumTier()` is the colony's tier and 46 tiers in `data/buildings.json` carry `requiresForumTier`. The Market is a building that trade reads (`src/tribes/envoys.ts`: no Market, no trade; its tier sets the trade rate). There is no Praetorium, and every building is one to a fixed slot. None of this is changed in this pass.
+⚠ *Flagged 2026-09-27, not reconciled:* the patch says "the building count stays at fourteen", but its own unique/repeatable table lists fifteen — the list above, Library included (sixteen with the Barracks). The Harbour appears only as a footprint. *Resolved the same day:* the Barracks is on the list (Mathias). *Code:* the Forum is the seat — `forumTier()` is the colony's tier and 46 tiers in `data/buildings.json` carry `requiresForumTier`. The Market is a building that trade reads (`src/tribes/envoys.ts`: no Market, no trade; its tier sets the trade rate). There is no Praetorium. None of this is changed in this pass. *Since the grid (2026-09-27, below):* buildings are unique or repeatable and placed on the grid; `data/buildings.json` holds sixteen — the fourteen of the old list, the Wall and the Barracks — with the Market still separate and no Praetorium, because the seat change (B.1) is not yet built.
 
 ### 4.5 Layout ✅
 
@@ -180,6 +183,9 @@ Every building has a footprint in grid cells. 🟡 starting values: Praetorium, 
 - **Free placement:** the player places any building on any free cells that fit its footprint. Placement is a decision, not a menu.
 - The number of cells is finite and always fewer than the player would like. 🟡 Starting values (`_tuning`): wall tier 0 (ditch and bank) 6×6 = 36 cells; tier I 7×7; tier II 8×8; tier III 9×9 = 81. One of every building costs about 23 cells, so tier 0 leaves room for roughly a dozen extras and no more.
 - **The wall's tier grows the enclosure.** Raising the wall is how the town gets bigger. This ties expansion to defence and gives the Wall building its second purpose.
+- **The riverbank ✅** *(2026-09-27, Mathias).* One edge of the grid runs along the river. Beyond it is a strip of bank, outside the wall, kept for a building placed only there — the harbour, 2×1 along the bank (§4.4). No harbour building yet.
+
+*Built 2026-09-27* (`src/village/grid.ts`, `data/layout.json`). The cells are integer (x, y) on the isometric grid, each one sprite plate across. The enclosure is the tier's size in cells, and it grows **away from the river**: the river edge is fixed and each larger size adds a column on the land side and a row, alternately, north and south. So every size contains the one before it, nothing placed ever falls outside, and the bank never moves. 🟡 *Claude's first pass, for confirmation:* the river edge is the south-east (bottom right on screen, where the painted river runs); the bank is one cell deep; the gate stands at the middle of the south-west edge, where the road comes in. Placing a building is a mode of the village view: every place it fits is marked, and a click there puts it down and starts tier I. There is no moving or demolishing. A unique building stands once, a repeatable one as long as there are cells. A save from the ring layout loads onto the grid with every building kept by its id and tier, the forum on its founding cells and the rest set down nearest the centre. An empty plot, or a castellum the ring layout pinned but nobody raised, holds nothing and is dropped.
 
 #### C.2 Three zones ✅
 
@@ -195,7 +201,9 @@ Free placement exists so that placement can matter. Adjacency effects — a gran
 
 The town view zooms, to roughly 3× its current extent at most. The wall and grid are drawn in code; buildings are painted sprites (§10).
 
-⚠ *Flagged 2026-09-27:* repeatable resource buildings "still require their site" (§4.4), but the sites outside the wall are placed by the map (C.2), so the number of farms, camps and mines is bounded by how many sites the map gives — not by plots. *Code:* the town is three rings of fixed slots with a circular wall and the perimeter slot `w1` (`data/layout.json`, `src/render/environment.ts`); CLAUDE.md's Conventions still describe them. None of C is implemented in this pass; the grid session follows.
+*Built 2026-09-27:* the view opens on the whole country — the largest enclosure, its bank and the river, and every site — and the wheel zooms in about the pointer as far as the old frame (660 units across). The wall runs on the grid lines, one piece per cell of edge. Each piece sorts by depth with the buildings, so the far edges stand behind the town and the near edges and the gate in front of it, lit from the top left like the sprites. A 2×2 building's sprite is scaled to its footprint.
+
+⚠ *Flagged 2026-09-27:* repeatable resource buildings "still require their site" (§4.4), but the sites outside the wall are placed by the map (C.2), so the number of farms, camps and mines is bounded by how many sites the map gives — not by plots. *Code, 2026-09-27:* C.1, C.2 and C.4 are built (above); C.3 is not. The painted country (`base-map-v1.jpg`) was made for the round wall and is laid under the grid until it is regenerated (§10), and the river beside the bank is drawn in code.
 
 ### 4.6 Research ✅ (system) / ❓ (contents)
 
@@ -230,7 +238,7 @@ A holding is defined by what it gives, and the kinds are deliberately unlike eac
 | Farmland | grain | plain yield |
 | Quarry | stone | arrives with the stone content drop (§4.1); until then it is scoutable and claimable but idle 🟡 |
 | Salt spring | salt | as above |
-| Troop field | militia | adds to the militia pool (§8.1) **without drawing on population** — the one way to grow the pool other than the castellum |
+| Troop field | militia | adds to the militia pool (§8.1) **without drawing on population** — the one way to grow the pool other than the castellum (and, since 2026-09-27, the Barracks, §4.4) |
 | Watchtower | warning | reveals a ring of hexes around it, and raids against anything inside that ring are telegraphed one round earlier |
 | Ford / junction | movement | envoys and trade resolve faster; the trade effect applies at the market |
 | Shrine | gravitas | a small standing gravitas income to the house holding the post of temple |
@@ -305,7 +313,7 @@ No units on the map. Strength against strength, resolved at council.
 
 ### 8.1 The militia pool ✅
 
-One pool of men-at-arms, sized by population and the Castellum tier, with three sinks: **home defence**, **site garrisons** (§5.3), **bodyguards** (§9.6). Every allocation is a trade-off.
+One pool of men-at-arms, sized by population, the Castellum tier and every Barracks standing (§4.4, 2026-09-27), with three sinks: **home defence**, **site garrisons** (§5.3), **bodyguards** (§9.6). Every allocation is a trade-off.
 
 ### 8.2 Raids ✅
 
@@ -413,6 +421,8 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 
 ⚠ *Flagged 2026-09-27:* `assets/style/anchor-v2.jpg` does not exist in the repo. The upload that carried this patch added `docs/rome_anchor_1.jpg`, a 2760×1504 stylised Roman complex whose pediment inscription reads, to the eye, *FORVM COL. FELICIS* — a forum by its lettering, where this section calls the anchor the praetorium (🟡 read by eye, not verified). It has not been moved, renamed or processed — that belongs to the art session. The old sentence "the plate's width equals the tile width" is dropped: since the plot-size change a plate is `plateTiles` (1.75) layout tiles wide (CLAUDE.md, Conventions), and §4.5's footprints (1×1 to 3×3 cells) will redefine it again. `tools/artgen/palette.json` and `docs/PALETTE-NOTES-isobuild.md` hold the palette the re-sample replaces.
 
+*Tier-1 stills, 2026-09-27.* Mathias's new-style tier-1 stills are in `assets/src/`, mapped to sprites in `assets/src/stills.json` and placed by `npm run assets:stills`. Every still that passes the plate assertion is placed, and a building without one keeps its drawn sprite. Placed: castellum, forum, barracks, cellars, clay works (from `clay_pit`, 🟡), farm, granary, insulae, iron mine, lumber camp, market, temple (from `shrine`, 🟡), warehouse and waystation. The warehouse render carries a 15×112 px black bar on its top-right edge; the pipeline crops it before keying, and the file is not edited. **Fails the plate assertion, not placed:** `library_t1.jpg`, slopes +0.548 / −0.553 against a tolerance of ±0.45–0.55. The assertion was not loosened. Tiers II and III keep their drawn sprites, so a colony mixes the two styles until those stills exist. The Barracks' tiers II and III are drawn placeholders.
+
 ---
 
 ## 11. Tech ✅
@@ -448,7 +458,7 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 
 ## 14. Banked ✅ (defer, don't drop)
 
-Processed goods beyond the first drop · citizen tiers · mobile layout · Latin building names with English tooltips (the forum is always the forum) · offensive combat · Rome ordering attacks on tribes · character traits (Rome II style) · a fifth family emerging · a Teutoburg-scale late-game event · weather · named events for real Germanic leaders · counsel beyond the opening, a standing "what matters now" card (2026-09-24, "not for now") · milestones, the colony's firsts as a reward-free record (2026-09-24) · two great factions in a cold war, later — the Alliance/Horde idea, to be designed fresh under its own name when the time comes (2026-09-27) · in-town roads (2026-09-27) · adjacency rules, ❓ see §4.5 C.3 (2026-09-27) · festivals as a council action 🟡 (2026-09-27, Pillar 9).
+Processed goods beyond the first drop · citizen tiers · mobile layout · Latin building names with English tooltips (the forum is always the forum) · offensive combat · Rome ordering attacks on tribes · character traits (Rome II style) · a fifth family emerging · a Teutoburg-scale late-game event · weather · named events for real Germanic leaders · counsel beyond the opening, a standing "what matters now" card (2026-09-24, "not for now") · milestones, the colony's firsts as a reward-free record (2026-09-24) · two great factions in a cold war, later — the Alliance/Horde idea, to be designed fresh under its own name when the time comes (2026-09-27) · in-town roads (2026-09-27) · adjacency rules, ❓ see §4.5 C.3 (2026-09-27) · festivals as a council action 🟡 (2026-09-27, Pillar 9) · the **Blacksmith**, the **Iron works** and the **Stables** (2026-09-27, Mathias): their tier-1 stills are in `assets/src/` and stay unplaced until they have a place in the economy.
 
 ---
 
@@ -494,3 +504,4 @@ v0.3.0 — 2026-09-25, applied 2026-09-27 — the holdings patch (`docs/DESIGN-p
 v0.3.1 — 2026-09-27 — the pivot patch (`docs/DESIGN-patch-2026-09-27-pivot.md`). Pillar 9 amended: mythic Rome — the gods act; no wizards, spells or mana; festivals 🟡. §4.4: the Praetorium is the seat and its tier is the colony's; the Forum absorbs the Market — ✅ confirmed by Mathias in session, 2026-09-27; unique and repeatable buildings; footprints. §4.5 rewritten: the town grid, three zones, adjacency ❓, a zooming view. §10 rewritten: stylised hand-painted art from `anchor-v2`, content still Roman, palette and base map re-derived; sprites, plates, anchors, animation and pipeline unchanged. §9.8: the gods act, contents ❓. §14: two great factions in a cold war, in-town roads, adjacency rules and festivals banked. Doc only — none of §4.4's seat change, §4.5 or §10 is implemented. **Invalidated by this patch, listed and not deleted** (later sessions replace them): the rings and perimeter slot `w1` in `data/layout.json`; the circular wall geometry in `src/render/environment.ts` (`createWall`, its isometric circle, `wallLight`); `assets/style/anchor-v1.jpg` and `anchor-v1.png`; the 43 building sprites in `assets/buildings/` derived from anchor-v1; `assets/src/lumber-camp-t1.jpg`, `lumber-camp-t3.jpg` and `lumber-camp-t3-trees.mp4`; the base map `assets/src/base-map-v1.jpg`; and the palette sample, which is `tools/artgen/palette.json` 🟡 (identified by this session, not named by the patch). Flags recorded in §4.4, §4.5 and §10, not reconciled: the building count (fourteen stated, fifteen listed), barracks and the Harbour, the Forum as seat and the Market as trade in code, repeatable resource buildings bounded by map sites, and `anchor-v2.jpg` missing from the repo.
 v0.3.2 — 2026-09-25, merged 2026-09-28 (#13) — §3.3 reversed: no round runs unattended. The idle round, its two config values and every surface that spoke of it are gone; a save loaded after any absence is at the round it was left at, and the dev multiplier scales the village clock only. The UI no longer redraws on the village tick: header, panel, dev bar and news card are patched in place, so the tick never replaces the element under the pointer, the button being clicked or the section being scrolled.
 v0.3.3 — 2026-09-26, merged 2026-09-28 (#14) — §3.3: the absence pillar (§2.11) recorded as the reason the idle round is gone; the 'exploit' ruled not an exploit; no replacement mechanic without Mathias's sign-off. §3.1: the "Since you were last here" strip is anchored to when the player last saw the colony (`lastSeen`) and shows only after `returnStrip.minGapMinutes` (30, a tuning default).
+v0.3.4 — 2026-09-27, merged 2026-09-28 — the grid session. §4.5 C.1, C.2 and C.4 built. The town is a grid of cells inside a rectangular wall. Its size follows the wall's tier (🟡 6/7/8/9) and it grows away from the river. Buildings are placed on free cells by footprint (🟡 2×2 for the forum, castellum and temple), unique or repeatable, and resource sites stay fixed outside the wall. The view zooms in to the old frame. §4.4 and §4.5, Mathias: the **Barracks** is added, a repeatable 1×1 building and the military counterpart to farms, each one adding to the militia pool (§8.1; §5.2's troop field is no longer the only other way to grow it). One edge of the grid is a **riverbank** reserved for a future harbour, 2×1 and placed only there; no harbour building yet. 🟡 The river edge, the bank's depth and the gate's side are Claude's first pass. §14: the Blacksmith, Iron works and Stables are banked, and their stills stay unplaced. §10: every new-style tier-1 still that passes the plate assertion is placed; the library's fails and keeps its drawn sprite. Saves from the ring layout load onto the grid, and `saveVersion` is now 2.

@@ -7,7 +7,7 @@
  */
 import { advisor, type AdvisorCondition, type AdvisorStep, type ResourceId } from '../data';
 import type { GameState, PlaytestStats } from '../state/types';
-import { checkBuild } from '../village/construction';
+import { checkBuild, checkPlace } from '../village/construction';
 import { buildingTier, capacity } from '../village/storage';
 import { holderOf } from '../politics/posts';
 import { nearestUnknown, scoutCost } from '../map/sites';
@@ -21,7 +21,7 @@ type Reader = (state: GameState, arg: never) => boolean;
 const READERS: Record<string, Reader> = {
   buildingTier: (s, a: { id: string; atLeast: number }) => buildingTier(s, a.id) >= a.atLeast,
   underWay: (s, a: { building: string }) => s.constructions.some((c) => c.buildingId === a.building),
-  affordable: (s, a: { slot: string; building: string }) => checkBuild(s, a.slot, a.building).ok,
+  affordable: (s, a: { slot?: string; building: string }) => buildCheck(s, a).ok,
   roundAtLeast: (s, n: number) => s.round >= n,
   postHeld: (s, a: { postId: string; byPlayer?: boolean }) => {
     const h = holderOf(s, a.postId);
@@ -40,6 +40,11 @@ const READERS: Record<string, Reader> = {
 };
 
 export const CONDITION_WORDS = Object.keys(READERS);
+
+/** A build on a named slot, or a town building still to be put down on the grid. */
+function buildCheck(state: GameState, a: { slot?: string; building: string }) {
+  return a.slot ? checkBuild(state, a.slot, a.building) : checkPlace(state, a.building);
+}
 
 /** True when the one word in `cond` holds. An unknown word is a data bug and throws. */
 export function holds(state: GameState, cond: AdvisorCondition): boolean {
@@ -66,13 +71,14 @@ export function currentAdvice(state: GameState): AdvisorStep | null {
   return nextStep(state);
 }
 
-export interface Goto { tab: AdvisorStep['goto']['tab']; slot?: string; hex?: string }
+export interface Goto { tab: AdvisorStep['goto']['tab']; slot?: string; place?: string; hex?: string }
 
 /** Where the step points, with the map's named rule resolved against this colony. */
 export function resolveGoto(state: GameState, step: AdvisorStep): Goto {
   const g = step.goto;
   const out: Goto = { tab: g.tab };
   if (g.slot) out.slot = g.slot;
+  if (g.place) out.place = g.place;
   if (g.hex === 'nearestUnknown') {
     const hex = nearestUnknown(state);
     if (hex) out.hex = hex;
@@ -88,7 +94,7 @@ export function blockedBy(state: GameState, step: AdvisorStep): string | null {
   const a = step.action;
   if (!a) return null;
   if (a.build) {
-    const check = checkBuild(state, a.build.slot, a.build.building);
+    const check = buildCheck(state, a.build);
     if (check.ok) return null;
     if (check.reason !== 'Not enough resources') return check.reason ?? null;
     return shortfall(state, check.cost);

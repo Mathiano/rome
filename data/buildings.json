@@ -1,10 +1,12 @@
 {
-  "_comment": "Three tiers per building. buildSeconds is real time. requiresForumTier gates each tier. Effects are read by src/village and src/combat; nothing here is duplicated in code.",
+  "_comment": "Three tiers per building. buildSeconds is real time. requiresForumTier gates each tier. Effects are read by src/village and src/combat; nothing here is duplicated in code. zone (DESIGN §4.5 C.2): 'town' stands on the grid inside the wall, 'site' on a resource site outside it, 'wall' is the circuit. footprint is [along x, along y] in grid cells (§4.4, 🟡 starting values). unique: one per colony; every other building is repeatable (§4.4).",
   "buildings": [
     {
       "id": "forum",
       "name": "Forum",
-      "ring": "centre",
+      "zone": "town",
+      "footprint": [2, 2],
+      "unique": true,
       "kind": "building",
       "role": "Seat of the council. Its tier is the colony's tier.",
       "tiers": [
@@ -52,7 +54,9 @@
     {
       "id": "castellum",
       "name": "Castellum",
-      "ring": "centre",
+      "zone": "town",
+      "footprint": [2, 2],
+      "unique": true,
       "kind": "building",
       "role": "Garrison. Sets the militia pool and the bodyguards a house may keep.",
       "tiers": [
@@ -97,7 +101,8 @@
     {
       "id": "wall",
       "name": "Wall",
-      "ring": "perimeter",
+      "zone": "wall",
+      "unique": true,
       "kind": "building",
       "role": "The circuit around the colony. Raising it is what a raid has to get through before it reaches the stores.",
       "_tuning": "DESIGN §4.4 — costs, buildSeconds and defence are first-pass defaults (2026-09-22) and want a balance pass. Defence carries over the old raid.wallStrengthPerCastellumTier of 12 per tier, so the walls term of §8.2 is unchanged in size; what changed is which building supplies it.",
@@ -142,7 +147,8 @@
     {
       "id": "warehouse",
       "name": "Warehouse",
-      "ring": "inner",
+      "zone": "town",
+      "footprint": [1, 1],
       "kind": "building",
       "role": "Stores wood, clay and iron. Overflow is lost.",
       "tiers": [
@@ -186,7 +192,8 @@
     {
       "id": "granary",
       "name": "Granary",
-      "ring": "inner",
+      "zone": "town",
+      "footprint": [1, 1],
       "kind": "building",
       "role": "Stores grain. Overflow is lost.",
       "tiers": [
@@ -230,7 +237,8 @@
     {
       "id": "cellars",
       "name": "Cellars",
-      "ring": "inner",
+      "zone": "town",
+      "footprint": [1, 1],
       "kind": "building",
       "role": "Hidden stores. Raiders never find what is kept here.",
       "tiers": [
@@ -274,7 +282,8 @@
     {
       "id": "insulae",
       "name": "Insulae",
-      "ring": "inner",
+      "zone": "town",
+      "footprint": [1, 1],
       "kind": "building",
       "role": "Housing. Raises the population cap.",
       "tiers": [
@@ -318,7 +327,9 @@
     {
       "id": "market",
       "name": "Market",
-      "ring": "inner",
+      "zone": "town",
+      "footprint": [1, 1],
+      "unique": true,
       "kind": "building",
       "role": "Trade with the tribes and Rome. Raises denarii income.",
       "tiers": [
@@ -366,7 +377,9 @@
     {
       "id": "temple",
       "name": "Temple",
-      "ring": "inner",
+      "zone": "town",
+      "footprint": [2, 2],
+      "unique": true,
       "kind": "building",
       "role": "The gods of Rome. Piety and gravitas.",
       "tiers": [
@@ -414,7 +427,9 @@
     {
       "id": "library",
       "name": "Library",
-      "ring": "inner",
+      "zone": "town",
+      "footprint": [1, 1],
+      "unique": true,
       "kind": "building",
       "role": "Scrolls, copyists and quiet. Nothing is researched without it.",
       "tiers": [
@@ -464,7 +479,9 @@
     {
       "id": "waystation",
       "name": "Waystation",
-      "ring": "inner",
+      "zone": "town",
+      "footprint": [1, 1],
+      "unique": true,
       "kind": "building",
       "role": "The road to the Rhine. Rome's requests and rewards pass through here.",
       "tiers": [
@@ -507,9 +524,56 @@
       ]
     },
     {
+      "id": "barracks",
+      "name": "Barracks",
+      "zone": "town",
+      "footprint": [1, 1],
+      "kind": "building",
+      "role": "Quarters and a drill yard. Each one adds to the militia pool — the military counterpart to farms.",
+      "_tuning": "Costs, times and militiaBonus are first-pass defaults (2026-09-27), set against the castellum (5 / 15 / 35 men); a balance pass is due.",
+      "tiers": [
+        {
+          "cost": {
+            "wood": 60,
+            "clay": 40,
+            "iron": 20
+          },
+          "buildSeconds": 240,
+          "requiresForumTier": 1,
+          "effects": {
+            "militiaBonus": 3
+          }
+        },
+        {
+          "cost": {
+            "wood": 180,
+            "clay": 140,
+            "iron": 90
+          },
+          "buildSeconds": 1800,
+          "requiresForumTier": 1,
+          "effects": {
+            "militiaBonus": 7
+          }
+        },
+        {
+          "cost": {
+            "wood": 520,
+            "clay": 420,
+            "iron": 300
+          },
+          "buildSeconds": 7200,
+          "requiresForumTier": 2,
+          "effects": {
+            "militiaBonus": 12
+          }
+        }
+      ]
+    },
+    {
       "id": "lumber_camp",
       "name": "Lumber camp",
-      "ring": "outer",
+      "zone": "site",
       "kind": "field",
       "site": "forest",
       "produces": "wood",
@@ -556,7 +620,7 @@
     {
       "id": "clay_works",
       "name": "Clay works",
-      "ring": "outer",
+      "zone": "site",
       "kind": "field",
       "site": "clay_bank",
       "produces": "clay",
@@ -603,7 +667,7 @@
     {
       "id": "iron_mine",
       "name": "Iron mine",
-      "ring": "outer",
+      "zone": "site",
       "kind": "field",
       "site": "iron_seam",
       "produces": "iron",
@@ -650,7 +714,7 @@
     {
       "id": "farm",
       "name": "Farm",
-      "ring": "outer",
+      "zone": "site",
       "kind": "field",
       "site": "farmland",
       "produces": "grain",

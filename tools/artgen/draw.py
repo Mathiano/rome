@@ -1630,13 +1630,79 @@ def library(sc, tier):
         tuft(sc, 1.1, 2.1)
 
 
+def palus(sc, gx, gy, z=0.0, h=0.55):
+    """A drill post: the stake a recruit strikes with a wooden sword."""
+    box(sc, gx - 0.07, gy - 0.07, gx + 0.07, gy + 0.07, z, z + h, "timberdark", w=W_DETAIL)
+
+
+def weapon_rack(sc, gx, gy, z=0.0):
+    """A rack of spears and shields leaning on a rail."""
+    box(sc, gx - 0.45, gy - 0.06, gx + 0.45, gy + 0.06, z + 0.34, z + 0.42, "timber", w=W_DETAIL)
+    for i in range(4):
+        x = gx - 0.36 + i * 0.24
+        sc.add(gx + gy + 0.2, line(iso(x, gy, z), iso(x + 0.05, gy, z + 0.8), PAL["timber_deep"], W_DETAIL), z + 0.8)
+    for i in range(2):
+        c = iso(gx - 0.2 + i * 0.4, gy + 0.08, z + 0.24)
+        sc.add(gx + gy + 0.3, ellipse(c, 10, 13, PAL["roof_dark"]), z + 0.3)
+
+
+def barracks(sc, tier):
+    """Quarters along the back, a drill yard in front: the counterpart of a farm."""
+    paving(sc, 1.6, 4.5, 6.6, 6.9, 0, 5, 2)
+    if tier == 1:
+        with sc.group(6.3 + 3.9):
+            box(sc, 1.7, 1.7, 6.3, 3.9, 0, 0.8, "timberdark")
+            plank_lines(sc, 1.7, 1.7, 6.3, 3.9, 0, 0.8, 9)
+            archway(sc, 4.0, 3.9, 0, 0.8, 0.7)
+            gable(sc, 1.7, 1.7, 6.3, 3.9, 0.8, 0.55, "x", gable_mat="timberdark")
+        for gx in (2.4, 3.6, 4.8):
+            palus(sc, gx, 5.7)
+        weapon_rack(sc, 6.0, 5.2)
+        banner(sc, 1.5, 4.6, 1.2, 0.7)
+        crate(sc, 6.6, 6.4)
+    elif tier == 2:
+        with sc.group(6.4 + 3.9):
+            box(sc, 1.5, 1.5, 6.4, 3.9, 0, 0.3, "stone")
+            box(sc, 1.5, 1.5, 6.4, 3.9, 0.3, 1.2, "plaster")
+            stone_blocks(sc, 1.5, 1.5, 6.4, 3.9, 0, 0.3, 1)
+            for gx in (2.5, 4.0, 5.5):
+                archway(sc, gx, 3.9, 0.3, 1.0, 0.55)
+            gable(sc, 1.5, 1.5, 6.4, 3.9, 1.2, 0.65, "x")
+        with sc.group(2.9 + 6.6):
+            box(sc, 1.5, 3.9, 2.9, 6.6, 0, 0.9, "plaster")
+            gable(sc, 1.5, 3.9, 2.9, 6.6, 0.9, 0.5, "y")
+        for gx in (3.8, 4.8, 5.8):
+            palus(sc, gx, 5.8)
+        weapon_rack(sc, 5.2, 4.6)
+        banner(sc, 6.7, 6.6, 1.5, 0.8)
+    else:
+        with sc.group(6.5 + 3.8):
+            box(sc, 1.4, 1.4, 6.5, 3.8, 0, 0.4, "stone")
+            box(sc, 1.4, 1.4, 6.5, 3.8, 0.4, 1.9, "plaster")
+            stone_blocks(sc, 1.4, 1.4, 6.5, 3.8, 0, 1.9, 6)
+            for gx in (2.4, 3.6, 4.8, 5.9):
+                archway(sc, gx, 3.8, 0.4, 1.2, 0.5)
+            hip_roof(sc, 1.4, 1.4, 6.5, 3.8, 1.9, 0.7, inset=1.5)
+        with sc.group(2.8 + 6.7):
+            box(sc, 1.4, 3.8, 2.8, 6.7, 0, 1.5, "stone")
+            stone_blocks(sc, 1.4, 3.8, 2.8, 6.7, 0, 1.5, 5)
+            gable(sc, 1.4, 3.8, 2.8, 6.7, 1.5, 0.55, "y")
+        for gx in (3.7, 4.6, 5.5, 6.4):
+            palus(sc, gx, 6.0)
+        weapon_rack(sc, 5.0, 4.5)
+        weapon_rack(sc, 6.3, 4.8)
+        banner(sc, 6.8, 6.7, 1.9, 0.9)
+        sc.anim("flag", 6.8, 6.7, 2.8, 0.9)
+
+
 BUILDINGS = {
     "forum": forum, "castellum": castellum, "warehouse": warehouse, "granary": granary,
     "cellars": cellars, "insulae": insulae, "market": market, "temple": temple,
     "library": library, "waystation": waystation, "lumber-camp": lumber_camp,
     "clay-works": clay_works, "iron-mine": iron_mine, "farm": farm,
+    "barracks": barracks,
 }
-PAVED = {"forum", "market", "temple", "library", "waystation", "insulae", "warehouse"}
+PAVED = {"forum", "market", "temple", "library", "waystation", "insulae", "warehouse", "barracks"}
 
 
 def compose(name, tier):

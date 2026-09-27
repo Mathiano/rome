@@ -1,36 +1,33 @@
 /**
- * The colony the buildings stand in (DESIGN §10).
+ * The colony the buildings stand in (DESIGN §4.5, §10).
  *
- * Seventeen plots on a gradient read as a catalogue of buildings on a lawn.
- * A town reads as a town because something encloses it: a wall with a gate, one
- * continuous ground inside, roads that meet at a square, and country outside
- * that explains where the resources come from — the river at the clay banks,
- * the forest behind the wood sites, ploughed strips beyond the farms.
+ * The town is a rectangle of cells inside a rectangular wall — the Roman
+ * colonial plan. The wall and the grid are drawn in code (§4.5 C.4); the
+ * buildings are painted sprites. The river runs along one edge of the town,
+ * beyond a strip of bank kept for the harbour.
  *
- * All of it is drawn once at construction and never touched again: nothing here
- * depends on game state, so it costs one pass at startup and nothing per tick.
+ * The country and the river are drawn once. The town's floor, its grid and
+ * the wall depend on the wall's tier, so they are rebuilt when it is raised
+ * and at no other time.
  */
 import { layout } from '../data';
+import { cellSize, enclosureOfSize, type Rect } from '../village/grid';
 
 const NS = 'http://www.w3.org/2000/svg';
 
 /**
  * The painted country (assets/src/base-map-v1.jpg), generated against the spec
- * in assets/style/PROMPTS.md. Loaded the same way the sprites are, so it is
- * absent rather than fatal if the file is ever removed.
+ * in assets/style/PROMPTS.md for the old round wall. It is invalidated by the
+ * grid (DESIGN §10: regenerated after the grid exists) and kept until then as
+ * country, laid so its clearing sits under the largest enclosure. Loaded the
+ * same way the sprites are, so it is absent rather than fatal.
  */
 const baseMapUrls = import.meta.glob('../../assets/src/base-map-*.jpg', { query: '?url', import: 'default', eager: true }) as Record<string, string>;
 const BASE_MAP: string | undefined = Object.entries(baseMapUrls).sort().pop()?.[1];
 
 /**
- * How the painting lands on the wall.
- *
- * The clearing it was generated with is 2.42:1 and the wall is exactly 2:1, so
- * the two cannot both be honoured. The scale is uniform — stretching terrain
- * would show on the trees — and it matches the clearing's *height*: painted
- * earth spilling outside the wall reads as cleared approach, where grass inside
- * the wall would read as a bug. Measured off the source, not guessed
- * (tools: the fit check in the session capsule).
+ * Where the painting's clearing is, measured off the source. The scale is
+ * uniform and matches the clearing's height to the largest enclosure's.
  */
 const MAP_FIT = {
   /** Where the clearing's centre sits in the source image, as a fraction. */
@@ -82,27 +79,6 @@ function el<K extends keyof SVGElementTagNameMap>(tag: K, attrs: Record<string, 
   return e;
 }
 
-function project(x: number, y: number): [number, number] {
-  const { w, h } = layout.tile;
-  return [((x - y) * w) / 2, ((x + y) * h) / 2];
-}
-
-/**
- * An isometric circle of radius r in tile units. On this projection it comes
- * out as an axis-aligned ellipse, which is why the wall can be drawn as one.
- */
-const RING_X = Math.SQRT2 * (layout.tile.w / 2);
-const RING_Y = Math.SQRT2 * (layout.tile.h / 2);
-function ring(r: number, t: number): [number, number] {
-  return [RING_X * r * Math.cos(t), RING_Y * r * Math.sin(t)];
-}
-
-/** Far enough out to clear the outer ring of plots, close enough to enclose. */
-const WALL_R = 6.15;
-/** Where the gate sits on the ring, in radians: due south, facing the viewer. */
-const GATE_AT = Math.PI / 2;
-const GATE_HALF = 0.2;
-
 /** A tower on the wall, in whatever the wall is made of at this tier. */
 function tower(x: number, y: number, T: { h: number; foot: string; face: string; top: string }): SVGGElement {
   const g = el('g', { transform: `translate(${x.toFixed(1)},${y.toFixed(1)})` });
@@ -118,26 +94,23 @@ function tower(x: number, y: number, T: { h: number; foot: string; face: string;
   return g;
 }
 
-/**
- * Depth on this projection. A tile at (x,y) sits at x+y; the wall ring is
- * parameterised by screen angle t, and works out to WALL_R·√2·sin(t) — due
- * south (t = π/2) is nearest the viewer, due north is furthest.
- */
-export const wallDepthAt = (t: number) => WALL_R * Math.SQRT2 * Math.sin(t);
+/** Grid units to scene units: +x runs down-right, +y down-left. */
+export function project(x: number, y: number): [number, number] {
+  const { w, h } = cellSize();
+  return [((x - y) * w) / 2, ((x + y) * h) / 2];
+}
+
+/** How lit a stretch of wall is: light comes from the top left, as on every sprite. */
+export type WallEdge = 'north-west' | 'north-east' | 'south-east' | 'south-west';
 
 /**
- * How lit a stretch of wall is, from -1 (full shade) to +1 (full light), for
- * the ring's screen angle t.
- *
- * Light comes from the top left, as it does on every sprite. The ring's
- * outward normal at tile angle θ is (cos θ, sin θ), and θ = t − 45° on this
- * parameterisation; a screen direction of (−1,−1) works back to (−3,−1) in
- * tile space, so the dot product of the two reduces to the line below. It puts
- * the north-west of the ring in light and the south-east in shade, which is
- * what the eye expects of a drum lit from that corner.
+ * The face the viewer sees of a wall running along y (the north-west and
+ * south-east edges) faces +x, down and to the right: away from the light.
+ * The face of one running along x faces +y, down and to the left: toward it.
+ * The same split the sprites' boxes use — left faces lit, right faces dark.
  */
-export function wallLight(t: number): number {
-  return -(0.448 * Math.cos(t) + 0.894 * Math.sin(t));
+export function wallLight(edge: WallEdge): number {
+  return edge === 'north-east' || edge === 'south-west' ? 0.5 : -0.5;
 }
 
 /** Darken or lift a hex by a fraction, for that shading. */
@@ -151,214 +124,205 @@ function shade(hex: string, f: number): string {
 /** What the circuit is made of at each tier of the wall building (DESIGN §4.4). */
 const WALL_TIERS = [
   // 0 — no wall raised yet: the ditch and bank a colonia throws up on day one
-  { h: 7, foot: '#6b5a44', face: '#8a7357', top: '#a68a68', merlons: false, towers: 0, stakes: false, courses: 0 },
+  { h: 7, foot: '#6b5a44', face: '#8a7357', top: '#a68a68', merlons: false, stakes: false, courses: 0 },
   // 1 — a timber palisade on that bank: posts, each with a shadow side
-  { h: 12, foot: '#4a3b2c', face: '#6d4d3d', top: '#9b7c68', merlons: false, towers: 3, stakes: true, courses: 0 },
+  { h: 12, foot: '#4a3b2c', face: '#6d4d3d', top: '#9b7c68', merlons: false, stakes: true, courses: 0 },
   // 2 — stone, coped, with towers and coursed blocks
-  { h: 15, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: false, towers: 5, stakes: false, courses: 3 },
+  { h: 15, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: false, stakes: false, courses: 3 },
   // 3 — the full circuit, crenellated, and the standard over the gate
-  { h: 17, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: true, towers: 8, stakes: false, courses: 4 },
+  { h: 17, foot: '#564f45', face: '#a19683', top: '#cfc3ab', merlons: true, stakes: false, courses: 4 },
 ];
 
 export interface ScenePiece { depth: number; g: SVGGElement }
 
-/**
- * The gate's span, for the perimeter slot's hit area (`layout.json` w1).
- * Derived from the same ring the gate is drawn on, so the two cannot drift:
- * the leaves run from `GATE_AT - GATE_HALF` to `GATE_AT + GATE_HALF`, and the
- * finished circuit's gate stands `WALL_TIERS[3].h * 0.8` high. It is the gate's
- * own span and no more: any taller and the marker reads as a plot standing in
- * the fields rather than as the way into the colony.
- */
-export const GATE_HIT = {
-  w: 2 * Math.abs(ring(WALL_R, GATE_AT + GATE_HALF)[0]),
-  h: WALL_TIERS[WALL_TIERS.length - 1].h * 0.8,
-};
+/** The gate: the middle cell of the south-west edge, facing the viewer's left, where the road comes in. */
+export function gateCell(e: Rect): number {
+  return Math.floor((e.x0 + e.x1 + 1) / 2);
+}
+
+/** The gate's centre in grid units, for the wall slot's position and hit area. */
+export function gateAt(e: Rect): { x: number; y: number } {
+  return { x: gateCell(e) + 0.5, y: e.y1 + 1 };
+}
+
+/** The gate's hit area, in scene units around its centre. */
+export const GATE_HIT = { w: cellSize().w / 2, h: WALL_TIERS[WALL_TIERS.length - 1].h * 0.8 };
+
+const pt = (x: number, y: number) => project(x, y).map((v) => v.toFixed(1)).join(',');
+const poly = (cells: [number, number][]) => cells.map(([x, y]) => pt(x, y)).join(' ');
 
 /**
- * The flat ground: the painting, the roads and the square.
- *
- * Everything here lies on the ground and belongs behind every building, so it
- * needs no depth of its own. The wall does — see `createWall`.
+ * The country: the painting, the river and its far bank. Drawn once; nothing
+ * here depends on the colony.
  */
 export function createGround(view: { x: number; y: number; w: number; h: number }): SVGGElement {
   const root = el('g', { class: 'env' });
-
-  // --- the country: one painted image, fitted so the wall lands on its clearing
+  const big = enclosureOfSize(Math.max(...layout.grid.sizeByWallTier));
   if (BASE_MAP) {
-    // The painting is wider than the frame but not always taller than the
-    // letterbox a tall window leaves, so the frame is flooded first with the
-    // painting's own edge colour. Sampled from its outer 12px, not guessed.
+    // Flood first with the painting's own edge colour, for the letterbox.
     root.appendChild(el('rect', { x: view.x - view.w, y: view.y - view.h, width: view.w * 3, height: view.h * 3, fill: PAL.mapEdge }));
-    const k = (RING_Y * WALL_R) / (MAP_FIT.semiH * MAP_FIT.height);
+    const [cx, cy] = project((big.x0 + big.x1 + 1) / 2, (big.y0 + big.y1 + 1) / 2);
+    const semiH = ((big.x1 - big.x0 + 1 + big.y1 - big.y0 + 1) * cellSize().h) / 4;
+    // The clearing under the largest town, and never smaller than the frame:
+    // with the clearing's centre pinned there, each edge of the painting must
+    // still reach the frame's. A window of another shape than the frame shows
+    // past it, onto the edge-colour flood above.
+    const W = MAP_FIT.width;
+    const H = MAP_FIT.height;
+    const k = Math.max(
+      semiH / (MAP_FIT.semiH * H),
+      (cx - view.x) / (MAP_FIT.cx * W), (view.x + view.w - cx) / ((1 - MAP_FIT.cx) * W),
+      (cy - view.y) / (MAP_FIT.cy * H), (view.y + view.h - cy) / ((1 - MAP_FIT.cy) * H),
+    );
     root.appendChild(el('image', {
       href: BASE_MAP,
-      x: (-MAP_FIT.cx * MAP_FIT.width * k).toFixed(1),
-      y: (-MAP_FIT.cy * MAP_FIT.height * k).toFixed(1),
+      x: (cx - MAP_FIT.cx * MAP_FIT.width * k).toFixed(1),
+      y: (cy - MAP_FIT.cy * MAP_FIT.height * k).toFixed(1),
       width: (MAP_FIT.width * k).toFixed(1),
       height: (MAP_FIT.height * k).toFixed(1),
       preserveAspectRatio: 'none',
       class: 'base-map',
     }));
   } else {
-    // No painting: fall back to plain ground rather than a blank frame.
     root.appendChild(el('rect', { x: view.x, y: view.y, width: view.w, height: view.h, fill: PAL.grass }));
-    root.appendChild(el('ellipse', { cx: 0, cy: 0, rx: (RING_X * WALL_R).toFixed(1), ry: (RING_Y * WALL_R).toFixed(1), fill: PAL.earthLight }));
   }
-
-  // --- roads: one way in from the gate, and a ring inside the wall. Spurs to
-  // every plot made a star that swallowed the town, so the plots meet the ring
-  // road instead of the centre.
-  const roadEdges = el('g', { class: 'road-edges', opacity: 0.4 });
-  const roads = el('g', { class: 'roads' });
-  const [gx, gy] = ring(WALL_R, GATE_AT);
-  const [cx0, cy0] = project(0.5, 0); // the forum and castellum stand here
-  // Every lane used to carry a semi-transparent darker underlay. Where the ring
-  // road, the gate road and the cross street met at the square, three of those
-  // compounded into a dark blot that read as a mud pit. The edge is opaque and
-  // painted once, under all of them.
-  const lane = (d: string, w: number) => {
-    roadEdges.appendChild(el('path', { d, fill: 'none', stroke: PAL.roadEdge, 'stroke-width': w + 3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
-    roads.appendChild(el('path', { d, fill: 'none', stroke: PAL.road, 'stroke-width': w, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' }));
-  };
-  // the ring road, just inside the wall
-  let rd = '';
-  for (let i = 0; i <= 56; i++) {
-    const [x, y] = ring(WALL_R * 0.82, (i / 56) * Math.PI * 2);
-    rd += `${i ? ' L' : 'M'} ${x.toFixed(1)},${y.toFixed(1)}`;
+  // The river, beyond the bank: it runs the whole length of the country so
+  // the enclosure can grow along it without the water ending.
+  const bankX = big.x1 + 1 + layout.grid.riverbankDepth;
+  const Y0 = big.y0 - 8;
+  const Y1 = big.y1 + 9;
+  const river = el('g', { class: 'river' });
+  // The river ends where the painting does, not out across the flood.
+  const painting = root.querySelector('image.base-map');
+  if (painting) {
+    const clip = el('clipPath', { id: 'country-clip' });
+    clip.appendChild(el('rect', { x: painting.getAttribute('x')!, y: painting.getAttribute('y')!, width: painting.getAttribute('width')!, height: painting.getAttribute('height')! }));
+    root.appendChild(clip);
+    river.setAttribute('clip-path', 'url(#country-clip)');
   }
-  lane(rd + ' Z', 11);
-  // the gate road, meeting the ring road and running on to the square
-  const [rgx, rgy] = ring(WALL_R * 0.82, GATE_AT);
-  lane(`M ${gx.toFixed(1)},${gy.toFixed(1)} L ${rgx.toFixed(1)},${rgy.toFixed(1)} L ${cx0.toFixed(1)},${cy0.toFixed(1)}`, 13);
-  // one cross street, so the square is not only reachable from the south
-  const [ax, ay] = ring(WALL_R * 0.82, GATE_AT + Math.PI);
-  lane(`M ${ax.toFixed(1)},${ay.toFixed(1)} L ${cx0.toFixed(1)},${cy0.toFixed(1)}`, 11);
-  root.appendChild(roadEdges);
-  root.appendChild(roads);
-
-  // the square: paved, with a well at its centre
-  root.appendChild(el('ellipse', { cx: cx0.toFixed(1), cy: cy0.toFixed(1), rx: 62, ry: 31, fill: PAL.square, stroke: PAL.roadEdge, 'stroke-width': 1.2, opacity: 0.95 }));
-  // flagstones, as light rings rather than dark patches
-  for (let i = 0; i < 3; i++) {
-    root.appendChild(el('ellipse', {
-      cx: cx0.toFixed(1), cy: cy0.toFixed(1), rx: 20 + i * 14, ry: 10 + i * 7,
-      fill: 'none', stroke: PAL.squareLine, 'stroke-width': 0.9, opacity: 0.5,
-    }));
-  }
-
+  river.appendChild(el('polygon', { points: poly([[bankX, Y0], [bankX + 2.4, Y0], [bankX + 2.4, Y1], [bankX, Y1]]), fill: PAL.water, stroke: PAL.ink, 'stroke-width': 1 }));
+  river.appendChild(el('polygon', { points: poly([[bankX + 0.7, Y0], [bankX + 1.7, Y0], [bankX + 1.7, Y1], [bankX + 0.7, Y1]]), fill: PAL.waterDeep, opacity: 0.6 }));
+  root.appendChild(river);
   return root;
 }
 
-
+/**
+ * The town floor for an enclosure: packed earth inside the wall, a line for
+ * every cell so placement can be read, and the riverbank strip in its own tone.
+ * Flat, so it lies under every building and needs no depth.
+ */
+export function createTownFloor(e: Rect, bank: Rect): SVGGElement {
+  const root = el('g', { class: 'town-floor' });
+  root.appendChild(el('polygon', {
+    class: 'floor',
+    points: poly([[e.x0, e.y0], [e.x1 + 1, e.y0], [e.x1 + 1, e.y1 + 1], [e.x0, e.y1 + 1]]),
+    fill: PAL.earthLight, stroke: PAL.roadEdge, 'stroke-width': 1, opacity: 0.92,
+  }));
+  root.appendChild(el('polygon', {
+    class: 'riverbank',
+    points: poly([[bank.x0, bank.y0], [bank.x1 + 1, bank.y0], [bank.x1 + 1, bank.y1 + 1], [bank.x0, bank.y1 + 1]]),
+    fill: PAL.stoneLight, stroke: PAL.roadEdge, 'stroke-width': 1, opacity: 0.85,
+  }));
+  const lines = el('g', { class: 'cell-lines' });
+  for (let x = e.x0 + 1; x <= e.x1; x++) lines.appendChild(el('line', { x1: project(x, e.y0)[0], y1: project(x, e.y0)[1], x2: project(x, e.y1 + 1)[0], y2: project(x, e.y1 + 1)[1] }));
+  for (let y = e.y0 + 1; y <= e.y1; y++) lines.appendChild(el('line', { x1: project(e.x0, y)[0], y1: project(e.x0, y)[1], x2: project(e.x1 + 1, y)[0], y2: project(e.x1 + 1, y)[1] }));
+  for (let y = bank.y0 + 1; y <= bank.y1; y++) lines.appendChild(el('line', { x1: project(bank.x0, y)[0], y1: project(bank.x0, y)[1], x2: project(bank.x1 + 1, y)[0], y2: project(bank.x1 + 1, y)[1] }));
+  root.appendChild(lines);
+  return root;
+}
 
 /**
  * The wall, as pieces that sort with the buildings.
  *
- * It used to be one ring painted behind every plot, so a building on the south
- * edge was drawn *through* the near wall. On this projection the ring's depth
- * runs from -8.7 due north to +8.7 due south, and the plots' from -7 to +7, so
- * the two interleave: the far arc belongs behind them and the near arc in
- * front. Each arc carries its own depth and the village merges them into the
- * same sort as the plots.
+ * It runs on the grid lines round the enclosure, one piece per cell of edge,
+ * each carrying its own depth — the midpoint of its stretch, x + y, the same
+ * measure a building's centre sorts by. The far edges (north-west, north-east)
+ * then fall behind every cell beside them and the near edges (south-east on
+ * the river, south-west with the gate) in front: SVG paints in document
+ * order, and the village appends in depth order.
  *
- * `tier` is the wall building's own (DESIGN §4.4, ✅ 2026-09-22). The wall is
- * not the castellum: the castellum garrisons the colony from the centre, and
- * the circuit is raised separately, on the perimeter slot at the gate.
+ * `tier` is the wall building's own (DESIGN §4.4); the enclosure is the one
+ * that tier gives (§4.5 C.1).
  */
-export function createWall(tier: number): ScenePiece[] {
+export function createWall(tier: number, e: Rect): ScenePiece[] {
   const T = WALL_TIERS[Math.max(0, Math.min(WALL_TIERS.length - 1, tier))];
   const pieces: ScenePiece[] = [];
-  const from = GATE_AT + GATE_HALF;
-  const to = GATE_AT + Math.PI * 2 - GATE_HALF;
-  const SEGMENTS = 24;
-
-  const arcPath = (a: number, b: number, lift: number) => {
-    const steps = 6;
-    let d = '';
-    for (let i = 0; i <= steps; i++) {
-      const [x, y] = ring(WALL_R, a + ((b - a) * i) / steps);
-      d += `${i ? ' L' : 'M'} ${x.toFixed(1)},${(y - lift).toFixed(1)}`;
-    }
-    return d;
-  };
-
-  for (let i = 0; i < SEGMENTS; i++) {
-    // a sliver of overlap, so the bands join without a visible seam
-    const a = from + ((to - from) * i) / SEGMENTS - (i ? 0.012 : 0);
-    const b = from + ((to - from) * (i + 1)) / SEGMENTS + 0.012;
-    const g = el('g', { class: 'wall-seg' });
-    // One tone per arc, from its own facing: the circuit is a drum, and a flat
-    // band of stone all the way round is what made it read as a ribbon.
-    const lit = wallLight((a + b) / 2);
+  const gx = gateCell(e);
+  const run = (edge: WallEdge, a: [number, number], b: [number, number]) => {
+    const g = el('g', { class: 'wall-seg', 'data-edge': edge });
+    const lit = wallLight(edge);
+    const [ax, ay] = project(...a);
+    const [bx, by] = project(...b);
     const face = shade(T.face, lit * 0.26);
     const foot = shade(T.foot, lit * 0.16);
-    g.appendChild(el('path', { d: arcPath(a, b, 0), fill: 'none', stroke: PAL.ink, 'stroke-width': T.h + 3 }));
-    g.appendChild(el('path', { d: arcPath(a, b, 1.5), fill: 'none', stroke: foot, 'stroke-width': T.h }));
-    g.appendChild(el('path', { d: arcPath(a, b, T.h * 0.33), fill: 'none', stroke: face, 'stroke-width': T.h * 0.76 }));
+    const quad = (lo: number, hi: number) => `${ax.toFixed(1)},${(ay - lo).toFixed(1)} ${bx.toFixed(1)},${(by - lo).toFixed(1)} ${bx.toFixed(1)},${(by - hi).toFixed(1)} ${ax.toFixed(1)},${(ay - hi).toFixed(1)}`;
+    g.appendChild(el('polygon', { points: quad(0, T.h), fill: face, stroke: PAL.ink, 'stroke-width': 1, 'stroke-linejoin': 'round' }));
+    g.appendChild(el('polygon', { points: quad(0, T.h * 0.18), fill: foot }));
     for (let c = 1; c <= T.courses; c++) {
-      // Courses, staggered segment to segment so the joints do not line up
-      // into one continuous seam around the ring.
-      const lift = T.h * (0.12 + (c / (T.courses + 1)) * 0.6);
-      g.appendChild(el('path', {
-        d: arcPath(a, b, lift), fill: 'none', stroke: shade(T.foot, lit * 0.16),
-        'stroke-width': 0.9, opacity: 0.45,
-        'stroke-dasharray': c % 2 ? '9 7' : '7 9', 'stroke-dashoffset': (i % 2) * 8,
-      }));
+      const lift = T.h * (0.18 + (c / (T.courses + 1)) * 0.7);
+      g.appendChild(el('line', { x1: ax, y1: ay - lift, x2: bx, y2: by - lift, stroke: foot, 'stroke-width': 0.9, opacity: 0.5, 'stroke-dasharray': c % 2 ? '9 7' : '7 9' }));
     }
     if (T.stakes) {
-      // a palisade reads by its posts, and each post has a lit and a dark side
-      for (let k = 0; k <= 6; k++) {
-        const [x, y] = ring(WALL_R, a + ((b - a) * k) / 6);
-        g.appendChild(el('line', { x1: (x + 0.7).toFixed(1), y1: (y - 1).toFixed(1), x2: (x + 0.7).toFixed(1), y2: (y - T.h * 0.95).toFixed(1), stroke: shade(T.face, -0.3), 'stroke-width': 1.4, opacity: 0.75 }));
-        g.appendChild(el('line', { x1: (x - 0.6).toFixed(1), y1: (y - 1).toFixed(1), x2: (x - 0.6).toFixed(1), y2: (y - T.h * 0.95).toFixed(1), stroke: shade(T.face, 0.24), 'stroke-width': 1, opacity: 0.6 }));
+      for (let k = 0; k <= 5; k++) {
+        const x = ax + ((bx - ax) * k) / 5;
+        const y = ay + ((by - ay) * k) / 5;
+        g.appendChild(el('line', { x1: x.toFixed(1), y1: (y - 1).toFixed(1), x2: x.toFixed(1), y2: (y - T.h * 0.95).toFixed(1), stroke: shade(T.face, -0.3), 'stroke-width': 1.4, opacity: 0.75 }));
       }
     }
-    g.appendChild(el('path', { d: arcPath(a, b, T.h * 0.78), fill: 'none', stroke: shade(T.top, lit * 0.1), 'stroke-width': T.h * 0.27 }));
+    g.appendChild(el('line', { x1: ax, y1: ay - T.h, x2: bx, y2: by - T.h, stroke: shade(T.top, lit * 0.1), 'stroke-width': 3, 'stroke-linecap': 'round' }));
     if (T.merlons) {
-      g.appendChild(el('path', { d: arcPath(a, b, T.h), fill: 'none', stroke: shade(T.top, lit * 0.12), 'stroke-width': 5, 'stroke-dasharray': '7 7' }));
-      g.appendChild(el('path', { d: arcPath(a, b, T.h), fill: 'none', stroke: PAL.ink, 'stroke-width': 5, 'stroke-dasharray': '0.9 13.1', opacity: 0.55 }));
+      g.appendChild(el('line', { x1: ax, y1: ay - T.h - 2, x2: bx, y2: by - T.h - 2, stroke: shade(T.top, lit * 0.12), 'stroke-width': 4, 'stroke-dasharray': '7 7' }));
     }
-    pieces.push({ depth: wallDepthAt((a + b) / 2), g });
-  }
+    pieces.push({ depth: (a[0] + a[1] + b[0] + b[1]) / 2, g });
+  };
+  for (let x = e.x0; x <= e.x1; x++) run('north-east', [x, e.y0], [x + 1, e.y0]);
+  for (let y = e.y0; y <= e.y1; y++) run('north-west', [e.x0, y], [e.x0, y + 1]);
+  for (let y = e.y0; y <= e.y1; y++) run('south-east', [e.x1 + 1, y], [e.x1 + 1, y + 1]);
+  for (let x = e.x0; x <= e.x1; x++) if (x !== gx) run('south-west', [x, e.y1 + 1], [x + 1, e.y1 + 1]);
 
-  for (let i = 0; i < T.towers; i++) {
-    const span = Math.PI * 2 - GATE_HALF * 2 - 0.44;
-    const t = from + 0.22 + (T.towers === 1 ? span / 2 : (span * i) / (T.towers - 1));
-    const [x, y] = ring(WALL_R, t);
-    const g = tower(x, y, { ...T, face: shade(T.face, wallLight(t) * 0.22), foot: shade(T.foot, wallLight(t) * 0.14) });
+  // Towers: the corners from the palisade on, the gate's flanks from stone,
+  // and the middle of each far edge on the finished circuit.
+  const towersAt: [number, number][] = [];
+  if (tier >= 1) towersAt.push([e.x0, e.y0], [e.x1 + 1, e.y0], [e.x0, e.y1 + 1], [e.x1 + 1, e.y1 + 1]);
+  if (tier >= 2) towersAt.push([gx, e.y1 + 1], [gx + 1, e.y1 + 1]);
+  if (tier >= 3) towersAt.push([(e.x0 + e.x1 + 1) / 2, e.y0], [e.x0, (e.y0 + e.y1 + 1) / 2]);
+  for (const [x, y] of towersAt) {
+    const [sx, sy] = project(x, y);
+    const g = tower(sx, sy, { ...T, face: T.face, foot: T.foot });
     g.setAttribute('class', 'tower');
-    pieces.push({ depth: wallDepthAt(t), g });
+    pieces.push({ depth: x + y + 0.02, g });
   }
 
-  // the gate, at the nearest point of the ring, so it is always in front
+  // the gate, on the south-west edge where the road comes in
   const gate = el('g', { class: 'gate' });
-  const [gxl, gyl] = ring(WALL_R, GATE_AT - GATE_HALF);
-  const [gxr, gyr] = ring(WALL_R, GATE_AT + GATE_HALF);
+  const [gxl, gyl] = project(gx + 0.25, e.y1 + 1);
+  const [gxr, gyr] = project(gx + 0.75, e.y1 + 1);
+  const [sxl, syl] = project(gx, e.y1 + 1);
+  const [sxr, syr] = project(gx + 1, e.y1 + 1);
   const gh = T.h * 0.8;
+  // the wall either side of the leaves, so the gate cell is not a gap
+  for (const [x0, y0, x1, y1] of [[sxl, syl, gxl, gyl], [gxr, gyr, sxr, syr]]) {
+    gate.appendChild(el('polygon', { points: `${x0.toFixed(1)},${y0.toFixed(1)} ${x1.toFixed(1)},${y1.toFixed(1)} ${x1.toFixed(1)},${(y1 - T.h).toFixed(1)} ${x0.toFixed(1)},${(y0 - T.h).toFixed(1)}`, fill: shade(T.face, wallLight('south-west') * 0.26), stroke: PAL.ink, 'stroke-width': 1 }));
+  }
   gate.appendChild(el('path', {
     d: `M ${gxl.toFixed(1)},${gyl.toFixed(1)} L ${gxr.toFixed(1)},${gyr.toFixed(1)} L ${gxr.toFixed(1)},${(gyr - gh).toFixed(1)} L ${gxl.toFixed(1)},${(gyl - gh).toFixed(1)} Z`,
     fill: PAL.timberDark, stroke: PAL.ink, 'stroke-width': 1.2,
   }));
-  for (let i = 1; i < 5; i++) {
-    const t = i / 5;
+  for (let i = 1; i < 4; i++) {
+    const t = i / 4;
     const x = gxl + (gxr - gxl) * t;
     const y = gyl + (gyr - gyl) * t;
     gate.appendChild(el('line', { x1: x.toFixed(1), y1: y.toFixed(1), x2: x.toFixed(1), y2: (y - gh).toFixed(1), stroke: PAL.timberMid, 'stroke-width': 1.6 }));
   }
   if (T.merlons) {
-    // A finished circuit flies the colony's standard over its gate. This is
-    // the wall's tier-3 animated feature (DESIGN §10): drawn here, waved by
-    // the same `cloth-wave` keyframes the sprite overlays use, so there is one
-    // flag in the game and not two.
-    const [bx, by] = ring(WALL_R, GATE_AT);
+    // A finished circuit flies the colony's standard over its gate: the wall's
+    // tier-3 animated feature (DESIGN §10), waved by the sprites' keyframes.
+    const [bx, by] = project(gx + 0.5, e.y1 + 1);
     const mast = el('g', { class: 'anim-flag gate-banner', transform: `translate(${bx.toFixed(1)},${(by - T.h).toFixed(1)})` });
     mast.appendChild(el('line', { x1: 0, y1: 2, x2: 0, y2: -26, stroke: PAL.ink, 'stroke-width': 1.6 }));
-    const cloth = el('polygon', { class: 'cloth', points: '0,-25 13,-22.2 11,-15.5 0,-14' });
-    mast.appendChild(cloth);
+    mast.appendChild(el('polygon', { class: 'cloth', points: '0,-25 13,-22.2 11,-15.5 0,-14' }));
     gate.appendChild(mast);
   }
-  pieces.push({ depth: wallDepthAt(GATE_AT) + 0.01, g: gate });
-
+  pieces.push({ depth: gx + 0.5 + e.y1 + 1 + 0.01, g: gate });
   return pieces;
 }

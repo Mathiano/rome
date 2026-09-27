@@ -5,8 +5,9 @@ Single-player Roman colony-building game. Year 0, Germania. Real-time village ec
 ## Read first
 
 1. `docs/DESIGN.md` — the design source of truth. Marks: ✅ decided, 🟡 proposed, ❓ open.
-2. `docs/CAPSULE-*.md` — session capsules; the newest one is the current state.
-3. `data/*.json` — all balance and content. If a number or name lives in code, that is a bug.
+2. `VISION.md` — what the game is and which way to lean when DESIGN.md doesn't say. Where the two disagree, DESIGN.md wins and the disagreement is flagged to Mathias.
+3. `docs/CAPSULE-*.md` — session capsules; the newest one is the current state.
+4. `data/*.json` — all balance and content. If a number or name lives in code, that is a bug.
 
 Do not implement anything marked 🟡 or ❓ without Mathias confirming it in the session. Do not resolve an ❓ yourself.
 
@@ -55,11 +56,12 @@ assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites +
 ## Conventions
 
 - **Anchors:** buildings anchor at the ground-plate centre, the midpoint of the plate's left and right corners (`data-ax` / `data-ay`, and `ax` / `ay` in `assets/buildings/manifest.json`). Never the south vertex — it floats half a tile.
-- **Sprites:** PNG with alpha. The ground plate is the base diamond. One structure per sprite. A plot is `plateTiles` layout tiles wide (1.75, so neighbouring plates meet); `tools/artgen/` enforces the plate's 2:1 edges and writes the manifest. `tools/artgen/draw.py` draws the tiers this repo ships.
-- **The colony around them:** the country is one painted image (`assets/src/base-map-*.jpg`, brief in `assets/style/PROMPTS.md`); `src/render/environment.ts` draws the roads and square flat on top of it, and the plate is toned to the ground rather than outlined — an outlined plate turns the colony into a quilt of tiles.
-- **The wall has depth:** it is not scenery behind the plots. Its ring runs deeper and nearer than any plot, so `createWall` emits arcs, towers and the gate as `ScenePiece`s and the village merges them into the same depth sort as the buildings. Anything else draws a building through the near wall.
-- **The wall is its own building, not the castellum** (`docs/DESIGN.md` §4.4, ✅ 2026-09-22). The `wall` tier decides what the circuit is made of: a bank with none raised, then a palisade, coursed stone, and a crenellated circuit that flies a standard over the gate. It stands on the perimeter slot `w1` at the gate — no ring, no ground plate — and counts as a building for concurrency. The castellum garrisons the colony from the centre and its tier drives only its own sprite. The v0 building list in §4.4 is ✅ confirmed, so any further addition to it is Mathias's call.
-- **The wall is lit like everything else:** from the top left. `wallLight(t)` gives each arc its own tone from its facing, so the circuit reads as a drum rather than a flat ribbon.
+- **Sprites:** PNG with alpha. The ground plate is the base diamond. One structure per sprite. A plate is one cell of the town grid: `plateTiles` in the manifest equals `cellTiles` in `data/layout.json` (1.75 layout tiles), and a 2×2 building's sprite is scaled to its footprint. `tools/artgen/` enforces the plate's 2:1 edges and writes the manifest; `npm run assets:stills` places the new-style stills listed in `assets/src/stills.json`, and `tools/artgen/draw.py` draws the tiers that have no still.
+- **The town grid** (`docs/DESIGN.md` §4.5 C.1): a rectangle of cells inside a rectangular wall, sized by the wall's tier and growing away from the river, so nothing placed ever ends up outside it. `src/village/grid.ts` owns the cells, footprints and placement; a town slot exists only once something is placed on it. Resource sites are fixed outside the wall in `data/layout.json`. One edge is the riverbank, reserved for buildings placed only there (the harbour, not yet built).
+- **The colony around them:** the country is one painted image (`assets/src/base-map-*.jpg`, brief in `assets/style/PROMPTS.md`), made for the old round wall and due to be regenerated to the grid. `src/render/environment.ts` draws the town floor, its cell lines, the bank and the river flat on top of it.
+- **The wall has depth:** it is not scenery behind the plots. It runs on the grid lines round the enclosure, so `createWall` emits one piece per cell of edge, plus the towers and the gate, as `ScenePiece`s. Each piece's depth is x + y, the measure a building's centre sorts by, and the village merges them into one depth sort. Anything else draws a building through the near wall.
+- **The wall is its own building, not the castellum** (`docs/DESIGN.md` §4.4, ✅ 2026-09-22). The `wall` tier decides what the circuit is made of: a bank with none raised, then a palisade, coursed stone, and a crenellated circuit that flies a standard over the gate. It stands on the wall slot `w1` at the gate — no cell, no ground plate — and counts as a building for concurrency. Its tier also sets the size of the enclosure. The castellum garrisons the colony from the centre and its tier drives only its own sprite. The v0 building list in §4.4 is ✅ confirmed, so any further addition to it is Mathias's call.
+- **The wall is lit like everything else:** from the top left. `wallLight(edge)` lights the faces that look down and to the left and shades the ones that look right, the same split the sprites' boxes use.
 - **A yard is not a building:** a resource plot carries the stock, tools and clutter of its trade, and people working it. One tree in a lumber camp is a bug, not a style.
 - **Animation:** tier 3 only. SVG overlays on the PNG sprite, CSS keyframes and the Web Animations API, positioned from the same anchor.
 - **Naming in code:** English. Latin only where the doc says so (`forum`, `castellum`).
@@ -76,6 +78,7 @@ assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites +
 - Mathias cross-checks proposals with Gemini. Gemini's art-direction instincts are sound; its codebase-specific claims need verification against this repo before acting on them.
 - End every substantial session with a `docs/CAPSULE-SESSION-<date>.md`: what changed, what's verified, what's next, what's open.
 - In an unattended session, a ❓ may be resolved only as a data-file default, listed in the session capsule for confirmation. Never in code.
+- **Saves:** Before 1.0, a save-format change bumps saveVersion and resets older saves instead of migrating them. The ring-to-grid migration (migrateRingsToGrid, 2026-09-27) is a kept one-off; don't add another without asking. After 1.0, ask first. *(Mathias, 2026-09-28. In code: `deserialise` refuses an older format with `SaveTooOld`, and the load sets the old save aside under `rome.save.v1.retired.v<n>` rather than letting the new colony overwrite it.)*
 
 ## Do not
 

@@ -1,7 +1,7 @@
 import { activeTribes, advisor, building, config, envoys, researchNode, lesserPosts as lesserDefs, posts as postDefs, tribeDef, unlocks, RESOURCE_IDS } from '../data';
 import type { GameState, LogEntry } from '../state/types';
 import type { Game, Political } from '../game';
-import { checkBuild, eligibleBuildings, progress, rushPrice, slotById } from '../village/construction';
+import { checkBuild, checkPlace, eligibleBuildings, progress, rushPrice, slotById } from '../village/construction';
 import { canAfford, netPerHour } from '../village/economy';
 import { capacity, hiddenPerResource, populationCap, forumTier, buildingTier } from '../village/storage';
 import { gravitasRank, leaderOf, livingMembers, playerFamily, rivalFamilies, standing } from '../politics/characters';
@@ -51,6 +51,8 @@ export interface PanelHandlers {
   onScout(hex: string): void;
   onBuild(slotId: string, buildingId: string): void;
   onSelectSlot(slotId: string): void;
+  /** Start putting a town building down on the grid; '' stops (DESIGN §4.5 C.1). */
+  onPlace(buildingId: string): void;
   /** Land on a hex of the map, the way onSelectSlot lands on a plot. */
   onSelectHex(hex: string): void;
   /** "Enough counsel": put the opening line away. Household business, no round. */
@@ -201,13 +203,13 @@ export function tabBadge(s: GameState, t: Tab): string {
   return BADGES.some((lit) => lit(s, t)) ? '<span class="badge">!</span>' : '';
 }
 
-export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number, selectedHex: string | null = null): string {
+export function renderPanel(game: Game, tab: Tab, selected: string | null, now: number, selectedHex: string | null = null, placing: string | null = null): string {
   const s = game.state;
   const badge = (t: Tab) => tabBadge(s, t);
   const nav = TABS.map((t) => `<button data-tab="${t.id}" class="${t.id === tab ? 'active' : ''}">${t.name}${badge(t.id)}</button>`).join('');
   let body = '';
   switch (tab) {
-    case 'village': body = renderVillage(s, selected, now); break;
+    case 'village': body = renderVillage(s, selected, now, placing); break;
     case 'map': body = renderMap(s, selectedHex); break;
     case 'library': body = renderLibrary(s, now); break;
     case 'council': body = renderCouncil(s); break;
@@ -231,9 +233,11 @@ export function renderCounsel(s: GameState): string {
   const g = resolveGoto(s, step);
   const show = g.slot
     ? `<button class="act" data-select-slot="${g.slot}">${esc(advisor.showMe)}</button>`
-    : g.hex
-      ? `<button class="act" data-select-hex="${g.hex}">${esc(advisor.showMe)}</button>`
-      : `<button class="act" data-tab="${g.tab}">${esc(advisor.showMe)}</button>`;
+    : g.place
+      ? `<button class="act" data-place="${g.place}">${esc(advisor.showMe)}</button>`
+      : g.hex
+        ? `<button class="act" data-select-hex="${g.hex}">${esc(advisor.showMe)}</button>`
+        : `<button class="act" data-tab="${g.tab}">${esc(advisor.showMe)}</button>`;
   const blocked = blockedBy(s, step);
   return `<aside class="counsel card" data-advisor-step="${step.id}"><b>${esc(advisor.title)}</b><p>${esc(step.text)}</p>`
     + (blocked ? `<p class="muted">Not yet: ${esc(blocked)}.</p>` : '')
@@ -246,9 +250,23 @@ export function renderCounsel(s: GameState): string {
  * see render/overview.ts), or the plot card when a slot is. Placement stays
  * on the map (DESIGN §4.5): the card is where a new building is chosen.
  */
-function renderVillage(s: GameState, selected: string | null, now: number): string {
+function renderVillage(s: GameState, selected: string | null, now: number, placing: string | null = null): string {
   let out = `<h2>Village</h2>`;
   out += renderReturnStrip();
+  if (placing) {
+    // The choice of cells is made on the village itself (§4.5 C.1: placement
+    // is a decision, not a menu); the panel says what is being placed and how
+    // to put it back.
+    const def = building(placing);
+    const check = checkPlace(s, placing);
+    const [w, h] = def.footprint ?? [1, 1];
+    const where = def.placement === 'riverbank' ? 'on the riverbank' : 'inside the wall';
+    out += `<div class="card placing" data-placing="${placing}"><b>Placing the ${esc(def.name.toLowerCase())} ${ROMAN[1]}</b> <span class="muted">${w}×${h}</span>
+      <p class="muted">${esc(def.role)}</p><p>${esc(effectNowNext(def, 0, 1))}</p><p>Cost: ${costTxt(check.cost, s)} · ${esc(durationText(check.seconds))}</p>
+      <p>Choose its cells ${where}: every place it fits is marked.</p>
+      ${check.ok ? '' : `<p>${lockWords(check)}</p>`}
+      <button class="act secondary" data-place="">Put it back</button></div>`;
+  }
   out += renderDue(s, now, openMenus.has('due'));
   if (!selected) {
     out += renderSummary(s);
@@ -781,6 +799,7 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.reportFilter) { setReportFilter(d.reportFilter); return h.onTab('log'); }
     if (d.build && d.building) return h.onBuild(d.build, d.building);
     if (d.selectSlot) return h.onSelectSlot(d.selectSlot);
+    if ('place' in d) return h.onPlace(d.place ?? '');
     // The plot card's way back: no slot selected is the overview.
     if ('overview' in d) return h.onSelectSlot('');
     if (d.selectHex) return h.onSelectHex(d.selectHex);

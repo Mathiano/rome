@@ -41,6 +41,13 @@ header .res .neg b { color: #e0885a; }
 #village .env { pointer-events: none; }
 #village svg { width: 100%; height: 100%; display: block; }
 #village .slot { cursor: pointer; }
+/* The town grid (DESIGN §4.5 C.1): faint cell lines on the floor, stronger
+   while a building is being placed; every place it fits is marked. */
+#village .cell-lines line { stroke: rgba(90,66,48,0.22); stroke-width: 0.8; }
+#village svg.placing .cell-lines line { stroke: rgba(90,66,48,0.5); }
+#village .place-spot { fill: rgba(201,162,74,0.16); stroke: var(--gold); stroke-width: 1.2; stroke-dasharray: 5 4; cursor: pointer; }
+#village .place-spot:hover { fill: rgba(201,162,74,0.45); stroke-dasharray: none; stroke-width: 2; }
+#village svg.placing .slot { pointer-events: none; }
 #village .slot .tile { fill: rgba(132,104,89,0.14); stroke: rgba(30,7,2,0.5); stroke-width: 1.2; stroke-dasharray: 6 5; }
 #village .slot.built .tile { fill: none; stroke: none; }
 /* The wall has no plate and no sprite of its own: its circuit is drawn by
@@ -50,7 +57,7 @@ header .res .neg b { color: #e0885a; }
    .selected rules below. `pointer-events: all` is inherited from .slot and
    catches the pointer regardless of fill, so an unpainted tile is still a
    target. Kept above those rules: they are equally specific and win on order. */
-#village .slot.ring-perimeter .tile { fill: rgba(0,0,0,0); stroke: none; stroke-dasharray: none; }
+#village .slot.zone-wall .tile { fill: rgba(0,0,0,0); stroke: none; stroke-dasharray: none; }
 /* Selection was a hard gold rule around a nearly invisible plot; the two
    states now differ by weight rather than by shouting. */
 #village .slot.selected .tile, #village .slot.built.selected .tile { fill: rgba(201,162,74,0.22); stroke: var(--gold); stroke-width: 1.6; stroke-dasharray: none; }
