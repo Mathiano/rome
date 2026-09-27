@@ -5,8 +5,9 @@ Single-player Roman colony-building game. Year 0, Germania. Real-time village ec
 ## Read first
 
 1. `docs/DESIGN.md` — the design source of truth. Marks: ✅ decided, 🟡 proposed, ❓ open.
-2. `docs/CAPSULE-*.md` — session capsules; the newest one is the current state.
-3. `data/*.json` — all balance and content. If a number or name lives in code, that is a bug.
+2. `VISION.md` — what the game is and which way to lean when DESIGN.md doesn't say. Where the two disagree, DESIGN.md wins and the disagreement is flagged to Mathias.
+3. `docs/CAPSULE-*.md` — session capsules; the newest one is the current state.
+4. `data/*.json` — all balance and content. If a number or name lives in code, that is a bug.
 
 Do not implement anything marked 🟡 or ❓ without Mathias confirming it in the session. Do not resolve an ❓ yourself.
 
