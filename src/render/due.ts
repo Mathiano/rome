@@ -156,10 +156,15 @@ export function awayLines(r: AwayReport): string[] {
 }
 
 /**
- * Held here rather than in the save: the strip is for the session that finds
- * the colony changed, and is put away by the first action or tab change.
+ * The lines on screen are held here; when the player last saw the colony is in
+ * the save (`lastSeen`, village/away.ts). The strip is put away by the first
+ * action or tab change, which stamps `lastSeen`.
  */
 let returnStrip: string[] = [];
+
+export function returnStripShowing(): boolean {
+  return returnStrip.length > 0;
+}
 
 export function setReturnStrip(lines: string[]): void {
   returnStrip = lines;

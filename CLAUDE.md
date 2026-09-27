@@ -81,5 +81,6 @@ assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites +
 
 - Add a build queue, a fifth family, citizen tiers, offence, or any feature listed in `docs/DESIGN.md` §14 without being asked.
 - Add Supabase, auth or any network dependency in v0.
+- Restore the idle round, a calendar floor, or any mechanic that runs a round without the player (§2.11, §3.3). A replacement needs Mathias's sign-off first.
 - Introduce a visible village clock. Only the political round is visible time.
 - Hard-code balance numbers.
