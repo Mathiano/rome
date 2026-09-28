@@ -4,7 +4,7 @@ The brief for the painted country under the rectangular town (DESIGN §10: "rege
 
 Written 2026-09-28 (overnight item 4). Nothing has been generated. Every pixel below is computed from `data/layout.json` and the projection in `src/render/environment.ts`. `tests/basemap-spec.test.ts` recomputes them and fails if the layout changes without this file changing too.
 
-`docs/basemap-v2-geometry.svg` draws the same numbers at the same size, and can go to the image model as a layout guide. It is a wireframe, not art.
+`docs/basemap-v2-geometry.svg` draws the same numbers at the same size (`npm run basemap:guide`, from `tools/basemap/`), and can go to the image model as a layout guide. It is a wireframe, not art.
 
 ## 1. The frame, which is not negotiable
 
@@ -60,7 +60,7 @@ The river runs the whole frame, parallel to the town's river edge: from the uppe
 - **Deep channel** (x 6.7 to 7.7): a darker band down the middle. It enters the right edge between **(3520, 982)** and **(3520, 1094)** and leaves the bottom between **(1084, 2200)** and **(1308, 2200)**.
 - **Beyond the far bank** (the lower-right corner of the frame): the other shore. Grass and scrub, less worked than the colony's side.
 
-🟡 v1 painted a river and the game now draws one flat over the painting (`createGround`). The proposal is that v2 paints it in exactly this band, and the drawn river is retired when v2 is wired in. If the painted band misses these lines by more than ~10 px, the riverbank strip will float off the water.
+✅ *Mathias, 2026-09-28:* v2 paints the river in exactly this band, and the river the game draws over the painting now (`createGround`) is removed when v2 is wired in. If the painted band misses these lines by more than ~10 px, the riverbank strip will float off the water.
 
 ## 5. The resource sites, outside the wall
 
@@ -96,5 +96,5 @@ Every sprite and every piece of wall is drawn over the painting. So anything pai
 - **Wiring,** a later session and not this spec:
   - `createGround` places the image at exactly scene x −908, y −542, 1760 × 1100 units, with no clearing-fit (`MAP_FIT` goes);
   - the frame numbers move to `data/layout.json`;
-  - the drawn river retires if §4's proposal is taken;
+  - the drawn river is removed (§4);
   - the check is a pixel assertion that the painted near bank sits on grid x = 6.

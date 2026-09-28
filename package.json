@@ -11,7 +11,8 @@
     "assets": "python3 tools/artgen/build.py",
     "assets:selftest": "python3 tools/artgen/build.py --selftest && python3 tools/artgen/loop.py --selftest",
     "assets:loop": "python3 tools/artgen/loop.py",
-    "assets:stills": "python3 tools/artgen/build.py --stills assets/src/stills.json"
+    "assets:stills": "python3 tools/artgen/build.py --stills assets/src/stills.json",
+    "basemap:guide": "vite-node tools/basemap/write.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.3",

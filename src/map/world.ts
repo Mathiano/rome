@@ -28,8 +28,6 @@ export interface SiteDef {
   militiaPerTier?: number[];
   /** Hexes within this distance are shown once it is held (§5.2, watchtower). */
   revealRadius?: number;
-  /** Rounds an envoy's road is shortened while it is held (§5.2, ford). */
-  envoyRoundsSaved?: number;
   description: string;
 }
 export interface HoldingTierDef { name: string; yieldMultiplier: number; defence: number; cost?: Record<string, number>; buildSeconds?: number }

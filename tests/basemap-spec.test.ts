@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { layout } from '../src/data';
 import { enclosureOfSize } from '../src/village/grid';
 import { gateAt, project } from '../src/render/environment';
+import { FRAME as GUIDE_FRAME, renderGuide } from '../tools/basemap/guide';
 
 /**
  * docs/BASEMAP-V2-SPEC.md gives the painter pixel positions computed from the
@@ -49,6 +50,11 @@ describe('the base map v2 geometry spec matches the layout', () => {
     for (const s of layout.sites) {
       expect(spec, s.id).toContain(`| ${s.id} | ${s.site} | ${s.x}, ${s.y} | ${px(s.x + 0.5, s.y + 0.5)} | ${px(s.x, s.y)} ${px(s.x + 1, s.y)} ${px(s.x + 1, s.y + 1)} ${px(s.x, s.y + 1)} |`);
     }
+  });
+
+  it('is the guide the committed generator draws (npm run basemap:guide)', () => {
+    expect(GUIDE_FRAME).toEqual(FRAME);
+    expect(svg).toBe(renderGuide());
   });
 
   it('draws the same geometry in the guide diagram', () => {

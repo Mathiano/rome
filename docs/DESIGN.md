@@ -246,8 +246,8 @@ A holding is defined by what it gives, and the kinds are deliberately unlike eac
 | Salt spring | salt | as above |
 | Troop field | militia | adds to the militia pool (§8.1) **without drawing on population** — the one way to grow the pool other than the castellum (and, since 2026-09-27, the Barracks, §4.4) |
 | Watchtower | warning | reveals a ring of hexes around it, and raids against anything inside that ring are telegraphed one round earlier |
-| Ford / junction | movement | envoys and trade resolve faster; the trade effect applies at the market |
-| Shrine | gravitas | a small standing gravitas income to the house holding the post of temple |
+| Ford / junction | trade | a better trade rate at the forum while it is held (envoys already arrive in one round, so there is nothing for it to speed) |
+| Shrine | gravitas | a small standing gravitas income to the house holding the post of temple — ✅ *2026-09-28, Mathias:* to the player's house until a temple post exists |
 | Ruin | research scrolls | a **one-time** yield when first claimed, then inert. It is a prize, not an income |
 
 All yields, costs, upkeep and probabilities live in `data/map.json`, flagged `_tuning`.
@@ -265,11 +265,11 @@ Holding construction uses the same concurrency rule as the colony (§4.4): one h
 Roads are the colony's long-term project and the connective tissue of the map.
 
 - Built **segment by segment**, hex to hex, from the colonia outward. Each segment is timed and costs resources.
-- A holding connected to the colonia by an unbroken road: **raid exposure falls**, **envoys and trade resolve faster**, and **its yield rises**.
+- A holding connected to the colonia by an unbroken road: **raid exposure falls**, **trade at the forum improves**, and **its yield rises**.
 - 🟡 **Cost in v0:** denarii and wood, since stone is not a v0 resource (§4.1). When the stone drop lands, a **paved** road upgrade costs stone and improves the same three effects further. CC to propose starting numbers as `_tuning`.
 - Roads are visible on the map as a growing network. This is the thing a player builds toward over weeks.
 
-*Built 2026-09-28 (overnight item 3).* One segment is under construction at a time (Mathias, overnight brief), in a **road lane of its own** beside the colony's lanes and the holding lane (🟡 Claude's call: §4.4's concurrency rule names no road lane, and sharing the holding lane would make roads and holdings compete). A segment goes only on a hex beside the colonia or a road that reaches it, so the network never has a gap by construction; a gap can arise only if a road is lost, and then everything beyond it counts as unconnected. Numbers in `data/map.json` `roads`, all `_tuning`: a segment 30 denarii and 40 wood over 15 minutes; a connected holding's raid chance × 0.5 and its yield × 1.25; the trade rate sharpened by 0.1 while any holding is connected. ❓ **Envoys resolve faster** has nothing to shorten in v0 — an envoy's road is one round — so it waits, like the ford's (§5.2). Drawn on the map as solid lines between laid hexes and a dashed line to the segment being laid. Save format 6.
+*Built 2026-09-28 (overnight item 3).* One segment is under construction at a time (Mathias, overnight brief), in a **road lane of its own** beside the colony's lanes and the holding lane (✅ Mathias, 2026-09-28, as Claude proposed: sharing the holding lane would make roads and holdings compete). A segment goes only on a hex beside the colonia or a road that reaches it, so the network never has a gap by construction; a gap can arise only if a road is lost, and then everything beyond it counts as unconnected. Numbers in `data/map.json` `roads`, all `_tuning`: a segment 30 denarii and 40 wood over 15 minutes; a connected holding's raid chance × 0.5 and its yield × 1.25; the trade rate sharpened by 0.1 while any holding is connected. Drawn on the map as solid lines between laid hexes and a dashed line to the segment being laid. Save format 6.
 
 ### 5.5 Claiming, holding and contest ✅
 
@@ -295,10 +295,10 @@ The colonia is the only place that builds, houses population and holds a council
 - the **troop field**, adding 3 / 6 / 10 men as camp, station and fort without drawing on the people;
 - the **watchtower**, which on being held shows every hex within 2 — known without a scout, a seen war band never walked into, a seen hoard still waiting for the scouts;
 - the **ford**, its trade rate sharpened at the forum;
-- the **shrine**, 1 gravitas a round — to the player's house, because DESIGN names "the post of temple" and v0 has no such post (❓);
+- the **shrine**, 1 gravitas a round — to the player's house until a temple post exists (✅ Mathias, 2026-09-28);
 - the **ruin**, paying 2 scrolls once, when it is first held, and nothing to the scouts.
 
-Holdings are camp, station and fort (§5.3), built in place on the village clock in a third lane of their own, finishable early at the Pillar 3 price; each tier raises the yield (×1, ×1.5, ×2) and adds to the defence (0, 8, 20), all `_tuning`. They are drawn in SVG: a mark, a walled mark, a walled mark with a tower. ❓ *Left for item 2:* a watchtower's raid seen a round sooner needs raids declared before they land, which the contest rule brings. ❓ *Not yet meaningful:* a ford's "envoys resolve faster" — an envoy's road is one round in v0, so the ford's `envoyRoundsSaved` has nothing to shorten until envoys travel longer. Save format 4.
+Holdings are camp, station and fort (§5.3), built in place on the village clock in a third lane of their own, finishable early at the Pillar 3 price; each tier raises the yield (×1, ×1.5, ×2) and adds to the defence (0, 8, 20), all `_tuning`. They are drawn in SVG: a mark, a walled mark, a walled mark with a tower. ❓ *Left for item 2:* a watchtower's raid seen a round sooner needs raids declared before they land, which the contest rule brings. Save format 4.
 
 ---
 
@@ -528,4 +528,5 @@ v0.3.5 — 2026-09-28 — overnight item 0. §4.4: the Praetorium is the seat an
 v0.3.6 — 2026-09-28 — overnight item 1. §5.1–5.3 built: a 21-hex top-level map; "?" resolves to a site, a hoard or a camp; every §5.2 kind (troop field, watchtower, ford, shrine, one-shot ruin, idle quarry and salt spring); camp, station and fort in a third lane, drawn in SVG. Shrine gravitas to the player's house (❓ no temple post); a ford's envoy speed waits for longer envoy roads (❓). Save format 4.
 v0.3.7 — 2026-09-28 — overnight item 2. §5.5 built: tribes take unclaimed sites on the village clock (away or not), up to a share of the map; a held site changes hands only in a round the player convenes, its threat declared a round before and decided after the player's move; garrisons never exceed the militia pool. §3.3's code note updated. Save format 5.
 v0.3.8 — 2026-09-28 — overnight item 3. §5.4 built: roads laid hex by hex outward from the colonia, one segment at a time in a road lane of its own (🟡), for denarii and wood; a holding joined by an unbroken road is harder to raid, yields more, and eases trade; envoy speed waits (❓). Save format 6.
-v0.3.9 — 2026-09-28 — overnight item 4. §10: the geometry for base map v2, painted to the town grid, is `docs/BASEMAP-V2-SPEC.md` — a 3520 × 2200 frame, the enclosure and gate at each wall tier, the riverbank, the river band and the eight site plates in pixels, with a wireframe guide. 🟡 The river painted in that band and the drawn one retired on wiring. Doc only; nothing generated.
+v0.3.9 — 2026-09-28 — overnight item 4. §10: the geometry for base map v2, painted to the town grid, is `docs/BASEMAP-V2-SPEC.md` — a 3520 × 2200 frame, the enclosure and gate at each wall tier, the riverbank, the river band and the eight site plates in pixels, with a wireframe guide. ✅ (Mathias, 2026-09-28) The river is painted in that band and the drawn one is removed when v2 lands. Doc only; nothing generated.
+v0.3.10 — 2026-09-28 — review of the overnight stack, Mathias. §5.2 and §5.4: "envoys resolve faster" is removed — envoys already arrive in one round; the ford's effect is a trade bonus at the forum. Confirmed as proposed: roads have a build lane of their own; the shrine's gravitas goes to the player's house until a temple post exists; the river is painted in the base map and the code-drawn river is removed when it lands. The base-map guide's generator is `tools/basemap/`.
