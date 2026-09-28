@@ -377,3 +377,6 @@ table .neg, .card.report .neg { color: var(--terracotta); }
 .worldmap .holding .h-flag { fill: #b5563a; stroke: #2a2118; stroke-width: 0.5; }
 .worldmap .ground.seen { stroke-dasharray: 3 2; }
 .worldmap .rising { font-size: 8px; fill: #c9a24a; text-anchor: middle; }
+.worldmap .tribe-held .t-flag { fill: #2a2118; stroke: #2a2118; stroke-width: 0.5; }
+.worldmap .threat { font-size: 11px; font-weight: bold; fill: #b5563a; text-anchor: middle; }
+#panel p.threat { border-left: 3px solid var(--terracotta); padding-left: 8px; }

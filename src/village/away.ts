@@ -19,6 +19,8 @@ export interface AwaySnapshot {
   research: string[];
   /** The `overflowSinceSeen` counter as it stood. */
   overflow: Partial<Resources>;
+  /** Sites tribes held (§5.5), by hex. Absent in a snapshot taken before the contest rule. */
+  tribeHeld?: string[];
 }
 
 export interface AwayReport {
@@ -32,6 +34,8 @@ export interface AwayReport {
   learned: string[];
   /** Whole citizens gained (or lost, negative). */
   citizens: number;
+  /** Sites a tribe took first while the player was away (§5.5, §3.3: which opportunities have closed). */
+  taken: { key: string; siteId: string; tribeId: string }[];
 }
 
 export function takeSnapshot(state: GameState): AwaySnapshot {
@@ -41,7 +45,20 @@ export function takeSnapshot(state: GameState): AwaySnapshot {
     slots: Object.fromEntries(state.slots.map((s) => [s.id, { building: s.building, tier: s.tier }])),
     research: [...state.research.completed],
     overflow: { ...(state.overflowSinceSeen ?? {}) },
+    tribeHeld: state.map.tribeHeld.map((t) => t.key),
   };
+}
+
+/**
+ * The sites tribes took between two snapshots that the player knew of —
+ * scouted, or seen from a tower. An unseen "?" taken is simply gone when the
+ * scouts get there; there is nothing to name.
+ */
+export function sitesTaken(state: GameState, before: AwaySnapshot): AwayReport['taken'] {
+  const had = new Set(before.tribeHeld ?? []);
+  return state.map.tribeHeld
+    .filter((t) => !had.has(t.key) && (state.map.scouted.includes(t.key) || state.map.seen.includes(t.key)))
+    .map((t) => ({ key: t.key, siteId: t.siteId, tribeId: t.tribeId }));
 }
 
 export function awayReport(before: AwaySnapshot, after: AwaySnapshot): AwayReport {
@@ -62,12 +79,12 @@ export function awayReport(before: AwaySnapshot, after: AwaySnapshot): AwayRepor
   }
   const learned = after.research.filter((id) => !before.research.includes(id));
   const citizens = Math.floor(after.population) - Math.floor(before.population);
-  return { resources, overflow: lost, raised, learned, citizens };
+  return { resources, overflow: lost, raised, learned, citizens, taken: [] };
 }
 
 /** Nothing moved: the strip has nothing to say (the threshold is zero). */
 export function isQuiet(r: AwayReport): boolean {
-  return !Object.keys(r.resources).length && !Object.keys(r.overflow).length && !r.raised.length && !r.learned.length && r.citizens === 0;
+  return !Object.keys(r.resources).length && !Object.keys(r.overflow).length && !r.raised.length && !r.learned.length && r.citizens === 0 && !(r.taken ?? []).length;
 }
 
 /**
@@ -95,7 +112,7 @@ export function returnReport(state: GameState, now: number): AwayReport | null {
   const seen = state.lastSeen;
   if (!hasSeen(state) || !seen) return null;
   if (now - seen.at < config.returnStrip.minGapMinutes * 60_000) return null;
-  const r = awayReport(seen.snapshot, takeSnapshot(state));
+  const r = { ...awayReport(seen.snapshot, takeSnapshot(state)), taken: sitesTaken(state, seen.snapshot) };
   return isQuiet(r) ? null : r;
 }
 

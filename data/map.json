@@ -254,5 +254,13 @@
         "buildSeconds": 7200
       }
     ]
+  },
+  "contest": {
+    "_comment": "DESIGN §5.5, the contest rule, which follows from §2.11. An unclaimed site may be taken by a tribe at any time, the player away or not: a missed opportunity, permitted. A held site changes hands only in a round the player convenes: a tribe's move against it is declared in one round and decided in a later one, after the player's own move, so the militia can be sent first.",
+    "_tuning": "Claude's first pass, 2026-09-28: the hourly chance a tribe takes one unclaimed site (0.02, about three a week), the share of the map's sites tribes may hold (0.3), and the rounds between a move being declared and decided (1; a held watchtower in sight adds one).",
+    "tribeTakeChancePerHour": 0.02,
+    "maxTribeHeldShare": 0.3,
+    "noticeRounds": 1,
+    "watchtowerExtraRounds": 1
   }
 }

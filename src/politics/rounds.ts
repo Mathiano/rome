@@ -11,6 +11,7 @@ import { ageAll } from './characters';
 import { rollEvent } from './events';
 import { accrueGravitas, driftAttitudes, updateCorruption } from './posts';
 import { colonyTier, sumEffect } from '../village/storage';
+import { keepCommitmentsWithinPool } from '../combat/militia';
 
 /**
  * One political round (DESIGN §3.2). The player's own action has already been
@@ -39,6 +40,7 @@ export function runRound(state: GameState, now: number): void {
   driftAttitudes(state);
   updateCorruption(state);
   checkCollapse(state);
+  keepCommitmentsWithinPool(state);
   state.lastReport = {
     round: state.round,
     at: now,

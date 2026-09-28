@@ -12,6 +12,7 @@ import { tradeRate } from '../tribes/envoys';
 import { portraitSvg } from './portrait';
 import { claimCost, claimOf, isKnown, isScouted, isSpentTreasure, ringOf, scoutCost, siteAt, siteDefence, siteRaidChance, upkeepPerRound } from '../map/sites';
 import { checkHoldingWork, holdingRushPrice } from '../map/holdings';
+import { threatAgainst, tribeHolds } from '../map/contest';
 import { holdingTier, mapConfig, site as siteDef } from '../map/world';
 import { spareMilitia } from '../combat/militia';
 import { assassinationChance, backingCost, marriageCandidates, totalBodyguards } from '../politics/intrigue';
@@ -340,6 +341,11 @@ function renderMap(s: GameState, hex: string | null, now = 0): string {
       const next = mapConfig.tiers.list[c.tier ?? 1];
       out += `<div class="card" data-held="${c.key}"><b>${esc(def.name)}</b> <span class="muted">${c.key}, ${r} rings out · ${esc(tier.name.toLowerCase())}</span>
         <p class="muted">Raid chance ${Math.round(siteRaidChance(s, c) * 100)}% a round · garrison ${c.garrison} · defence ${Math.round(siteDefence(c))}</p>`;
+      const threat = threatAgainst(s, c.key);
+      if (threat) {
+        const left = threat.resolveRound - s.round;
+        out += `<p class="threat" data-threat="${c.key}"><b>${esc(tribeDef(threat.tribeId).name)}</b> are moving on it: about <b>${threat.attack}</b> against its <b>${Math.round(siteDefence(c))}</b>. Decided ${left <= 1 ? 'when the council next meets' : `in ${left} rounds`}, after your move — men sent before then count.</p>`;
+      }
       if (next) {
         out += `<p>${esc(next.name)}: yield ×${next.yieldMultiplier}, defence ${next.defence} · ${costTxt(check.cost, s)} · ${esc(durationText(check.seconds))}
           <button class="act tiny" data-raise-holding="${c.key}" ${check.ok ? '' : 'disabled'}>Raise it</button>${check.ok ? '' : ` <span class="muted">${esc((check.reason ?? '').toLowerCase())}</span>`}</p>`;
@@ -366,6 +372,8 @@ function renderMap(s: GameState, hex: string | null, now = 0): string {
     return out;
   }
   if (!id || isSpentTreasure(s, hex)) return out + `<p class="muted">${id ? 'The hoard is gone. Empty country.' : 'Scouted. Empty country.'}</p>`;
+  const theirs = tribeHolds(s, hex);
+  if (theirs) return out + `<div class="card"><b>${esc(siteDef(id).name)}</b><p>${esc(tribeDef(theirs.tribeId).name)} took it before the council could. It is theirs now: an opportunity gone, not a holding lost.</p></div>`;
   const def = siteDef(id);
   out += `<div class="card"><b>${esc(def.name)}</b><p class="muted">${esc(def.description)}</p>`;
   if (def.produces && Object.keys(def.produces).length) out += `<p>Yields ${Object.entries(def.produces).map(([k, v]) => `${v} ${k}/h`).join(', ')} as a camp, more as a station and a fort</p>`;

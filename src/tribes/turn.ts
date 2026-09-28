@@ -4,6 +4,8 @@ import { chance } from '../state/rng';
 import { log } from '../state/store';
 import { defenceStrength, raidChance, raidStrength, resolveRaid } from '../combat/raids';
 import { propagateWeb, resolveEnvoy, tribeState } from './envoys';
+import { towerSees } from '../map/contest';
+import { mapConfig } from '../map/world';
 
 /** What it costs to buy the tribe off once scouts have seen them massing. */
 export function appeasePrice(state: GameState, tribeId: string): number {
@@ -47,7 +49,10 @@ function oneTribe(state: GameState, t: TribeState): void {
   }
   if (t.massingForRound > state.round) return; // already warned, not yet landed
   if (chance(state, raidChance(state, t))) {
-    t.massingForRound = state.round + config.tribe.warnRoundsBeforeRaid;
-    log(state, 'raid', `Scouts report ${def.name} massing beyond the treeline: about ${Math.round(raidStrength(state, t))} against your ${Math.round(defenceStrength(state))}. They will come next round.`);
+    // A held watchtower that sees the colonia sees them a round sooner (§5.2).
+    const tower = towerSees(state, '0,0') ? mapConfig.contest.watchtowerExtraRounds : 0;
+    const warn = config.tribe.warnRoundsBeforeRaid + tower;
+    t.massingForRound = state.round + warn;
+    log(state, 'raid', `${tower ? 'From the watchtower, scouts' : 'Scouts'} report ${def.name} massing beyond the treeline: about ${Math.round(raidStrength(state, t))} against your ${Math.round(defenceStrength(state))}. They will come ${warn > 1 ? `in ${warn} rounds` : 'next round'}.`);
   }
 }

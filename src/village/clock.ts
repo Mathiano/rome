@@ -4,6 +4,7 @@ import { completeFinished } from './construction';
 import { completeResearch } from './research';
 import { clampToCapacity } from './storage';
 import { completeHoldingWork } from '../map/holdings';
+import { tribesTakeUnclaimed } from '../map/contest';
 
 /**
  * The invisible village clock (DESIGN §3.1). Advances the economy by wall-clock
@@ -37,5 +38,8 @@ export function tick(state: GameState, now: number): void {
   completeResearch(state, now);
   completeHoldingWork(state, now);
   clampToCapacity(state);
+  // Tribes take unclaimed sites on the clock, present or away (§5.5): an
+  // opportunity missed. Nothing the player holds is touched here.
+  tribesTakeUnclaimed(state, state.lastTick, now);
   state.lastTick = now;
 }
