@@ -57,6 +57,8 @@ To generate (edit freely before running):
 
 ## Base map — the country the colony stands in
 
+**Superseded for geometry, 2026-09-28:** the round wall is gone; the brief for v2, painted to the rectangular town grid, is `docs/BASEMAP-V2-SPEC.md`. The v1 record below stays for its findings.
+
 **Status: ✅ v1 generated and wired in, 2026-09-21.** `base-map-v1.jpg`,
 3168×1344. The clearing it came back with is 2.42:1 against the wall's exact
 2:1, so the fit is uniform and matches the clearing's *height*: painted earth
