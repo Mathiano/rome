@@ -144,8 +144,7 @@
       "effect": {
         "tradeRate": -0.25
       },
-      "envoyRoundsSaved": 1,
-      "description": "A crossing the traders use. Envoys and trade move faster, and the trade is felt at the forum."
+      "description": "A crossing the traders use. While it is held, trade at the forum comes cheaper."
     },
     {
       "id": "shrine",
@@ -193,7 +192,7 @@
       "description": "Warriors, and they saw your scout first."
     }
   ],
-  "_sites": "DESIGN §5.2 ✅ kinds. Ids kept from v0.1 where the kind already existed (timber = Forest, meadow = Farmland, ruins = Ruin). A shrine's gravitas goes to the player's house: DESIGN names 'the post of temple', which v0 does not have (❓). Quarry and salt spring are claimable and idle until their content drop (🟡 per §5.2). A ford's envoy speed saves rounds on an envoy's road, which is one round long in v0, so it has no effect until envoys travel longer (❓).",
+  "_sites": "DESIGN §5.2 ✅ kinds. Ids kept from v0.1 where the kind already existed (timber = Forest, meadow = Farmland, ruins = Ruin). A shrine's gravitas goes to the player's house until a temple post exists (✅ Mathias, 2026-09-28). Quarry and salt spring are claimable and idle until their content drop (🟡 per §5.2). A ford's effect is a trade bonus at the forum; envoys already arrive in one round (Mathias, 2026-09-28).",
   "scout": {
     "_comment": "Prepared like an envoy (DESIGN §3.2): dispatched now, resolves at the next round.",
     "cost": {
@@ -265,7 +264,7 @@
   },
   "roads": {
     "_comment": "DESIGN §5.4: roads built segment by segment, hex to hex, from the colonia outward, one segment under construction at a time (Mathias, 2026-09-28). A holding joined to the colonia by an unbroken road: raid exposure falls, yield rises, and trade moves more easily. v0 roads cost denarii and wood; a paved upgrade with stone waits for the stone drop.",
-    "_tuning": "Claude's first pass, 2026-09-28: a segment's cost (30 denarii, 40 wood) and time (15 minutes); a connected holding's raid chance halved (exposureCut 0.5) and its yield raised by a quarter (yieldBonus 0.25); the trade rate sharpened by 0.1 while any holding is connected. ❓ 'Envoys resolve faster' has nothing to shorten: an envoy's road is one round in v0.",
+    "_tuning": "Claude's first pass, 2026-09-28: a segment's cost (30 denarii, 40 wood) and time (15 minutes); a connected holding's raid chance halved (exposureCut 0.5) and its yield raised by a quarter (yieldBonus 0.25); the trade rate sharpened by 0.1 while any holding is connected.",
     "segmentCost": {
       "denarii": 30,
       "wood": 40
