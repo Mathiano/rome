@@ -1,5 +1,5 @@
 {
-  "_comment": "The town grid (DESIGN §4.5 C.1). Cells are integer (x, y) on the isometric grid; +x runs down-right on screen, +y down-left. One cell is `cellTiles` layout tiles across, the width of a sprite's ground plate, so a 1×1 building's plate fills its cell. The enclosure is a rectangle whose size is set by the wall's tier; it grows away from the river, so the riverbank edge never moves and nothing already placed ever falls outside. The riverbank is a strip `riverbankDepth` cells deep beyond the enclosure's river edge, outside the wall, reserved for buildings placed only there (the harbour, not yet built). Resource sites stand outside the wall (C.2), placed here rather than by the player.",
+  "_comment": "The town grid (DESIGN §4.5 C.1). Cells are integer (x, y) on the isometric grid; +x runs down-right on screen, +y down-left. One cell is `cellTiles` layout tiles across, the width of a sprite's ground plate, so a 1×1 building's plate fills its cell. The enclosure is a rectangle whose size is set by the wall's tier; it grows away from the river, so the riverbank edge never moves and nothing already placed ever falls outside. The riverbank is a strip `riverbankDepth` cells deep beyond the enclosure's river edge, outside the wall, reserved for buildings placed only there (the harbour, not yet built). Resource sites stand outside the wall in four biomes (C.2), placed here rather than by the player.",
   "tile": {
     "w": 64,
     "h": 32
@@ -11,23 +11,53 @@
     "riverEdge": 4,
     "riverbankDepth": 1
   },
-  "sites": [
-    { "id": "o1", "site": "forest", "x": -7, "y": -3 },
-    { "id": "o2", "site": "forest", "x": -7, "y": 0 },
-    { "id": "o3", "site": "clay_bank", "x": 3, "y": -7 },
-    { "id": "o4", "site": "clay_bank", "x": 1, "y": -7 },
-    { "id": "o5", "site": "iron_seam", "x": -2, "y": -7 },
-    { "id": "o6", "site": "farmland", "x": 4, "y": 7 },
-    { "id": "o7", "site": "farmland", "x": -2, "y": 7 },
-    { "id": "o8", "site": "farmland", "x": -5, "y": 7 }
-  ],
+  "biomes": {
+    "_comment": "DESIGN §4.5 C.2 ✅ (Mathias, 2026-09-28): four resource biomes outside the wall, each with fixed slots for its own resource building and no other — wood to the north and north-west, clay to the north-east, iron in the cliffs by the river at the town's south end, grain to the south-west. Farm, Lumber camp, Clay works and Iron mine are repeatable only within their biome's slots; more of a basic resource comes from holdings on the map (§5.2). Compass is the screen: up is north, and the river runs along the town's south-east edge, so the iron is downstream at the south end (Mathias, 2026-09-28).",
+    "_tuning": "Three slots a biome, and the cells they stand on, are Claude's first pass (2026-09-28). A biome's slot count is the length of its list: add or remove a cell to change it. Cells must stay outside the largest enclosure with a cell of margin, off the riverbank and out of the river; tests/biomes.test.ts checks that and each biome's compass sector.",
+    "wood": {
+      "site": "forest",
+      "where": "north and north-west",
+      "slots": [
+        { "id": "wood1", "x": -7, "y": -3 },
+        { "id": "wood2", "x": -7, "y": 0 },
+        { "id": "wood3", "x": -6, "y": -6 }
+      ]
+    },
+    "clay": {
+      "site": "clay_bank",
+      "where": "north-east",
+      "slots": [
+        { "id": "clay1", "x": 3, "y": -7 },
+        { "id": "clay2", "x": 1, "y": -7 },
+        { "id": "clay3", "x": -2, "y": -7 }
+      ]
+    },
+    "iron": {
+      "site": "iron_seam",
+      "where": "the cliffs by the river, at the town’s south end",
+      "slots": [
+        { "id": "iron1", "x": 5, "y": 6 },
+        { "id": "iron2", "x": 3, "y": 7 },
+        { "id": "iron3", "x": 5, "y": 8 }
+      ]
+    },
+    "grain": {
+      "site": "farmland",
+      "where": "south-west",
+      "slots": [
+        { "id": "grain1", "x": -3, "y": 7 },
+        { "id": "grain2", "x": -1, "y": 7 },
+        { "id": "grain3", "x": -5, "y": 7 }
+      ]
+    }
+  },
   "wall": {
     "id": "w1"
   },
   "startBuilt": [
-    { "id": "c1", "building": "praetorium", "x": 1, "y": 0, "tier": 1 },
-    { "slot": "o1", "building": "lumber_camp", "tier": 1 },
-    { "slot": "o3", "building": "clay_works", "tier": 1 },
-    { "slot": "o7", "building": "farm", "tier": 1 }
+    { "id": "c1", "building": "praetorium", "x": 0, "y": 0, "tier": 1 },
+    { "slot": "wood1", "building": "lumber_camp", "tier": 1 },
+    { "slot": "clay1", "building": "clay_works", "tier": 1 },
+    { "slot": "grain1", "building": "farm", "tier": 1 }
   ]
 }

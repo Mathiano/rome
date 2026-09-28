@@ -68,7 +68,7 @@ describe('the condition vocabulary', () => {
     expect(t({ buildingTier: { id: 'praetorium', atLeast: 1 } })).toBe(true);
     expect(t({ buildingTier: { id: 'praetorium', atLeast: 2 } })).toBe(false);
     expect(t({ underWay: { building: 'iron_mine' } })).toBe(false);
-    expect(t({ affordable: { slot: 'o5', building: 'iron_mine' } })).toBe(true);
+    expect(t({ affordable: { slot: 'iron1', building: 'iron_mine' } })).toBe(true);
     expect(t({ roundAtLeast: 1 })).toBe(false);
     expect(t({ postHeld: { postId: 'works' } })).toBe(false);
     expect(t({ envoyOut: true })).toBe(false);
@@ -81,7 +81,7 @@ describe('the condition vocabulary', () => {
     expect(t({ researchStarted: true })).toBe(false);
     expect(t({ statAtLeast: { key: 'rounds', n: 1 } })).toBe(false);
     // and each turns with the colony
-    g.build('o5', 'iron_mine', 1000);
+    g.build('iron1', 'iron_mine', 1000);
     expect(t({ underWay: { building: 'iron_mine' } })).toBe(true);
     s.resources.wood = 0;
     expect(t({ affordable: { building: 'castellum' } })).toBe(false);
@@ -132,8 +132,8 @@ describe('the counsel line against a fresh colony', () => {
     // 1: the iron seam is open ground the colony can afford to work
     expect(currentAdvice(s)!.id).toBe('iron');
     expect(blockedBy(s, currentAdvice(s)!)).toBeNull();
-    expect(checkBuild(s, 'o5', 'iron_mine').ok).toBe(true);
-    g.build('o5', 'iron_mine', 1000);
+    expect(checkBuild(s, 'iron1', 'iron_mine').ok).toBe(true);
+    g.build('iron1', 'iron_mine', 1000);
     expect(currentAdvice(s)!.id).toBe('castellum');
 
     // 2: the castellum is affordable with the mine still being dug — a field
@@ -173,7 +173,7 @@ describe('the counsel line against a fresh colony', () => {
 
   it('stores nothing: the step is read off the colony, so a save round-trip agrees', () => {
     const g = new Game(createInitialState(0, 5));
-    g.build('o5', 'iron_mine', 1000);
+    g.build('iron1', 'iron_mine', 1000);
     const back = deserialise(serialise(g.state));
     expect(currentAdvice(back)!.id).toBe(currentAdvice(g.state)!.id);
     expect(back.advisorDismissed).toBe(false);
@@ -184,11 +184,11 @@ describe('the counsel line against a fresh colony', () => {
     const step = nextStep(s)!;
     s.resources.wood = 10;
     s.resources.clay = 5;
-    const cost = checkBuild(s, 'o5', 'iron_mine').cost;
+    const cost = checkBuild(s, 'iron1', 'iron_mine').cost;
     expect(blockedBy(s, step)).toBe(`${cost.wood! - 10} more wood, ${cost.clay! - 5} more clay`);
     // a field already being worked is the reason, not a number
     const t = createInitialState(0, 5);
-    startBuild(t, 'o2', 'lumber_camp', 0);
+    startBuild(t, 'wood2', 'lumber_camp', 0);
     expect(blockedBy(t, nextStep(t)!)).toMatch(/field is already being worked/);
     // scouts: the purse
     const u = createInitialState(0, 5);
@@ -268,7 +268,7 @@ describe('the counsel card', () => {
       const html = renderPanel(g, t, null, 1);
       expect(html, t).toContain('data-advisor-step="iron"');
       expect(html, t).toContain(`<b>${advisor.title}</b>`);
-      expect(html, t).toContain('data-select-slot="o5"');
+      expect(html, t).toContain('data-select-slot="iron1"');
       expect(html, t).toContain('data-advisor-dismiss');
       // the village tab carries the mark; the card sits between the nav and the body
       expect(html, t).toMatch(/data-tab="village"[^>]*>Village<span class="badge">!<\/span>/);
@@ -280,7 +280,7 @@ describe('the counsel card', () => {
 
   it('the Show-me button lands on the plot, the hex or the tab the step names', () => {
     const g = new Game(createInitialState(0, 5));
-    g.build('o5', 'iron_mine', 1000);
+    g.build('iron1', 'iron_mine', 1000);
     castellum(g, 1000);
     const hex = nearestUnknown(g.state)!;
     let html = renderPanel(g, 'village', null, 1);
@@ -297,7 +297,7 @@ describe('the counsel card', () => {
   it('states the shortfall in units when the step cannot be taken yet', () => {
     const g = new Game(createInitialState(0, 5));
     g.state.resources.wood = 0;
-    const cost = checkBuild(g.state, 'o5', 'iron_mine').cost;
+    const cost = checkBuild(g.state, 'iron1', 'iron_mine').cost;
     expect(renderPanel(g, 'village', null, 1)).toContain(`Not yet: ${cost.wood} more wood.`);
   });
 
@@ -310,10 +310,10 @@ describe('the counsel card', () => {
     bindPanel(panel, { ...noHandlers(), onSelectSlot: (id) => slots.push(id), onSelectHex: (h) => hexes.push(h), onDismissAdvisor: () => { dismissed += 1; } });
     panel.innerHTML = renderPanel(g, 'rome', null, 1);
     panel.querySelector<HTMLButtonElement>('aside.counsel [data-select-slot]')!.click();
-    expect(slots).toEqual(['o5']);
+    expect(slots).toEqual(['iron1']);
     panel.querySelector<HTMLButtonElement>('aside.counsel [data-advisor-dismiss]')!.click();
     expect(dismissed).toBe(1);
-    g.build('o5', 'iron_mine', 1000);
+    g.build('iron1', 'iron_mine', 1000);
     castellum(g, 1000);
     panel.innerHTML = renderPanel(g, 'village', null, 1);
     panel.querySelector<HTMLButtonElement>('aside.counsel [data-select-hex]')!.click();
@@ -325,8 +325,8 @@ describe('the counsel card', () => {
     const view = createVillageView(() => {});
     view.update(g.state, 0, null);
     const marked = [...view.root.querySelectorAll('.slot.counsel')].map((e) => e.getAttribute('data-slot'));
-    expect(marked).toEqual(['o5']);
-    g.build('o5', 'iron_mine', 1000);
+    expect(marked).toEqual(['iron1']);
+    g.build('iron1', 'iron_mine', 1000);
     view.update(g.state, 1000, null);
     // The castellum is to be placed, not built on a plot: no plot is marked,
     // and Show me starts placing it instead.
@@ -365,7 +365,7 @@ describe('before you go', () => {
     const g = new Game(createInitialState(0, 5));
     g.state.seenLogId = g.state.logSeq;
     g.state.seenOpening = true;
-    g.build('o5', 'iron_mine', 1000);
+    g.build('iron1', 'iron_mine', 1000);
     // Rome's founding letter is already open, so clear it: Rome writes its next
     // letter at this round, and the round has news to raise a card with.
     g.state.rome.activeRequest = null;

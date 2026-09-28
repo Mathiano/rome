@@ -16,7 +16,7 @@ const SEEDS = 12;
 const ROUNDS = 40;
 
 /** A slot to raise, or null for a town building to place on the grid where it first fits. */
-const WANTED = [['w1', 'wall'], [null, 'castellum'], ['o5', 'iron_mine'], [null, 'warehouse']] as const;
+const WANTED = [['w1', 'wall'], [null, 'castellum'], ['iron1', 'iron_mine'], [null, 'warehouse']] as const;
 
 /** Raise the first affordable thing on the list: upgrade what stands, place what does not. */
 function buildSomething(g: Game, t: number) {

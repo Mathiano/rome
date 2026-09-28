@@ -146,7 +146,7 @@ describe('production per building, and the ledger behind the header', () => {
   function workingColony(): GameState {
     const s = rich(createInitialState(0, 1));
     // A second field, a held meadow, a granary prefect and two studies.
-    startBuild(s, 'o2', 'lumber_camp', 0);
+    startBuild(s, 'wood2', 'lumber_camp', 0);
     completeFinished(s, 1e9);
     s.map.claimed.push({ key: '2,1', siteId: 'meadow', garrison: 0, claimedRound: 0, tier: 1 });
     s.map.claimed.push({ key: '3,1', siteId: 'timber', garrison: 0, claimedRound: 0, tier: 1 });
@@ -171,11 +171,11 @@ describe('production per building, and the ledger behind the header', () => {
 
   it('asks what a plot would yield at the next tier, and the open plot at tier I', () => {
     const s = workingColony();
-    const farm = slotById(s, 'o7');
+    const farm = slotById(s, 'grain1');
     const mult = 1 + postBonus(s, 'granary') + 0.12;
     expect(slotProductionPerHour(s, farm)).toBeCloseTo(35 * mult, 9);
     expect(slotProductionPerHour(s, farm, 2)).toBeCloseTo(90 * mult, 9);
-    const open = slotById(s, 'o6');
+    const open = slotById(s, 'grain2');
     expect(open.building).toBeNull();
     expect(slotProductionPerHour(s, open)).toBe(0);
     expect(slotProductionPerHour(s, open, 1, 'farm')).toBeCloseTo(35 * mult, 9);
@@ -241,13 +241,13 @@ describe('the two lanes (DESIGN §4.4: one building, one field, no queue)', () =
 
   it('routes the lane\'s Finish now to onRush', () => {
     const s = rich(createInitialState(0, 1));
-    startBuild(s, 'o2', 'lumber_camp', 0);
+    startBuild(s, 'wood2', 'lumber_camp', 0);
     const panel = document.createElement('div');
     const rushed: string[] = [];
     bindPanel(panel, { ...noHandlers(), onRush: (id) => rushed.push(id) });
     panel.innerHTML = renderPanel(new Game(s), 'village', null, 1);
-    panel.querySelector<HTMLButtonElement>('.lanes [data-rush="o2"]')!.click();
-    expect(rushed).toEqual(['o2']);
+    panel.querySelector<HTMLButtonElement>('.lanes [data-rush="wood2"]')!.click();
+    expect(rushed).toEqual(['wood2']);
   });
 });
 
@@ -273,18 +273,18 @@ describe('the colony overview', () => {
     const s = rich(createInitialState(0, 1));
     const html = renderPanel(new Game(s), 'village', null, 1);
     const lumber = building('lumber_camp').tiers[1];
-    expect(html).toContain('data-build="o1" data-building="lumber_camp"');
+    expect(html).toContain('data-build="wood1" data-building="lumber_camp"');
     expect(strip(html)).toContain(`30 wood/h now → 80/h at II (+50) ${lumber.cost.wood} wood , ${lumber.cost.clay} clay , ${lumber.cost.iron} iron ${durationText(lumber.buildSeconds)} Upgrade`);
     expect(strip(html)).toContain('Praetorium I II: gravitas 1 → 2 a round (+1)');
   });
 
   it('marks a job under way with its time left and the rush button, and a top tier as at its height', () => {
     const s = rich(createInitialState(0, 1));
-    const c = startBuild(s, 'o1', 'lumber_camp', 0);
+    const c = startBuild(s, 'wood1', 'lumber_camp', 0);
     slotById(s, 'c1').tier = 3;
     const html = renderOverview(s, 1000);
     expect(html).toContain(`tier II under way — ${remainingText(c.finishAt - 1000)}`);
-    expect(html).toMatch(/data-slot="o1">[\s\S]*?data-rush="o1"/);
+    expect(html).toMatch(/data-slot="wood1">[\s\S]*?data-rush="wood1"/);
     expect(strip(html)).toContain('Praetorium III at its height');
     expect(html).not.toContain('data-build="c1"');
   });
@@ -306,18 +306,18 @@ describe('the colony overview', () => {
     expect(html).toMatch(/data-unplaced="barracks">[\s\S]*?data-place="barracks">Place</);
     expect(html).not.toMatch(/data-unplaced="warehouse">[\s\S]*?data-build=/);
     expect(strip(html)).toContain('farmland ×2: Farm I +35 grain/h');
-    expect(strip(html)).toContain('iron seam ×1: Iron mine I +18 iron/h');
+    expect(strip(html)).toContain('iron seam ×3: Iron mine I +18 iron/h');
     const firstFarmland = layout.sites.find((x) => x.site === 'farmland' && !s.slots.find((y) => y.id === x.id)!.building)!;
     expect(html).toMatch(new RegExp(`farmland ×2[\\s\\S]*?data-select-slot="${firstFarmland.id}"`));
-    // o1 is built and o2 is not: one forest plot stays open.
-    expect(strip(html)).toContain('forest ×1: Lumber camp I +30 wood/h');
+    // wood1 is built; wood2 and wood3 stay open.
+    expect(strip(html)).toContain('forest ×2: Lumber camp I +30 wood/h');
   });
 
   it('is what the Village panel opens on, and the plot card leads back to it', () => {
     const g = new Game(rich(createInitialState(0, 1)));
     expect(renderPanel(g, 'village', null, 1)).toContain('In the colony');
     expect(renderPanel(g, 'village', null, 1)).not.toContain('data-overview');
-    const card = renderPanel(g, 'village', 'o1', 1);
+    const card = renderPanel(g, 'village', 'wood1', 1);
     expect(card).not.toContain('In the colony');
     expect(card).toContain('data-overview');
     const panel = document.createElement('div');
@@ -328,8 +328,8 @@ describe('the colony overview', () => {
     panel.querySelector<HTMLButtonElement>('[data-overview]')!.click();
     expect(picked, 'no slot selected is the overview').toEqual(['']);
     panel.innerHTML = renderPanel(g, 'village', null, 1);
-    panel.querySelector<HTMLButtonElement>('[data-build="o1"]')!.click();
-    expect(built).toEqual(['o1:lumber_camp']);
+    panel.querySelector<HTMLButtonElement>('[data-build="wood1"]')!.click();
+    expect(built).toEqual(['wood1:lumber_camp']);
     const placing: string[] = [];
     bindPanel(panel, { ...noHandlers(), onPlace: (b) => placing.push(b) });
     panel.querySelector<HTMLButtonElement>('[data-unplaced="warehouse"] [data-place]')!.click();
@@ -388,15 +388,15 @@ it('names resources the way the header does', () => {
 describe('a plot rising from nothing', () => {
   it('shows no tier and no zero yield on its row while tier I is under way', () => {
     const g = new Game(createInitialState(0, 5));
-    g.build('o5', 'iron_mine', 1000);
+    g.build('iron1', 'iron_mine', 1000);
     const html = renderPanel(g, 'village', null, 1000, null);
-    const row = html.match(/<li data-slot="o5">[\s\S]*?<\/li>/)![0];
+    const row = html.match(/<li data-slot="iron1">[\s\S]*?<\/li>/)![0];
     expect(row).toContain('tier I under way');
     expect(row).not.toContain('<b></b>');
     expect(row).not.toContain('0 iron/h');
     // once it stands, the tier and the yield come back
     g.tick(1000 + 60 * 60 * 1000);
-    const later = renderPanel(g, 'village', null, 1000 + 60 * 60 * 1000, null).match(/<li data-slot="o5">[\s\S]*?<\/li>/)![0];
+    const later = renderPanel(g, 'village', null, 1000 + 60 * 60 * 1000, null).match(/<li data-slot="iron1">[\s\S]*?<\/li>/)![0];
     expect(later).toContain('<b>I</b>');
     expect(later).toMatch(/\d+ iron\/h/);
   });

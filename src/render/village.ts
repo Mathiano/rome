@@ -230,6 +230,8 @@ export function createVillageView(onSelect: (slotId: string) => void, onPlace: (
   function update(state: GameState, now: number, selected: string | null, placing: string | null = null): void {
     last = { state, now, selected };
     compose(state);
+    // The grid is a tool, not scenery: its lines show only while a building is being placed.
+    floorLayer.querySelector('.cell-lines')?.setAttribute('display', placing ? 'inline' : 'none');
     drawPlacing(state, placing);
     // The counsel's plot is marked the way the selected one is.
     const step = currentAdvice(state);
