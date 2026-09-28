@@ -11,6 +11,7 @@ import {
 import { homeMilitia, militiaPool } from '../src/combat/militia';
 import { productionPerHour } from '../src/village/economy';
 import type { GameState } from '../src/state/types';
+import { colonyWith } from './helpers';
 /** v0.1 woke the other two tribes; these tests speak to the raider. */
 const TRIBE_ID = 'chatti';
 const TRIBE = (s: GameState) => s.tribes[TRIBE_ID];
@@ -105,13 +106,21 @@ describe('scouting', () => {
     expect(s.stats.scoutsLost).toBe(1);
     expect(isScouted(s, camp)).toBe(true);
   });
-  it('ruins pay in scrolls', () => {
-    const s = createInitialState(0, 5);
-    s.resources.denarii = 500;
+  it('a ruin pays its scrolls once, when it is first held, and nothing to the scouts (§5.2)', () => {
+    const s = colonyWith('ruins');
+    s.resources.denarii = 5000;
     const ruins = findSite(s, (id) => id === 'ruins');
+    const scrolls = s.rome.scrolls;
     dispatchScout(s, ruins);
     resolveScout(s);
-    expect(s.rome.scrolls).toBe(1);
+    expect(s.rome.scrolls).toBe(scrolls);
+    claimSite(s, ruins);
+    const paid = site('ruins').claimReward!.scrolls!;
+    expect(s.rome.scrolls).toBe(scrolls + paid);
+    // given up and taken again, it has nothing more to give
+    releaseSite(s, ruins);
+    claimSite(s, ruins);
+    expect(s.rome.scrolls).toBe(scrolls + paid);
   });
   it('costs denarii and refuses what is out of reach or already known', () => {
     const s = createInitialState(0, 5);
@@ -190,8 +199,8 @@ describe('claiming and holding', () => {
   });
   it('exposure rises with distance and a garrison answers it', () => {
     const { s } = held();
-    const near = { key: '2,0', siteId: 'timber', garrison: 0, claimedRound: 0 };
-    const far = { key: '10,0', siteId: 'timber', garrison: 0, claimedRound: 0 };
+    const near = { key: '2,0', siteId: 'timber', garrison: 0, claimedRound: 0, tier: 1 };
+    const far = { key: '10,0', siteId: 'timber', garrison: 0, claimedRound: 0, tier: 1 };
     s.round = mapConfig.hold.graceRounds + 1;
     expect(siteRaidChance(s, far)).toBeGreaterThan(siteRaidChance(s, near));
     s.round = 0;
@@ -216,7 +225,7 @@ describe('claiming and holding', () => {
     expect(claimOf(s2, k2)).toBeDefined();
   });
   it('a shrine or ford contributes its effect', () => {
-    const s = createInitialState(0, 5);
+    const s = colonyWith('shrine');
     s.resources.denarii = 5000;
     const shrine = findSite(s, (id) => id === 'shrine');
     dispatchScout(s, shrine);

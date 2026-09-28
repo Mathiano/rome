@@ -356,3 +356,24 @@ table .neg, .card.report .neg { color: var(--terracotta); }
    only for a building whose data declares a rule; none does yet. */
 #panel .adjacency ul { margin: 2px 0 6px 18px; padding: 0; }
 #panel .adjacency li { margin: 1px 0; }
+/* The stage's own switch (DESIGN §5.1): the country is a view of its own, not
+   a panel tab. A <nav>, so the stage's cross-fade rules for <div>s pass it by. */
+#stage .stage-switch { position: absolute; top: 8px; left: 50%; transform: translateX(-50%); z-index: 6; display: flex; border: 1px solid var(--ink); border-radius: 3px; overflow: hidden; box-shadow: 0 1px 3px var(--shadow); }
+#stage .stage-switch button { font: inherit; font-size: 13px; padding: 4px 14px; border: 0; background: var(--parchment); color: var(--ink); cursor: pointer; }
+#stage .stage-switch button + button { border-left: 1px solid var(--ink); }
+#stage .stage-switch button.on { background: var(--ink); color: var(--parchment); }
+/* Holdings on the map (DESIGN §5.2, §5.3): drawn, never painted. */
+.worldmap .m-cut { stroke: #594a3a; stroke-width: 1.2; }
+.worldmap .m-salt { fill: #f4f1ea; stroke: #9aa7ad; stroke-width: 0.6; }
+.worldmap .m-shield { fill: #b5563a; stroke: #2a2118; stroke-width: 0.8; }
+.worldmap .m-roof { fill: #b5563a; stroke: #2a2118; stroke-width: 0.8; }
+.worldmap .m-chest { fill: #8a5a32; stroke: #2a2118; stroke-width: 0.8; }
+.worldmap .m-coin { fill: #e3c35a; stroke: #7a5b12; stroke-width: 0.6; }
+.worldmap .holding .h-wall { fill: rgba(239, 230, 210, 0.35); stroke: #4a3b2c; stroke-width: 1.6; stroke-dasharray: 2.5 1.5; }
+.worldmap .holding.tier-3 .h-wall { stroke-dasharray: none; stroke-width: 2; }
+.worldmap .holding .h-tower { fill: #cfc3ab; stroke: #2a2118; stroke-width: 0.8; }
+.worldmap .holding .h-roof { fill: #b5563a; stroke: #2a2118; stroke-width: 0.6; }
+.worldmap .holding .h-pole { stroke: #2a2118; stroke-width: 1; }
+.worldmap .holding .h-flag { fill: #b5563a; stroke: #2a2118; stroke-width: 0.5; }
+.worldmap .ground.seen { stroke-dasharray: 3 2; }
+.worldmap .rising { font-size: 8px; fill: #c9a24a; text-anchor: middle; }

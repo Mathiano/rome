@@ -17,7 +17,7 @@ const dev = createDevClock(isDevRequested(location.search), () => Date.now(), ((
 const saveKey = dev.enabled ? DEV_SAVE_KEY : SAVE_KEY;
 
 const app = document.getElementById('app')!;
-app.innerHTML = `<header></header><div id="stage"><div id="village"></div><div id="map"></div></div><div id="panel"></div>`;
+app.innerHTML = `<header></header><div id="stage"><div id="village"></div><div id="map"></div><nav class="stage-switch"><button data-stage="town">Town</button><button data-stage="country">Country</button></nav></div><div id="panel"></div>`;
 const header = app.querySelector('header')!;
 const villageEl = document.getElementById('village')!;
 const mapEl = document.getElementById('map')!;
@@ -31,6 +31,8 @@ let selected: string | null = null;
 let selectedHex: string | null = null;
 /** A town building being put down: the village marks every place it fits (DESIGN §4.5 C.1). */
 let placing: string | null = null;
+/** Which view the stage shows, town or country (DESIGN §5.1: the map is a top-level view). */
+let stageView: 'town' | 'country' = 'town';
 let lastPanelHtml = '';
 let lastPanelKey = '';
 let lastTab: Tab | null = null;
@@ -42,6 +44,7 @@ const view = createVillageView((id) => {
   if (placing) return; // a click while placing chooses cells, never a plot
   selected = id;
   tab = 'village';
+  stageView = 'town';
   render(true);
 }, (x, y) => {
   const b = placing;
@@ -60,9 +63,21 @@ villageEl.appendChild(view.root);
 const mapView = createMapView((hex) => {
   selectedHex = hex;
   tab = 'map';
+  stageView = 'country';
   render(true);
 });
 mapEl.appendChild(mapView.root);
+
+// The country is a top-level view (DESIGN §5.1), not a panel tab: the stage
+// switches between town and country on its own, and the panel follows to the
+// tab that speaks for what is shown. Other tabs leave the stage where it is.
+document.querySelector('#stage .stage-switch')!.addEventListener('click', (ev) => {
+  const b = (ev.target as HTMLElement).closest('button');
+  if (!b?.dataset.stage) return;
+  stageView = b.dataset.stage === 'country' ? 'country' : 'town';
+  tab = stageView === 'country' ? 'map' : 'village';
+  render(true);
+});
 
 function toast(msg: string, ms = 3500): void {
   const t = document.createElement('div');
@@ -99,8 +114,8 @@ function persist(): void {
 
 const newsOverlay = createNewsOverlay(villageEl, {
   onChoice: (id) => guard(() => game.choose(id, dev.now())),
-  onTab: (t) => { tab = t as Tab; render(true); },
-  onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; render(true); },
+  onTab: (t) => { tab = t as Tab; if (t === 'map') stageView = 'country'; if (t === 'village') stageView = 'town'; render(true); },
+  onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; stageView = 'country'; render(true); },
   onContinue: () => {
     acknowledgeNews(game.state);
     // Leaving the founding card lands on the colony overview with nothing
@@ -164,7 +179,8 @@ function render(force = false): void {
   renderNewsOverlay();
   if (dev.enabled) renderDevBar(now);
 
-  const onMap = tab === 'map';
+  const onMap = stageView === 'country';
+  for (const b of document.querySelectorAll<HTMLButtonElement>('#stage .stage-switch button')) b.classList.toggle('on', b.dataset.stage === stageView);
   if (villageEl.dataset.hidden !== String(onMap)) {
     villageEl.dataset.hidden = String(onMap);
     mapEl.dataset.hidden = String(!onMap);
@@ -199,14 +215,16 @@ function render(force = false): void {
 }
 
 bindPanel(panelEl, {
-  onTab: (t) => { tab = t; putStripAway(); render(true); },
-  onSelectSlot: (id) => { selected = id; placing = null; tab = 'village'; render(true); },
-  onPlace: (b) => { placing = b || null; selected = null; tab = 'village'; render(true); },
-  onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; render(true); },
+  onTab: (t) => { tab = t; if (t === 'map') stageView = 'country'; if (t === 'village') stageView = 'town'; putStripAway(); render(true); },
+  onSelectSlot: (id) => { selected = id; placing = null; tab = 'village'; stageView = 'town'; render(true); },
+  onPlace: (b) => { placing = b || null; selected = null; tab = 'village'; stageView = 'town'; render(true); },
+  onSelectHex: (hex) => { selectedHex = hex; tab = 'map'; stageView = 'country'; render(true); },
   onDismissAdvisor: () => guard(() => game.dismissAdvisor()),
   onChoice: (id) => guard(() => game.choose(id, dev.now())),
   onAdoptNewMan: () => guard(() => game.adoptNewMan(dev.now())),
   onScout: (hex) => guard(() => game.scout(hex, dev.now())),
+  onRaiseHolding: (hex) => guard(() => game.raiseHolding(hex, dev.now())),
+  onRushHolding: () => guard(() => game.rushHolding(dev.now())),
   onBuild: (slot, b) => guard(() => game.build(slot, b, dev.now())),
   onRush: (slot) => guard(() => game.rush(slot, dev.now())),
   onPolitical: (a) => guard(() => game.act(a, dev.now())),

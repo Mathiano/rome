@@ -16,6 +16,7 @@ import { appease } from './tribes/turn';
 import { acceptDemand, refuseDemand } from './politics/families';
 import { resolveChoice } from './politics/events';
 import { claimSite, dispatchScout, releaseSite, setGarrison } from './map/sites';
+import { rushHoldingWork, startHoldingWork } from './map/holdings';
 import { spareMilitia } from './combat/militia';
 import { deliver, sendRecruits, hostOfficial, decline } from './rome/requests';
 
@@ -95,6 +96,15 @@ export class Game {
   scout(hex: string, now = Date.now()): void {
     this.tick(now);
     dispatchScout(this.state, hex);
+  }
+  /** A holding raised a tier is built on the village clock, like a building: no round (§5.3). */
+  raiseHolding(hex: string, now = Date.now()): void {
+    this.tick(now);
+    startHoldingWork(this.state, hex, now);
+  }
+  rushHolding(now = Date.now()): void {
+    this.tick(now);
+    rushHoldingWork(this.state, now);
   }
   /**
    * Standing men over your own kin is household business, not a move against

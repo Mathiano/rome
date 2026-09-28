@@ -25,7 +25,7 @@ function playerMan(s: GameState): string {
 function noHandlers(): PanelHandlers {
   return {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-    onSelectSlot: () => {}, onPlace: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
+    onSelectSlot: () => {}, onPlace: () => {}, onRaiseHolding: () => {}, onRushHolding: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
     onExport: () => {}, onImport: () => {}, onReset: () => {},
     onSelectHex: () => {}, onDismissAdvisor: () => {},
@@ -148,8 +148,8 @@ describe('production per building, and the ledger behind the header', () => {
     // A second field, a held meadow, a granary prefect and two studies.
     startBuild(s, 'o2', 'lumber_camp', 0);
     completeFinished(s, 1e9);
-    s.map.claimed.push({ key: '2,1', siteId: 'meadow', garrison: 0, claimedRound: 0 });
-    s.map.claimed.push({ key: '3,1', siteId: 'timber', garrison: 0, claimedRound: 0 });
+    s.map.claimed.push({ key: '2,1', siteId: 'meadow', garrison: 0, claimedRound: 0, tier: 1 });
+    s.map.claimed.push({ key: '3,1', siteId: 'timber', garrison: 0, claimedRound: 0, tier: 1 });
     s.posts.granary = playerMan(s);
     s.research.completed.push('crop_rotation', 'charcoal_burning');
     s.corruption = 12;
@@ -190,7 +190,7 @@ describe('production per building, and the ledger behind the header', () => {
     }
     const grain = ledgerFor(s, 'grain').map((l) => l.label);
     expect(grain).toContain('Farm I');
-    expect(grain).toContain('River meadow, held');
+    expect(grain).toContain('Farmland, held');
     expect(grain.some((l) => l.startsWith('Prefect of the granary — ') && l.includes('craft'))).toBe(true);
     expect(grain).toContain('research: +12%');
     expect(grain).toContain(`upkeep: ${Math.floor(s.population)} heads × ${config.population.grainUpkeepPerHeadPerHour}`);

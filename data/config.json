@@ -1,6 +1,6 @@
 {
   "_comment": "Global tuning. _proposed records where each value was confirmed in DESIGN.md.",
-  "saveVersion": 3,
+  "saveVersion": 4,
   "townName": "Arctown",
   "quietRound": {
     "_comment": "Mathias, 2026-09-24: a round the player calls that brings no news still gets a short card, or pressing the one button that advances the world reads as a bug.",

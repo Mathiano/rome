@@ -10,8 +10,8 @@ import { config, tribeDef } from '../data';
 import { log } from '../state/store';
 import { report } from '../state/reports';
 import { chance, nextRandom } from '../state/rng';
-import { key as hexKey, parseKey, ring } from './grid';
-import { generate, mapConfig, site } from './world';
+import { distance, key as hexKey, parseKey, ring, within } from './grid';
+import { generate, holdingTier, mapConfig, site } from './world';
 import { playerHoldsOffice, requireOffice } from '../politics/challenge';
 
 export function world(state: GameState) {
@@ -24,6 +24,34 @@ export function siteAt(state: GameState, k: string): string | null {
 
 export function isScouted(state: GameState, k: string): boolean {
   return state.map.scouted.includes(k);
+}
+
+/** Whether the player knows what stands there: scouted, or seen from a held watchtower (§5.2). */
+export function isKnown(state: GameState, k: string): boolean {
+  return isScouted(state, k) || (state.map.seen ?? []).includes(k);
+}
+
+/** A treasure the scouts have carried home leaves nothing behind it. */
+export function isSpentTreasure(state: GameState, k: string): boolean {
+  const id = siteAt(state, k);
+  return !!id && !!site(id).treasure && isScouted(state, k);
+}
+
+/**
+ * Show every hex within `radius` of a held watchtower (§5.2): their sites are
+ * known without a scout. What a scout would have fired — an ambush, a hoard
+ * carried home — does not: the tower only looks.
+ */
+export function revealAround(state: GameState, k: string, radius: number): string[] {
+  const at = parseKey(k);
+  const shown: string[] = [];
+  for (const h of within(mapConfig.radius)) {
+    const hk = hexKey(h);
+    if (hk === k || distance(h, at) > radius || isKnown(state, hk)) continue;
+    state.map.seen.push(hk);
+    shown.push(hk);
+  }
+  return shown;
 }
 
 export function claimOf(state: GameState, k: string): ClaimedSite | undefined {
@@ -43,6 +71,11 @@ export function dispatchScout(state: GameState, k: string): void {
   if (state.map.pendingScout) throw new Error('Scouts are already out');
   if (ringOf(k) > mapConfig.radius) throw new Error('Beyond the known country');
   if (isScouted(state, k)) throw new Error('Already scouted');
+  const seenId = (state.map.seen ?? []).includes(k) ? siteAt(state, k) : null;
+  if ((state.map.seen ?? []).includes(k) && !(seenId && site(seenId).treasure)) {
+    // The tower has already said what is there; only a hoard is worth the walk.
+    throw new Error(seenId && site(seenId).hostile ? 'The tower has seen a war band there' : 'The tower has already seen it');
+  }
   const cost = scoutCost();
   for (const [res, v] of Object.entries(cost)) {
     if (state.resources[res as ResourceId] < (v ?? 0)) throw new Error(`Not enough ${res}`);
@@ -64,7 +97,7 @@ export function nearestUnknown(state: GameState): string | null {
   let bestRing = Infinity;
   for (const h of w.hexes) {
     const k = hexKey(h);
-    if (!w.sites[k] || isScouted(state, k)) continue;
+    if (!w.sites[k] || isKnown(state, k)) continue;
     const r = ring(h);
     if (r < bestRing) { best = k; bestRing = r; }
   }
@@ -101,13 +134,15 @@ export function resolveScout(state: GameState): void {
     }, `${def.name} at ${k}: the scouts are ambushed. ${sc.campCasualties} men do not come back.`, 'map');
     return;
   }
-  const claimable = playerHoldsOffice(state);
-  if (def.reward?.scrolls) {
-    state.rome.scrolls += def.reward.scrolls;
-    report(state, 'scout', { ...base, scrolls: def.reward.scrolls, claimable, population: { before: popBefore, after: state.population } },
-      `${def.name} at ${k}: the scouts bring back ${def.reward.scrolls} research scroll(s).`, 'map');
+  if (def.treasure) {
+    // A "?" can be a hoard (§5.1): paid now, and nothing is left to hold.
+    const coin = def.reward?.denarii ?? 0;
+    state.resources.denarii += coin;
+    report(state, 'scout', { ...base, denarii: coin, population: { before: popBefore, after: state.population } },
+      `${def.name} at ${k}: the scouts carry home ${coin} denarii.`, 'map');
     return;
   }
+  const claimable = playerHoldsOffice(state);
   report(state, 'scout', { ...base, claimable, population: { before: popBefore, after: state.population } }, `${def.name} at ${k}. ${def.description}`, 'map');
 }
 
@@ -125,20 +160,36 @@ export function claimCost(k: string): Cost {
 
 export function claimSite(state: GameState, k: string): void {
   requireOffice(state, 'A claim');
-  if (!isScouted(state, k)) throw new Error('Nobody has been there');
+  if (!isKnown(state, k)) throw new Error('Nobody has been there');
   if (claimOf(state, k)) throw new Error('Already held');
   const id = siteAt(state, k);
-  if (!id) throw new Error('Nothing there to claim');
+  if (!id || isSpentTreasure(state, k)) throw new Error('Nothing there to claim');
   const def = site(id);
   if (def.hostile) throw new Error('That is a war band, not a holding');
+  if (def.treasure) throw new Error('Send scouts for the hoard; there is nothing to hold');
   const cost = claimCost(k);
   for (const [res, v] of Object.entries(cost)) {
     if (state.resources[res as ResourceId] < (v ?? 0)) throw new Error(`Not enough ${res}`);
   }
   for (const [res, v] of Object.entries(cost)) state.resources[res as ResourceId] -= v ?? 0;
-  state.map.claimed.push({ key: k, siteId: id, garrison: 0, claimedRound: state.round });
+  state.map.claimed.push({ key: k, siteId: id, garrison: 0, claimedRound: state.round, tier: 1 });
   state.stats.sitesClaimed += 1;
   log(state, 'map', `The council claims ${def.name} at ${k}, ${ringOf(k)} rings out.`);
+  holdTaken(state, k, id);
+}
+
+/** What a holding does the moment it is taken: a ruin pays once, a watchtower looks out (§5.2). */
+export function holdTaken(state: GameState, k: string, id: string): void {
+  const def = site(id);
+  if (def.claimReward?.scrolls && !state.map.ruinsSpent.includes(k)) {
+    state.map.ruinsSpent.push(k);
+    state.rome.scrolls += def.claimReward.scrolls;
+    log(state, 'map', `${def.name} at ${k} is searched: ${def.claimReward.scrolls} research scrolls. It will give nothing more.`);
+  }
+  if (def.revealRadius) {
+    const shown = revealAround(state, k, def.revealRadius);
+    if (shown.length) log(state, 'map', `From ${def.name} at ${k} the country shows for ${def.revealRadius} hexes round: ${shown.filter((h) => siteAt(state, h)).length} marks among ${shown.length} hexes.`);
+  }
 }
 
 export function releaseSite(state: GameState, k: string): void {
@@ -162,8 +213,19 @@ export function setGarrison(state: GameState, k: string, n: number, available: n
   c.garrison = want;
 }
 
+/** A garrison's men, and the holding's own works at its tier (§5.3). */
 export function siteDefence(c: ClaimedSite): number {
-  return c.garrison * mapConfig.hold.garrisonStrengthPerMan;
+  return c.garrison * mapConfig.hold.garrisonStrengthPerMan + holdingTier(c.tier ?? 1).defence;
+}
+
+/** Men the troop fields add to the militia pool, not drawn from the population (§5.2). */
+export function troopFieldMen(state: GameState): number {
+  let men = 0;
+  for (const c of state.map.claimed) {
+    const per = site(c.siteId).militiaPerTier;
+    if (per) men += per[Math.max(1, Math.min(per.length, c.tier ?? 1)) - 1] ?? 0;
+  }
+  return men;
 }
 
 /** Whoever is strongest and not sworn to you is who comes for the far holdings. */
@@ -184,8 +246,10 @@ export function claimedProduction(state: GameState): Partial<Record<ResourceId, 
   const out: Partial<Record<ResourceId, number>> = {};
   for (const c of state.map.claimed) {
     const def = site(c.siteId);
+    if (def.idle) continue; // a quarry with no stone worked yields nothing (§5.2)
+    const m = holdingTier(c.tier ?? 1).yieldMultiplier;
     for (const [res, v] of Object.entries(def.produces ?? {})) {
-      out[res as ResourceId] = (out[res as ResourceId] ?? 0) + (v ?? 0);
+      out[res as ResourceId] = (out[res as ResourceId] ?? 0) + (v ?? 0) * m;
     }
   }
   return out;

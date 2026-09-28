@@ -3,6 +3,7 @@ import { accrue } from './economy';
 import { completeFinished } from './construction';
 import { completeResearch } from './research';
 import { clampToCapacity } from './storage';
+import { completeHoldingWork } from '../map/holdings';
 
 /**
  * The invisible village clock (DESIGN §3.1). Advances the economy by wall-clock
@@ -21,18 +22,20 @@ export function tick(state: GameState, now: number): void {
   }
   // Constructions that finished during the gap change production; step at each boundary.
   let t = state.lastTick;
-  const boundaries = [...state.constructions.map((c) => c.finishAt), ...(state.research?.active ?? []).map((r) => r.finishAt)]
+  const boundaries = [...state.constructions.map((c) => c.finishAt), ...(state.research?.active ?? []).map((r) => r.finishAt), ...(state.map.works ? [state.map.works.finishAt] : [])]
     .filter((f) => f > t && f <= now)
     .sort((a, b) => a - b);
   for (const b of boundaries) {
     accrue(state, b - t);
     completeFinished(state, b);
     completeResearch(state, b);
+    completeHoldingWork(state, b);
     t = b;
   }
   accrue(state, now - t);
   completeFinished(state, now);
   completeResearch(state, now);
+  completeHoldingWork(state, now);
   clampToCapacity(state);
   state.lastTick = now;
 }
