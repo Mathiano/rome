@@ -1,57 +1,77 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 3520 2200" width="3520" height="2200" font-family="sans-serif">
-<!-- Base map v2 layout guide: docs/BASEMAP-V2-SPEC.md. A wireframe of where things are, not art. Computed from data/layout.json and the projection in src/render/environment.ts on 2026-09-28; tests/basemap-spec.test.ts checks its outline, gates and sites against the layout. -->
-<defs><pattern id="hatch" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="24" stroke="#b5563a" stroke-width="6" opacity="0.35"/></pattern><clipPath id="frame"><rect width="3520" height="2200"/></clipPath></defs>
-<rect width="3520" height="2200" fill="#e9e4d4"/>
-<rect x="60" y="60" width="3400" height="2080" fill="none" stroke="#999" stroke-dasharray="12 10" stroke-width="3"/>
-<rect x="338" y="309" width="2844" height="1584" fill="none" stroke="#555" stroke-dasharray="30 12" stroke-width="3"/>
-<text x="350" y="298" font-size="34" fill="#555">the whole scene at widest zoom</text>
-<g clip-path="url(#frame)"><polygon points="6968,-820 7237,-686 -1723,3794 -1992,3660" fill="#7d94a0"/><polygon points="7046,-781 7158,-725 -1802,3755 -1914,3699" fill="#5d7682" opacity="0.6"/></g>
-<text x="2398" y="1600" font-size="44" text-anchor="middle" fill="#fff" transform="rotate(-26.57 2398 1600)">river: near bank grid x = 6, 2.4 cells wide</text>
-<polygon points="808,1140 1816,1644 1704,1700 696,1196" fill="url(#hatch)"/>
-<polygon data-tier="3" points="1816,636 2824,1140 1816,1644 808,1140" fill="#c9cf9f" stroke="#4a3b2c" stroke-width="5" stroke-dasharray=""/>
-<line data-gate="3" x1="1256" y1="1364" x2="1368" y2="1420" stroke="#b5563a" stroke-width="14"/>
-<text x="1233" y="1426" font-size="30" fill="#b5563a">gate 3</text>
-<text x="1826" y="626" font-size="30" fill="#4a3b2c">wall tier 3: 9×9</text>
-<polygon data-tier="2" points="1816,748 2712,1196 1816,1644 920,1196" fill="none" stroke="#4a3b2c" stroke-width="3" stroke-dasharray="16 10"/>
-<line data-gate="2" x1="1368" y1="1420" x2="1480" y2="1476" stroke="#b5563a" stroke-width="14"/>
-<text x="1345" y="1482" font-size="30" fill="#b5563a">gate 2</text>
-<text x="1826" y="738" font-size="30" fill="#4a3b2c">wall tier 2: 8×8</text>
-<polygon data-tier="1" points="1928,804 2712,1196 1928,1588 1144,1196" fill="none" stroke="#4a3b2c" stroke-width="3" stroke-dasharray="16 10"/>
-<line data-gate="1" x1="1480" y1="1364" x2="1592" y2="1420" stroke="#b5563a" stroke-width="14"/>
-<text x="1457" y="1426" font-size="30" fill="#b5563a">gate 1</text>
-<text x="1938" y="794" font-size="30" fill="#4a3b2c">wall tier 1: 7×7</text>
-<polygon data-tier="0" points="1928,916 2600,1252 1928,1588 1256,1252" fill="#cfa278" stroke="#4a3b2c" stroke-width="5" stroke-dasharray=""/>
-<line data-gate="0" x1="1592" y1="1420" x2="1704" y2="1476" stroke="#b5563a" stroke-width="14"/>
-<text x="1569" y="1482" font-size="30" fill="#b5563a">gate 0</text>
-<text x="1938" y="906" font-size="30" fill="#4a3b2c">wall tier 0: 6×6</text>
-<polygon data-bank="3" points="2824,1140 2936,1196 1928,1700 1816,1644" fill="#d7b791" stroke="#4a3b2c" stroke-width="3"/>
-<text x="2352" y="1392" font-size="30" fill="#4a3b2c" transform="rotate(-26.57 2432 1392)">riverbank (harbour)</text>
-<text x="1646" y="1196" font-size="34" fill="#4a3b2c">flat packed earth (always floored)</text>
-<text x="1424" y="944" font-size="30" text-anchor="middle" fill="#4a3b2c">cleared ground, low contrast</text>
-<polygon points="1256,580 1368,636 1256,692 1144,636" fill="url(#hatch)"/>
-<polygon data-site="o1" points="1368,524 1480,580 1368,636 1256,580" fill="#fff" stroke="#2a2118" stroke-width="4"/>
-<text x="1368" y="590" font-size="30" text-anchor="middle" fill="#2a2118">o1 forest</text>
-<polygon points="920,748 1032,804 920,860 808,804" fill="url(#hatch)"/>
-<polygon data-site="o2" points="1032,692 1144,748 1032,804 920,748" fill="#fff" stroke="#2a2118" stroke-width="4"/>
-<text x="1032" y="758" font-size="30" text-anchor="middle" fill="#2a2118">o2 forest</text>
-<polygon points="2824,916 2936,972 2824,1028 2712,972" fill="url(#hatch)"/>
-<polygon data-site="o3" points="2936,860 3048,916 2936,972 2824,916" fill="#fff" stroke="#2a2118" stroke-width="4"/>
-<text x="2936" y="926" font-size="30" text-anchor="middle" fill="#2a2118">o3 clay_bank</text>
-<polygon points="2600,804 2712,860 2600,916 2488,860" fill="url(#hatch)"/>
-<polygon data-site="o4" points="2712,748 2824,804 2712,860 2600,804" fill="#fff" stroke="#2a2118" stroke-width="4"/>
-<text x="2712" y="814" font-size="30" text-anchor="middle" fill="#2a2118">o4 clay_bank</text>
-<polygon points="2264,636 2376,692 2264,748 2152,692" fill="url(#hatch)"/>
-<polygon data-site="o5" points="2376,580 2488,636 2376,692 2264,636" fill="#fff" stroke="#2a2118" stroke-width="4"/>
-<text x="2376" y="646" font-size="30" text-anchor="middle" fill="#2a2118">o5 iron_seam</text>
-<polygon points="1368,1756 1480,1812 1368,1868 1256,1812" fill="url(#hatch)"/>
-<polygon data-site="o6" points="1480,1700 1592,1756 1480,1812 1368,1756" fill="#fff" stroke="#2a2118" stroke-width="4"/>
-<text x="1480" y="1766" font-size="30" text-anchor="middle" fill="#2a2118">o6 farmland</text>
-<polygon points="696,1420 808,1476 696,1532 584,1476" fill="url(#hatch)"/>
-<polygon data-site="o7" points="808,1364 920,1420 808,1476 696,1420" fill="#fff" stroke="#2a2118" stroke-width="4"/>
-<text x="808" y="1430" font-size="30" text-anchor="middle" fill="#2a2118">o7 farmland</text>
-<polygon points="360,1252 472,1308 360,1364 248,1308" fill="url(#hatch)"/>
-<polygon data-site="o8" points="472,1196 584,1252 472,1308 360,1252" fill="#fff" stroke="#2a2118" stroke-width="4"/>
-<text x="472" y="1262" font-size="30" text-anchor="middle" fill="#2a2118">o8 farmland</text>
-<circle cx="1816" cy="1084" r="8" fill="#2a2118"/><text x="1830" y="1074" font-size="26" fill="#2a2118">grid (0,0)</text>
-<g font-size="32" fill="#2a2118"><rect x="90" y="1900" width="1000" height="210" fill="#fff" opacity="0.85"/><text x="110" y="1945">white diamond: a site's ground plate (224 × 112 px)</text><text x="110" y="1990">red hatch: nothing tall painted here (drawn in front)</text><text x="110" y="2035">red bar: the gate at that wall tier (drawn, not painted)</text><text x="110" y="2080">outer dashes: keep ~60 px of plain country at the edge</text></g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 4224 2640" width="4224" height="2640" font-family="sans-serif">
+<!-- Base map v2 layout guide: docs/BASEMAP-V2-SPEC.md. A wireframe of where things are, not art. Written by tools/basemap (npm run basemap:spec) from data/layout.json and the village projection. -->
+<defs><pattern id="hatch" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="24" stroke="#b5563a" stroke-width="6" opacity="0.35"/></pattern><clipPath id="frame"><rect width="4224" height="2640"/></clipPath></defs>
+<rect width="4224" height="2640" fill="#e9e4d4"/>
+<rect x="60" y="60" width="4104" height="2520" fill="none" stroke="#999" stroke-dasharray="12 10" stroke-width="3"/>
+<rect data-scene="1" x="690" y="361" width="2844" height="1920" fill="none" stroke="#555" stroke-dasharray="30 12" stroke-width="3"/>
+<text x="702" y="2325" font-size="34" fill="#555">the whole scene at widest zoom</text>
+<polygon data-biome="wood" points="1048,968 2056,464 2392,632 1384,1136" fill="#6e7d48" opacity="0.35" stroke="#6e7d48" stroke-width="4"/>
+<polygon data-biome="clay" points="2392,856 2728,688 3624,1136 3288,1304" fill="#a8553a" opacity="0.35" stroke="#a8553a" stroke-width="4"/>
+<polygon data-biome="iron" points="1272,1976 1608,1808 1944,1864 2280,2032 1720,2312 1384,2144" fill="#8a8580" opacity="0.35" stroke="#8a8580" stroke-width="4"/>
+<polygon data-biome="grain" points="488,1472 824,1304 1608,1696 1272,1864" fill="#d9b969" opacity="0.35" stroke="#d9b969" stroke-width="4"/>
+<g clip-path="url(#frame)"><polygon points="9560,-1720 9829,-1586 -3611,5134 -3880,5000" fill="#7d94a0"/><polygon points="9638,-1681 9750,-1625 -3690,5095 -3802,5039" fill="#5d7682" opacity="0.6"/></g>
+<text x="2862" y="1763" font-size="44" fill="#fff" text-anchor="middle" transform="rotate(-26.57 2862 1763)">river: near bank grid x = 6, 2.4 cells wide</text>
+<polygon data-clearing="outer" points="2168,688 3456,1332 2112,2004 824,1360" fill="#dcc9a4" stroke="#8f6f4f" stroke-width="3" stroke-dasharray="18 10"/>
+<polygon data-clearing="inner" points="2168,800 3344,1388 2224,1948 1048,1360" fill="#cfa278" stroke="#8f6f4f" stroke-width="3" stroke-dasharray="18 10"/>
+<text x="2756" y="1048" font-size="32" fill="#4a3b2c" text-anchor="middle" transform="rotate(26.57 2756 1038)">the clearing’s organic edge lies in this band</text>
+<polygon points="1160,1360 2168,1864 2056,1920 1048,1416" fill="url(#hatch)"/>
+<polygon data-tier="3" points="2168,856 3176,1360 2168,1864 1160,1360" fill="none" stroke="#4a3b2c" stroke-width="5" stroke-dasharray="4 10"/>
+<line data-gate="3" x1="1608" y1="1584" x2="1720" y2="1640" stroke="#b5563a" stroke-width="12"/>
+<text x="2168" y="890" font-size="26" fill="#4a3b2c" text-anchor="middle">wall 3: 9×9</text>
+<polygon data-tier="2" points="2168,968 3064,1416 2168,1864 1272,1416" fill="none" stroke="#4a3b2c" stroke-width="2" stroke-dasharray="14 10"/>
+<line data-gate="2" x1="1720" y1="1640" x2="1832" y2="1696" stroke="#b5563a" stroke-width="12"/>
+<text x="2168" y="1002" font-size="26" fill="#4a3b2c" text-anchor="middle">wall 2: 8×8</text>
+<polygon data-tier="1" points="2280,1024 3064,1416 2280,1808 1496,1416" fill="none" stroke="#4a3b2c" stroke-width="2" stroke-dasharray="14 10"/>
+<line data-gate="1" x1="1832" y1="1584" x2="1944" y2="1640" stroke="#b5563a" stroke-width="12"/>
+<text x="2280" y="1058" font-size="26" fill="#4a3b2c" text-anchor="middle">wall 1: 7×7</text>
+<polygon data-tier="0" points="2280,1136 2952,1472 2280,1808 1608,1472" fill="none" stroke="#4a3b2c" stroke-width="2" stroke-dasharray="14 10"/>
+<line data-gate="0" x1="1944" y1="1640" x2="2056" y2="1696" stroke="#b5563a" stroke-width="12"/>
+<text x="2280" y="1170" font-size="26" fill="#4a3b2c" text-anchor="middle">wall 0: 6×6</text>
+<polygon data-bank="3" points="3176,1360 3288,1416 2280,1920 2168,1864" fill="#d7b791" stroke="#4a3b2c" stroke-width="3"/>
+<text x="2728" y="1650" font-size="28" fill="#4a3b2c" text-anchor="middle" transform="rotate(-26.57 2728 1640)">riverbank (harbour)</text>
+<polygon data-seat="praetorium" points="2168,1304 2392,1416 2168,1528 1944,1416" fill="url(#hatch)" stroke="#b5563a" stroke-width="4"/>
+<text x="2168" y="1426" font-size="28" fill="#7a2e1c" text-anchor="middle">praetorium: drawn — paint only ground</text>
+<polygon points="1608,800 1720,856 1608,912 1496,856" fill="url(#hatch)"/>
+<polygon data-slot="wood1" points="1720,744 1832,800 1720,856 1608,800" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="1720" y="811" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">wood1</text>
+<polygon points="1272,968 1384,1024 1272,1080 1160,1024" fill="url(#hatch)"/>
+<polygon data-slot="wood2" points="1384,912 1496,968 1384,1024 1272,968" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="1384" y="979" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">wood2</text>
+<polygon points="1944,632 2056,688 1944,744 1832,688" fill="url(#hatch)"/>
+<polygon data-slot="wood3" points="2056,576 2168,632 2056,688 1944,632" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="2056" y="643" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">wood3</text>
+<text x="1720" y="546" font-size="34" fill="#2a2118" text-anchor="middle">wood: forest, with stumps and log piles</text>
+<polygon points="3176,1136 3288,1192 3176,1248 3064,1192" fill="url(#hatch)"/>
+<polygon data-slot="clay1" points="3288,1080 3400,1136 3288,1192 3176,1136" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="3288" y="1147" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">clay1</text>
+<polygon points="2952,1024 3064,1080 2952,1136 2840,1080" fill="url(#hatch)"/>
+<polygon data-slot="clay2" points="3064,968 3176,1024 3064,1080 2952,1024" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="3064" y="1035" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">clay2</text>
+<polygon points="2616,856 2728,912 2616,968 2504,912" fill="url(#hatch)"/>
+<polygon data-slot="clay3" points="2728,800 2840,856 2728,912 2616,856" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="2728" y="867" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">clay3</text>
+<text x="3027" y="770" font-size="34" fill="#2a2118" text-anchor="middle">clay: a red clay excavation</text>
+<polygon points="1832,2032 1944,2088 1832,2144 1720,2088" fill="url(#hatch)"/>
+<polygon data-slot="iron1" points="1944,1976 2056,2032 1944,2088 1832,2032" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="1944" y="2043" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">iron1</text>
+<polygon points="1496,1976 1608,2032 1496,2088 1384,2032" fill="url(#hatch)"/>
+<polygon data-slot="iron2" points="1608,1920 1720,1976 1608,2032 1496,1976" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="1608" y="1987" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">iron2</text>
+<polygon points="1608,2144 1720,2200 1608,2256 1496,2200" fill="url(#hatch)"/>
+<polygon data-slot="iron3" points="1720,2088 1832,2144 1720,2200 1608,2144" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="1720" y="2155" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">iron3</text>
+<text x="1757" y="1890" font-size="34" fill="#2a2118" text-anchor="middle">iron: rocky cliffs above the river</text>
+<polygon points="936,1584 1048,1640 936,1696 824,1640" fill="url(#hatch)"/>
+<polygon data-slot="grain1" points="1048,1528 1160,1584 1048,1640 936,1584" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="1048" y="1595" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">grain1</text>
+<polygon points="1160,1696 1272,1752 1160,1808 1048,1752" fill="url(#hatch)"/>
+<polygon data-slot="grain2" points="1272,1640 1384,1696 1272,1752 1160,1696" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="1272" y="1707" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">grain2</text>
+<polygon points="712,1472 824,1528 712,1584 600,1528" fill="url(#hatch)"/>
+<polygon data-slot="grain3" points="824,1416 936,1472 824,1528 712,1472" fill="#fff" stroke="#2a2118" stroke-width="4"/>
+<text x="824" y="1483" font-size="32" fill="#2a2118" text-anchor="middle" font-weight="bold">grain3</text>
+<text x="1048" y="1386" font-size="34" fill="#2a2118" text-anchor="middle">grain: open field strips</text>
+<circle cx="2168" cy="1304" r="8" fill="#2a2118"/>
+<text x="2182" y="1294" font-size="24" fill="#2a2118">grid (0,0)</text>
+<g font-size="30" fill="#2a2118"><rect x="90" y="90" width="1130" height="282" fill="#fff" opacity="0.88"/><text x="110" y="135">white diamond: a slot’s ground plate (224 × 112 px), flat ground</text><text x="110" y="177">red hatch: nothing tall painted here (drawn in front of it)</text><text x="110" y="219">dotted: the tier-III wall line — at most a low bank or scattered stones</text><text x="110" y="261">dashed: the wall at lower tiers, drawn only; red bar: its gate</text><text x="110" y="303">no buildings, no central building, no fence ring, anywhere</text><text x="110" y="345">outer dashes: keep ~60 px of plain country at the edge</text></g>
 </svg>

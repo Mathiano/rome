@@ -104,6 +104,8 @@ Anno-lite: some processing chains, none longer than two steps, and many raw reso
 
 **Planned content drops** (each brings its buildings): stone, marble, salt; processed — bricks, tools, pottery, ❓ wine, ❓ bread/food as a grain refinement. Final list is open; the mechanism (a resource arrives with its producer building and its consumers) is decided.
 
+**Basic and strategic ✅** *(Mathias, 2026-09-28).* The four **basic** resources — wood, clay, iron, grain — are worked at home, in the four biomes outside the wall (§4.5 C.2), three slots each; more of any of them comes from holdings on the map (§5.2). The **strategic** resources — stone, marble and salt — are **map-only**: no biome at home yields them, and they come only from holdings (§5.2's quarry and salt spring, idle until their drops land).
+
 ### 4.2 Storage — Travian model ✅
 
 | Store | Holds | Notes |
@@ -124,12 +126,12 @@ One number. Needs housing and grain upkeep. Grows with buildings. More populatio
 - Three visible tiers each. Tier 3 animates (§10).
 - Construction is timed. Finishing early costs denarii per Pillar 3.
 - **Concurrency:** one building and one resource field may be under construction at the same time — Travian's actual Roman-faction rule ✅. No build queue beyond that. (A holding may also be under construction, §5.3.)
-- Resource buildings sit on their site: the clay works on the clay bank, the mine on the iron seam (§4.5 C.2).
+- Resource buildings sit on their site: the clay works on the clay bank, the mine on the iron seam — each site one of its biome's slots (§4.5 C.2).
 - **The wall is a building of its own, not the castellum.** ✅ 2026-09-22, decided by Mathias. They are two things. The castellum garrisons the colony — militia pool, bodyguards — and its tier drives only its own sprite. The **Wall** is the circuit, raised separately; it counts as a building for the concurrency rule above, so the colony chooses between raising its walls and raising anything else. Its tier is the *walls* term of §8.2 defence strength and, since 2026-09-27, also the size of the enclosure (§4.5 C.1). The circuit at each tier: **none** is the ditch and bank a colonia throws up on arrival; **I** a timber palisade on that bank; **II** coursed stone with towers; **III** the full crenellated circuit, which flies the colony's standard over the gate as its §10 tier-3 animation.
 
 #### The seat ✅ *(confirmed by Mathias in session, 2026-09-27)*
 
-- **Praetorium** — the governor's residence and the seat of the player's family. Its tier is the colony's tier. It is the centre of the town. Footprint 2×2. Unique.
+- **Praetorium** — the governor's residence and the seat of the player's family. Its tier is the colony's tier. It is the centre of the town. Footprint 2×2. Unique. ✅ *2026-09-28, Mathias:* **pre-placed** at the centre of the town grid — the centre of the tier-III 9×9 enclosure, as near as a 2×2 can stand (anchor cell 0,0, half a cell off) — and it anchors every layout. The player never places or moves it (`placement: "fixed"`).
 - **Forum** — the civic and market building: basilica, curia and market stalls. Trade with tribes and Rome happens here; the council convenes here. Footprint 2×2. Unique. **The separate Market building is removed**; its role folds into the Forum.
 
 The building count stays at fourteen.
@@ -144,7 +146,7 @@ Buildings are no longer one-each.
 |---|---|
 | Praetorium, Forum, Castellum, Wall, Temple, Library, Waystation | Insulae, Warehouse, Granary, Cellars, Barracks, Farm, Lumber camp, Clay works, Iron mine |
 
-Repeatables are where the colony's shape is decided: more farms is a trade colony, more barracks-adjacent buildings is a military one, more libraries later a learned one. Costs may rise per copy 🟡 (`_tuning`). Resource buildings still require their site (§4.5).
+Repeatables are where the colony's shape is decided: more farms is a trade colony, more barracks-adjacent buildings is a military one, more libraries later a learned one. Costs may rise per copy 🟡 (`_tuning`). ✅ *2026-09-28, Mathias:* **Farm, Lumber camp, Clay works and Iron mine are repeatable only within their biome's slots** (§4.5 C.2) — three each (`_tuning`). More of a basic resource beyond those comes from holdings on the map (§5.2).
 
 *Built 2026-09-28:* each further copy of a repeatable building costs (1 + `repeatables.costGrowthPerCopy`)ⁿ of the first, on every tier, n its copy number from 0 — fixed when it is first built, so a later copy never re-prices an earlier one. 🟡 **0.25**, Claude's first pass: the fourth warehouse costs about twice the first. Unique buildings never scale. The Place row says how much dearer the next one is.
 
@@ -195,6 +197,7 @@ Every building has a footprint in grid cells. 🟡 starting values: Praetorium, 
 
 1. **Inside the wall:** buildings on the grid.
 2. **Immediately outside the wall:** resource sites on the terrain — fields, clay bank, iron seam, forest — each with its resource building on it. These are placed by the map, not the player, and are the first things a raid reaches.
+   ✅ *Resource biomes, Mathias 2026-09-28.* The sites stand in **four biomes**, each with **three fixed slots** (`_tuning`, `data/layout.json` `biomes`): **wood** to the north and north-west, **clay** to the north-east, **iron** in the cliffs by the river, **grain** to the south-west. A slot takes its biome's resource building and no other, so the Farm, Lumber camp, Clay works and Iron mine are repeatable only within their biome (§4.4). More of a basic resource comes from holdings on the map (§5.2); strategic resources are map-only (§4.1). *Built 2026-09-28:* the river runs along the town's south-east edge, so on our bank the south-east is the riverbank strip; the iron cliffs stand where the river passes the town's south end, and the grain lies further west (Mathias chose this over the far bank). The compass is the screen's: up is north.
 3. **The hex map beyond:** holdings (§5).
 
 #### C.3 Adjacency ❓
@@ -207,9 +210,11 @@ Free placement exists so that placement can matter. Adjacency effects — a gran
 
 The town view zooms, to roughly 3× its current extent at most. The wall and grid are drawn in code; buildings are painted sprites (§10).
 
+✅ *2026-09-28, Mathias:* **the grid is hidden except in build mode.** At rest the town is buildings on the ground; while a building is being placed, the cell lines show and every cell where it fits is marked.
+
 *Built 2026-09-27:* the view opens on the whole country — the largest enclosure, its bank and the river, and every site — and the wheel zooms in about the pointer as far as the old frame (660 units across). The wall runs on the grid lines, one piece per cell of edge. Each piece sorts by depth with the buildings, so the far edges stand behind the town and the near edges and the gate in front of it, lit from the top left like the sprites. A 2×2 building's sprite is scaled to its footprint.
 
-⚠ *Flagged 2026-09-27:* repeatable resource buildings "still require their site" (§4.4), but the sites outside the wall are placed by the map (C.2), so the number of farms, camps and mines is bounded by how many sites the map gives — not by plots. *Code, 2026-09-27:* C.1, C.2 and C.4 are built (above); C.3 is not. The painted country (`base-map-v1.jpg`) was made for the round wall and is laid under the grid until it is regenerated (§10), and the river beside the bank is drawn in code.
+⚠ *Flagged 2026-09-27:* repeatable resource buildings "still require their site" (§4.4), but the sites outside the wall are placed by the map (C.2), so the number of farms, camps and mines is bounded by how many sites the map gives — not by plots. *Resolved 2026-09-28 (Mathias):* that bound is the design — three slots a biome (C.2), and more from holdings. *Code, 2026-09-27:* C.1, C.2 and C.4 are built (above); C.3 is not. The painted country (`base-map-v1.jpg`) was made for the round wall and is laid under the grid until it is regenerated (§10), and the river beside the bank is drawn in code.
 
 ### 4.6 Research ✅ (system) / ❓ (contents)
 
@@ -431,7 +436,7 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 - **Anchor:** `assets/style/anchor-v2.jpg` (the stylised praetorium). Every building sprite is an edit of it. `anchor-v1.jpg` and every sprite derived from it are retired.
 - **Content stays Roman.** Eagles, red-and-gold vexilla, oil-lamp and brazier flame, Latin inscriptions. Nothing from any game's heraldry, palette or magic. Nothing lifted from Warcraft, Rome II, Travian, Anno or any other game.
 - **Palette:** re-sampled from anchor-v2; the design-system tokens are re-derived from it.
-- **Base map:** regenerated in the new style, after the grid and zones exist, so it is painted to the layout rather than the layout fitted to it. *Geometry specified 2026-09-28 in `docs/BASEMAP-V2-SPEC.md`; not yet generated.*
+- **Base map:** regenerated in the new style, after the grid and zones exist, so it is painted to the layout rather than the layout fitted to it. *Geometry specified 2026-09-28 in `docs/BASEMAP-V2-SPEC.md`, regenerated the same day for the biomes (`npm run basemap:spec`); not yet generated.* ✅ *Mathias, 2026-09-28:* the painted clearing has an organic, irregular edge while the grid under it stays square and holds the tier-III 9×9 with margin; the wall is at most hinted in the terrain, never painted as a structure; each biome is painted as terrain with room for its three slots; nothing built is painted anywhere.
 - **Sprites, plates, anchors, tier-3 animation and the pipeline:** unchanged from the previous §10, kept below.
   - **Sprites:** raster PNG with alpha, processed by `tools/artgen/` (key the white background, trim, find the ground plate, anchor, scale, manifest); prompts in `assets/style/PROMPTS.md`. Each sprite is one structure standing on its ground plate, the base diamond; the anchor is the plate centre, the midpoint of the plate's left and right corners. isobuild is retired for buildings. SVG remains for the world map, the UI and animated overlays. ✅ 2026-09-16.
   - **Animation:** tier 3 only. A small reusable set (smoke, a moving crane, a water wheel, a swinging sign) drawn as SVG overlays on top of the PNG sprite, via CSS keyframes and the Web Animations API, positioned from the same anchor. ✅ 2026-09-16.
@@ -477,7 +482,7 @@ Roman pantheon, as a colonia in year 0 would have it. Each god maps to a domain:
 
 ## 14. Banked ✅ (defer, don't drop)
 
-Processed goods beyond the first drop · citizen tiers · mobile layout · Latin building names with English tooltips (the forum is always the forum) · offensive combat · Rome ordering attacks on tribes · character traits (Rome II style) · a fifth family emerging · a Teutoburg-scale late-game event · weather · named events for real Germanic leaders · counsel beyond the opening, a standing "what matters now" card (2026-09-24, "not for now") · milestones, the colony's firsts as a reward-free record (2026-09-24) · two great factions in a cold war, later — the Alliance/Horde idea, to be designed fresh under its own name when the time comes (2026-09-27) · in-town roads (2026-09-27) · adjacency rules, ❓ see §4.5 C.3 (2026-09-27) · festivals as a council action 🟡 (2026-09-27, Pillar 9) · the **Blacksmith**, the **Iron works** and the **Stables** (2026-09-27, Mathias): their tier-1 stills are in `assets/src/` and stay unplaced until they have a place in the economy.
+Processed goods beyond the first drop · citizen tiers · mobile layout · Latin building names with English tooltips (the forum is always the forum) · offensive combat · Rome ordering attacks on tribes · character traits (Rome II style) · a fifth family emerging · a Teutoburg-scale late-game event · weather · named events for real Germanic leaders · counsel beyond the opening, a standing "what matters now" card (2026-09-24, "not for now") · milestones, the colony's firsts as a reward-free record (2026-09-24) · two great factions in a cold war, later — the Alliance/Horde idea, to be designed fresh under its own name when the time comes (2026-09-27) · in-town roads (2026-09-27) · adjacency rules, ❓ see §4.5 C.3 (2026-09-27) · festivals as a council action 🟡 (2026-09-27, Pillar 9) · the **Blacksmith**, the **Iron works** and the **Stables** (2026-09-27, Mathias): their tier-1 stills are in `assets/src/` and stay unplaced until they have a place in the economy. · a **base map that changes as the town grows** (2026-09-28, Mathias).
 
 ---
 
@@ -530,3 +535,4 @@ v0.3.7 — 2026-09-28 — overnight item 2. §5.5 built: tribes take unclaimed s
 v0.3.8 — 2026-09-28 — overnight item 3. §5.4 built: roads laid hex by hex outward from the colonia, one segment at a time in a road lane of its own (🟡), for denarii and wood; a holding joined by an unbroken road is harder to raid, yields more, and eases trade; envoy speed waits (❓). Save format 6.
 v0.3.9 — 2026-09-28 — overnight item 4. §10: the geometry for base map v2, painted to the town grid, is `docs/BASEMAP-V2-SPEC.md` — a 3520 × 2200 frame, the enclosure and gate at each wall tier, the riverbank, the river band and the eight site plates in pixels, with a wireframe guide. ✅ (Mathias, 2026-09-28) The river is painted in that band and the drawn one is removed when v2 lands. Doc only; nothing generated.
 v0.3.10 — 2026-09-28 — review of the overnight stack, Mathias. §5.2 and §5.4: "envoys resolve faster" is removed — envoys already arrive in one round; the ford's effect is a trade bonus at the forum. Confirmed as proposed: roads have a build lane of their own; the shrine's gravitas goes to the player's house until a temple post exists; the river is painted in the base map and the code-drawn river is removed when it lands. The base-map guide's generator is `tools/basemap/`.
+v0.3.11 — 2026-09-28 — Mathias. §4.5 C.2: four **resource biomes** outside the wall, three slots each (`_tuning`) — wood north and north-west, clay north-east, iron in the cliffs by the river at the town's south end, grain south-west; §4.4: the Farm, Lumber camp, Clay works and Iron mine are repeatable only within their biome's slots; §4.1: stone, marble and salt are map-only. §4.4: the **praetorium is fixed** at the centre of the tier-III grid and never placed or moved by the player. §4.5 C.4: the **grid is hidden** except in build mode. §10: the base-map spec and its guide are regenerated by `tools/basemap/` for the biomes, the fixed seat and an organic clearing that holds the tier-III enclosure with margin, the wall at most hinted, nothing built painted anywhere. §14: a base map that changes as the town grows. Save format 7.

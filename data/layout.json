@@ -13,14 +13,14 @@
   },
   "biomes": {
     "_comment": "DESIGN §4.5 C.2 ✅ (Mathias, 2026-09-28): four resource biomes outside the wall, each with fixed slots for its own resource building and no other — wood to the north and north-west, clay to the north-east, iron in the cliffs by the river at the town's south end, grain to the south-west. Farm, Lumber camp, Clay works and Iron mine are repeatable only within their biome's slots; more of a basic resource comes from holdings on the map (§5.2). Compass is the screen: up is north, and the river runs along the town's south-east edge, so the iron is downstream at the south end (Mathias, 2026-09-28).",
-    "_tuning": "Three slots a biome, and the cells they stand on, are Claude's first pass (2026-09-28). A biome's slot count is the length of its list: add or remove a cell to change it. Cells must stay outside the largest enclosure with a cell of margin, off the riverbank and out of the river; tests/biomes.test.ts checks that and each biome's compass sector.",
+    "_tuning": "Three slots a biome, and the cells they stand on, are Claude's first pass (2026-09-28). A biome's slot count is the length of its list: add or remove a cell to change it. Cells must stay outside the largest enclosure and clear of the painted clearing's edge (1.5 cells beyond the tier-III wall, docs/BASEMAP-V2-SPEC.md), off the riverbank and out of the river; tests/biomes.test.ts checks that and each biome's compass sector.",
     "wood": {
       "site": "forest",
       "where": "north and north-west",
       "slots": [
         { "id": "wood1", "x": -7, "y": -3 },
         { "id": "wood2", "x": -7, "y": 0 },
-        { "id": "wood3", "x": -6, "y": -6 }
+        { "id": "wood3", "x": -7, "y": -6 }
       ]
     },
     "clay": {
@@ -36,9 +36,9 @@
       "site": "iron_seam",
       "where": "the cliffs by the river, at the town’s south end",
       "slots": [
-        { "id": "iron1", "x": 5, "y": 6 },
-        { "id": "iron2", "x": 3, "y": 7 },
-        { "id": "iron3", "x": 5, "y": 8 }
+        { "id": "iron1", "x": 5, "y": 7 },
+        { "id": "iron2", "x": 3, "y": 8 },
+        { "id": "iron3", "x": 5, "y": 9 }
       ]
     },
     "grain": {

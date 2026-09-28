@@ -49,7 +49,7 @@ function plate(w: number, h: number): string {
  * Everything the view can show, in grid units: the largest enclosure, its
  * riverbank and the river past it, and every site outside the wall.
  */
-function sceneBounds(): { x: number; y: number; w: number; h: number } {
+export function sceneBounds(): { x: number; y: number; w: number; h: number } {
   const big = enclosureOfSize(Math.max(...layout.grid.sizeByWallTier));
   const pts: [number, number][] = [
     [big.x0, big.y0], [big.x1 + 1 + layout.grid.riverbankDepth + 1, big.y0], [big.x0, big.y1 + 1], [big.x1 + 1 + layout.grid.riverbankDepth + 1, big.y1 + 1],

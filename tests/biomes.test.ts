@@ -1,9 +1,11 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { biomes, buildings, layout } from '../src/data';
 import { createInitialState } from '../src/state/store';
 import { checkBuild, eligibleBuildings } from '../src/village/construction';
 import { enclosureOfSize, inRect } from '../src/village/grid';
 import { project } from '../src/render/environment';
+import { clearing } from '../tools/basemap/geometry';
 
 const big = enclosureOfSize(Math.max(...layout.grid.sizeByWallTier));
 const riverX = big.x1 + 1 + layout.grid.riverbankDepth;
@@ -49,6 +51,14 @@ describe('resource biomes (DESIGN §4.5 C.2, ✅ Mathias 2026-09-28)', () => {
       expect(inRect(margin, s.x, s.y), s.id).toBe(false);
       expect(s.x, `${s.id} in the river`).toBeLessThan(riverX);
       for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) expect(cells.has(`${s.x + dx},${s.y + dy}`), `${s.id} has a neighbour`).toBe(false);
+    }
+  });
+
+  it('stand clear of the painted clearing\'s edge band, so every plate is in its biome\'s own ground', () => {
+    const { outer } = clearing();
+    for (const s of layout.sites) {
+      const overlaps = s.x + 1 > outer.x0 && s.x < outer.x1 && s.y + 1 > outer.y0 && s.y < outer.y1;
+      expect(overlaps, s.id).toBe(false);
     }
   });
 
