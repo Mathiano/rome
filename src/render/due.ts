@@ -13,6 +13,7 @@
  * was closed, as amounts (village/away.ts), never as a duration.
  */
 import { building, config, envoys, posts as postDefs, researchNode, tribeDef, type ResourceId } from '../data';
+import { site } from '../map/world';
 import type { GameState, Resources } from '../state/types';
 import { mayReturn } from '../politics/secession';
 import { defenceStrength, raidStrength } from '../combat/raids';
@@ -152,6 +153,7 @@ export function awayLines(r: AwayReport): string[] {
   for (const id of r.learned) lines.push(`${researchNode(id).name} is known.`);
   if (r.citizens > 0) lines.push(`${plural(r.citizens, 'more citizen')}.`);
   if (r.citizens < 0) lines.push(`${plural(-r.citizens, 'fewer citizen')}.`);
+  for (const t of r.taken ?? []) lines.push(`${tribeDef(t.tribeId).name} took the ${site(t.siteId).name.toLowerCase()} at ${t.key} before the council could.`);
   return lines;
 }
 

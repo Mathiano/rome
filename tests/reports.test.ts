@@ -193,7 +193,8 @@ describe('the site raid report', () => {
     const was = mapConfig.hold.raidChanceBase;
     mapConfig.hold.raidChanceBase = 1;
     try {
-      for (let i = 0; i < 6 && !s.reports.some((r) => r.kind === 'site_raid'); i++) mapTurn(s);
+      // a move is declared in one round and decided in the next (§5.5): the round advances between
+      for (let i = 0; i < 6 && !s.reports.some((r) => r.kind === 'site_raid'); i++) { s.round += 1; mapTurn(s); }
     } finally { mapConfig.hold.raidChanceBase = was; }
     const r = s.reports.find((x) => x.kind === 'site_raid') as Extract<Report, { kind: 'site_raid' }>;
     expect(r).toBeDefined();

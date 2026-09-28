@@ -351,6 +351,22 @@ export interface MapState {
   /** A ruin pays once, when it is first held (§5.2); these have paid. */
   ruinsSpent: string[];
   works: HoldingWork | null;
+  /** Unclaimed sites a tribe has taken (§5.5): an opportunity missed, never a holding lost. */
+  tribeHeld: TribeHeldSite[];
+  /** Moves declared against the player's holdings, decided in a later round the player convenes (§5.5). */
+  threats: HoldingThreat[];
+}
+
+export interface TribeHeldSite { key: string; siteId: string; tribeId: string; at: number }
+
+export interface HoldingThreat {
+  key: string;
+  tribeId: string;
+  declaredRound: number;
+  /** The first round in which it may be decided. */
+  resolveRound: number;
+  /** Stated when declared, so the player sees the threat before committing (VISION, legible). */
+  attack: number;
 }
 
 /** A forced vote on the top office (DESIGN §9.5). */

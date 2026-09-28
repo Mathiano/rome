@@ -7,6 +7,7 @@ import type { GameState } from '../state/types';
 import { centre, corners, key, within } from '../map/grid';
 import { claimOf, isKnown, isScouted, isSpentTreasure, siteAt } from '../map/sites';
 import { generate, mapConfig } from '../map/world';
+import { threatAgainst, tribeHolds } from '../map/contest';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -139,7 +140,9 @@ export function createMapView(onSelect: (hex: string) => void): MapView {
       const id = spent ? null : siteAt(state, k);
       const held = claimOf(state, k);
       const home = k === '0,0';
-      const stamp = [terrain, known ? 's' : '', isScouted(state, k) ? 'x' : '', id ?? '', held ? `h${held.garrison}t${held.tier}` : '', state.map.works?.key === k ? 'w' : '', selected === k ? 'x' : '', state.map.pendingScout === k ? 'p' : ''].join('|');
+      const theirs = tribeHolds(state, k);
+      const threat = threatAgainst(state, k);
+      const stamp = [terrain, theirs ? `t${theirs.tribeId}` : '', threat ? `!${threat.resolveRound}` : '', known ? 's' : '', isScouted(state, k) ? 'x' : '', id ?? '', held ? `h${held.garrison}t${held.tier}` : '', state.map.works?.key === k ? 'w' : '', selected === k ? 'x' : '', state.map.pendingScout === k ? 'p' : ''].join('|');
       if (stamp === cell.state) continue;
       cell.state = stamp;
       cell.poly.setAttribute('class', `ground t-${terrain}${selected === k ? ' selected' : ''}${held ? ' held' : ''}`);
@@ -160,6 +163,18 @@ export function createMapView(onSelect: (hex: string) => void): MapView {
         cell.marks.appendChild(t);
       } else if (id) {
         if (held) cell.marks.appendChild(holdingMark(held.tier ?? 1, size));
+        if (theirs) {
+          // taken by a tribe before the council could (§5.5): an opportunity gone
+          const g = el('g', { class: 'tribe-held', 'data-tribe': theirs.tribeId });
+          g.append(el('line', { x1: size * 0.35, y1: size * 0.45, x2: size * 0.35, y2: -size * 0.35, class: 'h-pole' }),
+                   el('polygon', { points: `${size * 0.35},${-size * 0.35} ${size * 0.35 + 7},${-size * 0.25} ${size * 0.35},${-size * 0.12}`, class: 't-flag' }));
+          cell.marks.appendChild(g);
+        }
+        if (threat) {
+          const t = el('text', { x: -size * 0.5, y: -size * 0.3, class: 'threat' });
+          t.textContent = '!';
+          cell.marks.appendChild(t);
+        }
         cell.marks.appendChild(siteGlyph(id));
         if (!isScouted(state, k) && !held) cell.poly.classList.add('seen');
         if (state.map.works?.key === k) {

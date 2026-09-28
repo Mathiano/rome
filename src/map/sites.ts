@@ -6,13 +6,13 @@
  */
 import type { GameState, ClaimedSite } from '../state/types';
 import type { Cost, ResourceId } from '../data';
-import { config, tribeDef } from '../data';
+import { tribeDef } from '../data';
 import { log } from '../state/store';
 import { report } from '../state/reports';
-import { chance, nextRandom } from '../state/rng';
 import { distance, key as hexKey, parseKey, ring, within } from './grid';
 import { generate, holdingTier, mapConfig, site } from './world';
 import { playerHoldsOffice, requireOffice } from '../politics/challenge';
+import { contestTurn, tribeHolds } from './contest';
 
 export function world(state: GameState) {
   return generate(state.map.seed);
@@ -167,6 +167,8 @@ export function claimSite(state: GameState, k: string): void {
   const def = site(id);
   if (def.hostile) throw new Error('That is a war band, not a holding');
   if (def.treasure) throw new Error('Send scouts for the hoard; there is nothing to hold');
+  const theirs = tribeHolds(state, k);
+  if (theirs) throw new Error(`${tribeDef(theirs.tribeId).name} took it first`);
   const cost = claimCost(k);
   for (const [res, v] of Object.entries(cost)) {
     if (state.resources[res as ResourceId] < (v ?? 0)) throw new Error(`Not enough ${res}`);
@@ -269,7 +271,7 @@ export function upkeepPerRound(state: GameState): number {
 }
 
 // ---------------------------------------------------------------- round step
-/** Scouts report, upkeep is paid, and the far holdings take their chances. */
+/** Scouts report, upkeep is paid, and the contest over the holdings is decided and declared (§5.5). */
 export function mapTurn(state: GameState): void {
   resolveScout(state);
 
@@ -287,30 +289,8 @@ export function mapTurn(state: GameState): void {
     }
   }
 
-  const aggressor = siteAggressor(state);
-  if (!aggressor) return;
-  const tribeStrength = aggressor.strength * mapConfig.hold.tribeShareAgainstSite;
-  for (const c of [...state.map.claimed]) {
-    if (!chance(state, siteRaidChance(state, c))) continue;
-    const def = siteDefence(c);
-    const attack = tribeStrength * (0.75 + nextRandom(state) * 0.5);
-    const name = site(c.siteId).name;
-    const fearBefore = aggressor.fear;
-    const held = def >= attack;
-    let text: string;
-    if (held) {
-      aggressor.fear = Math.min(100, aggressor.fear + config.raid.fearGainOnRepulse / 2);
-      state.stats.siteRaidsRepelled += 1;
-      text = `${tribeDef(aggressor.id).name} test the garrison at ${name} and are driven off.`;
-    } else {
-      state.map.claimed = state.map.claimed.filter((x) => x.key !== c.key);
-      state.stats.sitesLost += 1;
-      text = `${tribeDef(aggressor.id).name} overrun ${name} at ${c.key}. ${c.garrison} men are lost and the holding with them.`;
-    }
-    report(state, 'site_raid', {
-      tribeId: aggressor.id, siteId: c.siteId, hex: c.key, garrison: c.garrison, defence: def, attack, held,
-      menLost: held ? 0 : c.garrison, fear: { before: fearBefore, after: aggressor.fear },
-    }, text, 'raid');
-  }
+  // The far holdings' raids are the contest rule's now (map/contest.ts): declared
+  // in one round, decided in a later one after the player's move.
+  contestTurn(state);
   void hexKey;
 }
