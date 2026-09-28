@@ -68,6 +68,14 @@ One branch off main, save format 7.
    - the drawn river removed;
    - the floor decision above.
 
+### Follow-ups set by Mathias for the next session (2026-09-28, not done yet)
+
+1. **Hide the town floor at rest when base map v2 is wired in.** Do it in the same change as the wiring, not before, because the v1 painting under it doesn't match the grid. This settles the 🟡 above: in build mode the floor shows with the grid; at rest the painted clearing is what shows.
+2. **Say in the spec that its pixel size is a target, not a requirement.** The painting will come back smaller, and possibly 3:2 or 16:9. The pipeline scales it uniformly, fits the clearing to the spec, and extends or crops the edges, as it did for v1 (`MAP_FIT` and the edge-colour flood). Its pixel size must not be held against it.
+   - What still matters is the relative geometry: the biomes and slots where the guide puts them, and the river parallel to the town's river edge.
+   - A uniform scale and shift fitted to the clearing only puts the painted river on grid x = 6 if those proportions were kept. The wiring's pixel check on the near bank is where a miss shows.
+   - Put this in `tools/basemap/spec.ts` and rerun `npm run basemap:spec`; the spec test requires the generated file to match.
+
 ## Open
 
 - ❓ Adjacency rules, gods' effects, research contents: unchanged, still Mathias's.
