@@ -233,7 +233,7 @@ describe('the adoption controls', () => {
     let raised = 0;
     const h: PanelHandlers = {
       onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-      onSelectSlot: () => {}, onPlace: () => {}, onRaiseHolding: () => {}, onRushHolding: () => {}, onAdoptNewMan: () => { raised += 1; },
+      onSelectSlot: () => {}, onPlace: () => {}, onRaiseHolding: () => {}, onRushHolding: () => {}, onBuildRoad: () => {}, onRushRoad: () => {}, onAdoptNewMan: () => { raised += 1; },
       onPolitical: (a) => { acts.push(a); }, onEnvoy: () => {}, onTrade: () => {},
       onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
       onExport: () => {}, onImport: () => {}, onReset: () => {},

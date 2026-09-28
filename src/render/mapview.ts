@@ -4,10 +4,11 @@
  * a "?" until scouts have been there.
  */
 import type { GameState } from '../state/types';
-import { centre, corners, key, within } from '../map/grid';
+import { centre, corners, key, neighbours, parseKey, within } from '../map/grid';
 import { claimOf, isKnown, isScouted, isSpentTreasure, siteAt } from '../map/sites';
 import { generate, mapConfig } from '../map/world';
 import { threatAgainst, tribeHolds } from '../map/contest';
+import { hasRoad } from '../map/roads';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -106,6 +107,30 @@ export function holdingMark(tier: number, size: number): SVGGElement {
   return g;
 }
 
+/**
+ * The halves of road that leave a hex (DESIGN §5.4): towards each neighbour it
+ * shares a road with, and dashed towards the segment being laid. Offsets are to
+ * the shared edge's midpoint.
+ */
+export function roadHalves(state: GameState, k: string): { x: number; y: number; laying: boolean }[] {
+  const size = mapConfig.hexSize;
+  const work = state.map.roadWork?.key ?? null;
+  const mine = hasRoad(state, k);
+  if (!mine && k !== work) return [];
+  const h = parseKey(k);
+  const c = centre(h, size);
+  const out: { x: number; y: number; laying: boolean }[] = [];
+  for (const n of neighbours(h)) {
+    const nk = key(n);
+    const theirs = hasRoad(state, nk);
+    const laying = (k === work && theirs) || (mine && nk === work);
+    if (!laying && !(mine && theirs)) continue;
+    const m = centre(n, size);
+    out.push({ x: (m.x - c.x) / 2, y: (m.y - c.y) / 2, laying });
+  }
+  return out;
+}
+
 export function createMapView(onSelect: (hex: string) => void): MapView {
   const size = mapConfig.hexSize;
   const span = (mapConfig.radius + 1) * size * 2;
@@ -115,17 +140,21 @@ export function createMapView(onSelect: (hex: string) => void): MapView {
   const topLayer = el('g', { class: 'labels' });
   root.append(terrainLayer, markLayer, topLayer);
 
-  const cells = new Map<string, { poly: SVGPolygonElement; marks: SVGGElement; state: string }>();
+  const cells = new Map<string, { poly: SVGPolygonElement; road: SVGGElement; marks: SVGGElement; state: string }>();
   for (const h of within(mapConfig.radius)) {
     const k = key(h);
     const g = el('g', { class: 'hex', 'data-hex': k });
     const poly = el('polygon', { points: corners(h, size), class: 'ground' });
     g.appendChild(poly);
+    // Each hex draws its own half of every road leaving it, centre to edge, so
+    // the halves meet on the shared edge and no later hex paints over a road.
+    const road = el('g', { class: 'road', transform: `translate(${centre(h, size).x},${centre(h, size).y})` });
+    g.appendChild(road);
     const marks = el('g', { transform: `translate(${centre(h, size).x},${centre(h, size).y})` });
     g.appendChild(marks);
     g.addEventListener('click', () => onSelect(k));
     terrainLayer.appendChild(g);
-    cells.set(k, { poly, marks, state: '' });
+    cells.set(k, { poly, road, marks, state: '' });
   }
 
   const hint = el('text', { class: 'map-hint', x: 0, y: 0 });
@@ -142,11 +171,14 @@ export function createMapView(onSelect: (hex: string) => void): MapView {
       const home = k === '0,0';
       const theirs = tribeHolds(state, k);
       const threat = threatAgainst(state, k);
-      const stamp = [terrain, theirs ? `t${theirs.tribeId}` : '', threat ? `!${threat.resolveRound}` : '', known ? 's' : '', isScouted(state, k) ? 'x' : '', id ?? '', held ? `h${held.garrison}t${held.tier}` : '', state.map.works?.key === k ? 'w' : '', selected === k ? 'x' : '', state.map.pendingScout === k ? 'p' : ''].join('|');
+      const roads = roadHalves(state, k);
+      const stamp = [roads.map((r) => `${r.x},${r.y}${r.laying ? 'l' : ''}`).join(';'), terrain, theirs ? `t${theirs.tribeId}` : '', threat ? `!${threat.resolveRound}` : '', known ? 's' : '', isScouted(state, k) ? 'x' : '', id ?? '', held ? `h${held.garrison}t${held.tier}` : '', state.map.works?.key === k ? 'w' : '', selected === k ? 'x' : '', state.map.pendingScout === k ? 'p' : ''].join('|');
       if (stamp === cell.state) continue;
       cell.state = stamp;
       cell.poly.setAttribute('class', `ground t-${terrain}${selected === k ? ' selected' : ''}${held ? ' held' : ''}`);
       cell.marks.innerHTML = '';
+      cell.road.innerHTML = '';
+      for (const r of roads) cell.road.appendChild(el('line', { x1: 0, y1: 0, x2: r.x, y2: r.y, class: r.laying ? 'road-laying' : 'road-built' }));
       if (home) {
         // The colonia, not Rome: a walled mark, named in the panel when selected.
         const g = el('g', { class: 'home' });

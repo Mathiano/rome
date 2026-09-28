@@ -106,6 +106,8 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       works: null,
       tribeHeld: [],
       threats: [],
+      roads: [],
+      roadWork: null,
     },
     rome: {
       favour: config.rome.startFavour,
@@ -251,7 +253,7 @@ export function migrate(state: GameState): GameState {
   if (state.lastChallengeRound === undefined) state.lastChallengeRound = -999;
   if (state.lastAssassinationRound === undefined) state.lastAssassinationRound = -999;
   if (!state.map) {
-    state.map = { seed: (state.seed ^ 0x5bf03635) | 0, scouted: [], seen: [], claimed: [], pendingScout: null, ruinsSpent: [], works: null, tribeHeld: [], threats: [] };
+    state.map = { seed: (state.seed ^ 0x5bf03635) | 0, scouted: [], seen: [], claimed: [], pendingScout: null, ruinsSpent: [], works: null, tribeHeld: [], threats: [], roads: [], roadWork: null };
   }
   for (const t of Object.values(state.tribes)) {
     if (t.massingForRound === undefined) t.massingForRound = -999;

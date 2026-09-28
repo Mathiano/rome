@@ -17,6 +17,7 @@ import { acceptDemand, refuseDemand } from './politics/families';
 import { resolveChoice } from './politics/events';
 import { claimSite, dispatchScout, releaseSite, setGarrison } from './map/sites';
 import { rushHoldingWork, startHoldingWork } from './map/holdings';
+import { rushRoad, startRoad } from './map/roads';
 import { spareMilitia } from './combat/militia';
 import { deliver, sendRecruits, hostOfficial, decline } from './rome/requests';
 
@@ -105,6 +106,15 @@ export class Game {
   rushHolding(now = Date.now()): void {
     this.tick(now);
     rushHoldingWork(this.state, now);
+  }
+  /** A road segment is laid on the village clock, like a building: no round (§5.4). */
+  buildRoad(hex: string, now = Date.now()): void {
+    this.tick(now);
+    startRoad(this.state, hex, now);
+  }
+  rushRoad(now = Date.now()): void {
+    this.tick(now);
+    rushRoad(this.state, now);
   }
   /**
    * Standing men over your own kin is household business, not a move against

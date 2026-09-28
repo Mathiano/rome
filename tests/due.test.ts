@@ -16,7 +16,7 @@ const strip = (html: string) => html.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' 
 function noHandlers(): PanelHandlers {
   return {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-    onSelectSlot: () => {}, onPlace: () => {}, onRaiseHolding: () => {}, onRushHolding: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
+    onSelectSlot: () => {}, onPlace: () => {}, onRaiseHolding: () => {}, onRushHolding: () => {}, onBuildRoad: () => {}, onRushRoad: () => {}, onAdoptNewMan: () => {}, onPolitical: () => {}, onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {}, onGuards: () => {},
     onExport: () => {}, onImport: () => {}, onReset: () => {},
     onSelectHex: () => {}, onDismissAdvisor: () => {},

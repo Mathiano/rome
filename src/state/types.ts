@@ -355,6 +355,10 @@ export interface MapState {
   tribeHeld: TribeHeldSite[];
   /** Moves declared against the player's holdings, decided in a later round the player convenes (§5.5). */
   threats: HoldingThreat[];
+  /** Hexes with a road on them (§5.4). The colonia's own hex is where every road starts and is not listed. */
+  roads: string[];
+  /** The one road segment under construction (§5.4). */
+  roadWork: { key: string; startedAt: number; finishAt: number } | null;
 }
 
 export interface TribeHeldSite { key: string; siteId: string; tribeId: string; at: number }

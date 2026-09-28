@@ -332,7 +332,7 @@ function handlers(): { h: PanelHandlers; acts: Political[]; guards: [string, num
   const guards: [string, number][] = [];
   const h: PanelHandlers = {
     onTab: () => {}, onChoice: () => {}, onScout: () => {}, onBuild: () => {}, onRush: () => {},
-    onSelectSlot: () => {}, onPlace: () => {}, onRaiseHolding: () => {}, onRushHolding: () => {},
+    onSelectSlot: () => {}, onPlace: () => {}, onRaiseHolding: () => {}, onRushHolding: () => {}, onBuildRoad: () => {}, onRushRoad: () => {},
     onAdoptNewMan: () => {},
     onPolitical: (a) => acts.push(a), onEnvoy: () => {}, onTrade: () => {},
     onResearch: () => {}, onRushResearch: () => {},

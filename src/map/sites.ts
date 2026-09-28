@@ -13,6 +13,7 @@ import { distance, key as hexKey, parseKey, ring, within } from './grid';
 import { generate, holdingTier, mapConfig, site } from './world';
 import { playerHoldsOffice, requireOffice } from '../politics/challenge';
 import { contestTurn, tribeHolds } from './contest';
+import { isConnected } from './roads';
 
 export function world(state: GameState) {
   return generate(state.map.seed);
@@ -240,7 +241,10 @@ export function siteRaidChance(state: GameState, c: ClaimedSite): number {
   const h = mapConfig.hold;
   if (state.round < h.graceRounds) return 0;
   if (!siteAggressor(state)) return 0;
-  return Math.max(0, Math.min(0.9, h.raidChanceBase + h.raidChancePerRing * ringOf(c.key)));
+  const base = h.raidChanceBase + h.raidChancePerRing * ringOf(c.key);
+  // a holding on the road is harder to reach unseen (§5.4)
+  const road = isConnected(state, c.key) ? 1 - mapConfig.roads.exposureCut : 1;
+  return Math.max(0, Math.min(0.9, base * road));
 }
 
 // ------------------------------------------------------------------ economics
@@ -249,7 +253,8 @@ export function claimedProduction(state: GameState): Partial<Record<ResourceId, 
   for (const c of state.map.claimed) {
     const def = site(c.siteId);
     if (def.idle) continue; // a quarry with no stone worked yields nothing (§5.2)
-    const m = holdingTier(c.tier ?? 1).yieldMultiplier;
+    // the tier's multiplier, and the road's bonus if the holding is on the network (§5.4)
+    const m = holdingTier(c.tier ?? 1).yieldMultiplier * (isConnected(state, c.key) ? 1 + mapConfig.roads.yieldBonus : 1);
     for (const [res, v] of Object.entries(def.produces ?? {})) {
       out[res as ResourceId] = (out[res as ResourceId] ?? 0) + (v ?? 0) * m;
     }
