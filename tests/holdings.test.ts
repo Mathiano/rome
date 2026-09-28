@@ -147,7 +147,7 @@ describe('holding tiers: camp, station, fort (§5.3)', () => {
     const g = new Game(rich(colonyWith('timber')));
     const k = hold(g.state, 'timber');
     g.raiseHolding(k, 0);
-    expect(() => g.build('o2', 'lumber_camp', 0)).not.toThrow();
+    expect(() => g.build('wood2', 'lumber_camp', 0)).not.toThrow();
     expect(g.state.constructions).toHaveLength(1);
     expect(g.state.map.works).not.toBeNull();
   });

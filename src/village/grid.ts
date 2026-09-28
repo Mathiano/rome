@@ -122,6 +122,11 @@ export function uniqueTaken(state: GameState, buildingId: string): boolean {
 export function placeProblem(state: GameState, buildingId: string, x: number, y: number): string | null {
   const def = building(buildingId);
   if (def.zone !== 'town') return 'Not a building for the town grid';
+  if (def.placement === 'fixed') {
+    // only ever on the cells the layout founds it on; the player never places it (checkPlace)
+    const f = layout.startBuilt.find((b) => 'id' in b && b.building === buildingId);
+    if (!f || !('x' in f) || f.x !== x || f.y !== y) return `The ${def.name.toLowerCase()} stands where the colony was founded`;
+  }
   if (uniqueTaken(state, buildingId)) return `The colony has its ${def.name.toLowerCase()} already`;
   const area = def.placement === 'riverbank' ? riverbank(state) : enclosure(state);
   const [w, h] = extentOf(def);

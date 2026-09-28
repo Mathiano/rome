@@ -148,7 +148,7 @@ describe('since you were last here', () => {
     const strip = html.slice(html.indexOf('data-away'), html.indexOf('data-menu="due"'));
     expect(strip).not.toMatch(DURATION);
     // the plot card carries it too: the strip is about the colony, not the overview
-    expect(renderPanel(g, 'village', 'o2', 1)).toContain('data-away');
+    expect(renderPanel(g, 'village', 'wood2', 1)).toContain('data-away');
     setReturnStrip([]);
     expect(renderPanel(g, 'village', null, 1)).not.toContain('data-away');
   });

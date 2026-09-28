@@ -43,9 +43,9 @@ export function scaledCost(state: GameState, base: Cost, copy = 1): Cost {
 
 /**
  * What may rise on a slot. A town slot exists only once something is placed
- * on it, so it only ever holds its own building; a site takes the building of
- * its resource, as many sites as there are (§4.4, repeatable); the wall slot
- * takes the wall.
+ * on it, so it only ever holds its own building; a site takes its biome's
+ * resource building and no other, so a repeatable resource building is bounded
+ * by its biome's slots (§4.4, §4.5 C.2); the wall slot takes the wall.
  */
 export function eligibleBuildings(_state: GameState, slot: Slot): string[] {
   if (slot.building) return [slot.building];
@@ -105,6 +105,7 @@ export function checkPlace(state: GameState, buildingId: string, at?: { x: numbe
   const gates: BuildGate[] = [];
   const fail = (gate: BuildGate, reason: string) => { gates.push(gate); reasons.push(reason); };
   if (def.zone !== 'town') fail('ineligible', 'Not a building for the town grid');
+  else if (def.placement === 'fixed') fail('ineligible', `The ${def.name.toLowerCase()} stands where the colony was founded`);
   else if (uniqueTaken(state, buildingId)) fail('unique', `The colony has its ${def.name.toLowerCase()} already`);
   else if (at) {
     const problem = placeProblem(state, buildingId, at.x, at.y);

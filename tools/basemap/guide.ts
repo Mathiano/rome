@@ -1,78 +1,120 @@
 /**
  * The base map's layout guide (docs/BASEMAP-V2-SPEC.md): a wireframe of where
- * things are, at the painting's own size, drawn from data/layout.json and the
- * village projection. Not art — it goes to the image model as a layout guide.
- *
- *   npm run basemap:guide    (tools/basemap/write.ts writes docs/basemap-v2-geometry.svg)
- *
- * tests/basemap-spec.test.ts renders it again and fails if the committed file
- * differs, so a layout change cannot leave the guide behind.
+ * things are, at the painting's own size. Not art — it goes to the image model
+ * as a layout guide beside the spec. Written by `npm run basemap:spec`;
+ * tests/basemap-spec.test.ts fails if the committed file differs.
  */
 import { layout } from '../../src/data';
-import { enclosureOfSize } from '../../src/village/grid';
-import { gateAt, project } from '../../src/render/environment';
+import { biomeSlots, clearing, corners, H, px, riverX, scenePx, seat, tiers, W } from './geometry';
 
-/** The painting's frame: scene units → image pixels. */
-export const FRAME = { x: -908, y: -542, k: 2, w: 3520, h: 2200 };
+type P = [number, number];
+const pts = (ps: P[]) => ps.map((p) => p.join(',')).join(' ');
+const mid = (ps: P[]): P => [Math.round(ps.reduce((a, p) => a + p[0], 0) / ps.length), Math.round(ps.reduce((a, p) => a + p[1], 0) / ps.length)];
+/** The slope of a line running along grid y on screen, for labels laid along the river. */
+const RIVER_ANGLE = (Math.atan2(28, -56) * 180) / Math.PI - 180;
 
-/** Grid units → image pixels, rounded. */
-export function px(x: number, y: number): [number, number] {
-  const [sx, sy] = project(x, y);
-  return [Math.round((sx - FRAME.x) * FRAME.k), Math.round((sy - FRAME.y) * FRAME.k)];
+/** The convex hull of a set of points (monotone chain). */
+function hull(ps: P[]): P[] {
+  const s = [...ps].sort((a, b) => a[0] - b[0] || a[1] - b[1]);
+  const cross = (o: P, a: P, b: P) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+  const lower: P[] = [];
+  for (const p of s) { while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], p) <= 0) lower.pop(); lower.push(p); }
+  const upper: P[] = [];
+  for (const p of [...s].reverse()) { while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], p) <= 0) upper.pop(); upper.push(p); }
+  return [...lower.slice(0, -1), ...upper.slice(0, -1)];
 }
 
-const pp = (...c: [number, number][]) => c.map(([x, y]) => px(x, y).join(',')).join(' ');
-const diamond = (x0: number, y0: number, x1: number, y1: number) => pp([x0, y0], [x1, y0], [x1, y1], [x0, y1]);
+/** How each biome is shown on the guide: a tint and the terrain in a few words. */
+export const BIOME_LOOK: Record<string, { fill: string; terrain: string }> = {
+  wood: { fill: '#6e7d48', terrain: 'forest, with stumps and log piles' },
+  clay: { fill: '#a8553a', terrain: 'a red clay excavation' },
+  iron: { fill: '#8a8580', terrain: 'rocky cliffs above the river' },
+  grain: { fill: '#d9b969', terrain: 'open field strips' },
+};
 
 export function renderGuide(): string {
-  const W = FRAME.w;
-  const H = FRAME.h;
   const o: string[] = [];
+  const text = (x: number, y: number, size: number, fill: string, body: string, extra = '') => o.push(`<text x="${x}" y="${y}" font-size="${size}" fill="${fill}"${extra}>${body}</text>`);
   o.push(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" font-family="sans-serif">`);
-  o.push(`<!-- Base map v2 layout guide: docs/BASEMAP-V2-SPEC.md. A wireframe of where things are, not art. Computed from data/layout.json and the projection in src/render/environment.ts on 2026-09-28; tests/basemap-spec.test.ts checks its outline, gates and sites against the layout. -->`);
+  o.push(`<!-- Base map v2 layout guide: docs/BASEMAP-V2-SPEC.md. A wireframe of where things are, not art. Written by tools/basemap (npm run basemap:spec) from data/layout.json and the village projection. -->`);
   o.push(`<defs><pattern id="hatch" width="24" height="24" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="24" stroke="#b5563a" stroke-width="6" opacity="0.35"/></pattern><clipPath id="frame"><rect width="${W}" height="${H}"/></clipPath></defs>`);
   o.push(`<rect width="${W}" height="${H}" fill="#e9e4d4"/>`);
   o.push(`<rect x="60" y="60" width="${W - 120}" height="${H - 120}" fill="none" stroke="#999" stroke-dasharray="12 10" stroke-width="3"/>`);
-  o.push(`<rect x="338" y="309" width="${3182 - 338}" height="${1893 - 309}" fill="none" stroke="#555" stroke-dasharray="30 12" stroke-width="3"/>`);
-  o.push(`<text x="350" y="298" font-size="34" fill="#555">the whole scene at widest zoom</text>`);
-  // the river band, clipped to the frame
-  const big = enclosureOfSize(9);
-  const bx = big.x1 + 1 + layout.grid.riverbankDepth;
-  o.push(`<g clip-path="url(#frame)"><polygon points="${pp([bx, -40], [bx + 2.4, -40], [bx + 2.4, 40], [bx, 40])}" fill="#7d94a0"/><polygon points="${pp([bx + 0.7, -40], [bx + 1.7, -40], [bx + 1.7, 40], [bx + 0.7, 40])}" fill="#5d7682" opacity="0.6"/></g>`);
-  o.push(`<text x="2398" y="1600" font-size="44" text-anchor="middle" fill="#fff" transform="rotate(-26.57 2398 1600)">river: near bank grid x = ${bx}, 2.4 cells wide</text>`);
+  const sc = scenePx();
+  o.push(`<rect data-scene="1" x="${sc.x}" y="${sc.y}" width="${sc.w}" height="${sc.h}" fill="none" stroke="#555" stroke-dasharray="30 12" stroke-width="3"/>`);
+  text(sc.x + 12, sc.y + sc.h + 44, 34, '#555', 'the whole scene at widest zoom');
+
+  // the biomes' ground, under everything else
+  for (const b of biomeSlots()) {
+    const ps: P[] = b.slots.flatMap((s) => [px(s.x - 1, s.y - 1), px(s.x + 2, s.y - 1), px(s.x + 2, s.y + 2), px(s.x - 1, s.y + 2)]);
+    const h = hull(ps);
+    o.push(`<polygon data-biome="${b.id}" points="${pts(h)}" fill="${BIOME_LOOK[b.id].fill}" opacity="0.35" stroke="${BIOME_LOOK[b.id].fill}" stroke-width="4"/>`);
+  }
+
+  // the river, clipped to the frame
+  o.push(`<g clip-path="url(#frame)"><polygon points="${pts([px(riverX, -60), px(riverX + 2.4, -60), px(riverX + 2.4, 60), px(riverX, 60)])}" fill="#7d94a0"/><polygon points="${pts([px(riverX + 0.7, -60), px(riverX + 1.7, -60), px(riverX + 1.7, 60), px(riverX + 0.7, 60)])}" fill="#5d7682" opacity="0.6"/></g>`);
+  const [rlx, rly] = px(riverX + 1.2, 1);
+  text(rlx, rly, 44, '#fff', `river: near bank grid x = ${riverX}, 2.4 cells wide`, ` text-anchor="middle" transform="rotate(${RIVER_ANGLE.toFixed(2)} ${rlx} ${rly})"`);
+
+  // the clearing: its edge wanders anywhere in the band, never inside it
+  const c = clearing();
+  o.push(`<polygon data-clearing="outer" points="${pts(corners(c.outer))}" fill="#dcc9a4" stroke="#8f6f4f" stroke-width="3" stroke-dasharray="18 10"/>`);
+  o.push(`<polygon data-clearing="inner" points="${pts(corners(c.inner))}" fill="#cfa278" stroke="#8f6f4f" stroke-width="3" stroke-dasharray="18 10"/>`);
+  // along the north-east side of the band, between the wall and the clay
+  const [ctx, cty] = px((c.outer.x0 + c.outer.x1) / 2, (c.outer.y0 + c.inner.y0) / 2);
+  text(ctx, cty + 10, 32, '#4a3b2c', 'the clearing’s organic edge lies in this band', ` text-anchor="middle" transform="rotate(${(-RIVER_ANGLE).toFixed(2)} ${ctx} ${cty})"`);
+
   // nothing tall below the tier-III wall's lower sides
-  o.push(`<polygon points="${pp([big.x0, big.y1 + 1], [big.x1 + 1, big.y1 + 1], [big.x1 + 1, big.y1 + 2], [big.x0, big.y1 + 2])}" fill="url(#hatch)"/>`);
-  // the enclosures, largest first
-  const sizes = layout.grid.sizeByWallTier;
-  for (let t = sizes.length - 1; t >= 0; t--) {
-    const e = enclosureOfSize(sizes[t]);
-    const edge = t === 0 || t === sizes.length - 1;
-    const fill = t === 0 ? '#cfa278' : t === sizes.length - 1 ? '#c9cf9f' : 'none';
-    o.push(`<polygon data-tier="${t}" points="${diamond(e.x0, e.y0, e.x1 + 1, e.y1 + 1)}" fill="${fill}" stroke="#4a3b2c" stroke-width="${edge ? 5 : 3}" stroke-dasharray="${edge ? '' : '16 10'}"/>`);
-    const g = gateAt(e);
-    const [a, b] = [px(g.x - 0.5, g.y), px(g.x + 0.5, g.y)];
-    o.push(`<line data-gate="${t}" x1="${a[0]}" y1="${a[1]}" x2="${b[0]}" y2="${b[1]}" stroke="#b5563a" stroke-width="14"/>`);
-    const [lx, ly] = px(g.x, g.y + 0.35);
-    o.push(`<text x="${lx - 40}" y="${ly + 14}" font-size="30" fill="#b5563a">gate ${t}</text>`);
-    const [tx, ty] = px(e.x0, e.y0);
-    o.push(`<text x="${tx + 10}" y="${ty - 10}" font-size="30" fill="#4a3b2c">wall tier ${t}: ${sizes[t]}×${sizes[t]}</text>`);
+  const t3 = tiers()[tiers().length - 1].rect;
+  o.push(`<polygon points="${pts(corners({ x0: t3.x0, y0: t3.y1, x1: t3.x1, y1: t3.y1 + 1 }))}" fill="url(#hatch)"/>`);
+
+  // the wall lines, largest first: the tier-III line may be hinted, the rest are the drawn wall's alone
+  const ts = tiers();
+  for (const t of [...ts].reverse()) {
+    const last = t.tier === ts.length - 1;
+    o.push(`<polygon data-tier="${t.tier}" points="${pts(corners(t.rect))}" fill="none" stroke="#4a3b2c" stroke-width="${last ? 5 : 2}" stroke-dasharray="${last ? '4 10' : '14 10'}"/>`);
+    o.push(`<line data-gate="${t.tier}" x1="${t.gate[0][0]}" y1="${t.gate[0][1]}" x2="${t.gate[1][0]}" y2="${t.gate[1][1]}" stroke="#b5563a" stroke-width="12"/>`);
+    const [tx, ty] = corners(t.rect)[0];
+    text(tx, ty + 34, 26, '#4a3b2c', `wall ${t.tier}: ${t.n}×${t.n}`, ' text-anchor="middle"');
   }
-  // the riverbank at the largest tier
-  o.push(`<polygon data-bank="3" points="${diamond(big.x1 + 1, big.y0, big.x1 + 1 + layout.grid.riverbankDepth, big.y1 + 1)}" fill="#d7b791" stroke="#4a3b2c" stroke-width="3"/>`);
-  const [rx, ry] = px(big.x1 + 1.5, 0);
-  o.push(`<text x="${rx - 80}" y="${ry}" font-size="30" fill="#4a3b2c" transform="rotate(-26.57 ${rx} ${ry})">riverbank (harbour)</text>`);
-  const [ix, iy] = px(1, 1);
-  o.push(`<text x="${ix - 170}" y="${iy}" font-size="34" fill="#4a3b2c">flat packed earth (always floored)</text>`);
-  o.push(`<text x="1424" y="944" font-size="30" text-anchor="middle" fill="#4a3b2c">cleared ground, low contrast</text>`);
-  for (const s of layout.sites) {
-    o.push(`<polygon points="${pp([s.x, s.y + 1], [s.x + 1, s.y + 1], [s.x + 1, s.y + 2], [s.x, s.y + 2])}" fill="url(#hatch)"/>`);
-    o.push(`<polygon data-site="${s.id}" points="${diamond(s.x, s.y, s.x + 1, s.y + 1)}" fill="#fff" stroke="#2a2118" stroke-width="4"/>`);
-    const [sx, sy] = px(s.x + 0.5, s.y + 0.5);
-    o.push(`<text x="${sx}" y="${sy + 10}" font-size="30" text-anchor="middle" fill="#2a2118">${s.id} ${s.site}</text>`);
+  // the riverbank at tier III
+  const bank = { x0: t3.x1, y0: t3.y0, x1: t3.x1 + layout.grid.riverbankDepth, y1: t3.y1 };
+  o.push(`<polygon data-bank="${ts.length - 1}" points="${pts(corners(bank))}" fill="#d7b791" stroke="#4a3b2c" stroke-width="3"/>`);
+  const [bx, by] = px(bank.x0 + 0.5, (bank.y0 + bank.y1) / 2);
+  text(bx, by + 10, 28, '#4a3b2c', 'riverbank (harbour)', ` text-anchor="middle" transform="rotate(${RIVER_ANGLE.toFixed(2)} ${bx} ${by})"`);
+
+  // the praetorium's cells: the drawn seat, nothing painted
+  const st = corners(seat());
+  o.push(`<polygon data-seat="praetorium" points="${pts(st)}" fill="url(#hatch)" stroke="#b5563a" stroke-width="4"/>`);
+  const [sx, sy] = mid(st);
+  text(sx, sy + 10, 28, '#7a2e1c', 'praetorium: drawn — paint only ground', ' text-anchor="middle"');
+
+  // the slots, three to a biome
+  for (const b of biomeSlots()) {
+    for (const s of b.slots) {
+      o.push(`<polygon points="${pts(corners({ x0: s.x, y0: s.y + 1, x1: s.x + 1, y1: s.y + 2 }))}" fill="url(#hatch)"/>`);
+      o.push(`<polygon data-slot="${s.id}" points="${pts(s.plate)}" fill="#fff" stroke="#2a2118" stroke-width="4"/>`);
+      text(s.centre[0], s.centre[1] + 11, 32, '#2a2118', s.id, ' text-anchor="middle" font-weight="bold"');
+    }
+    const top = b.slots.map((s) => s.plate[0]).sort((p, q) => p[1] - q[1])[0];
+    const [lx, ly] = mid(b.slots.map((s) => s.centre));
+    text(lx, Math.min(top[1] - 30, ly - 90), 34, '#2a2118', `${b.id}: ${BIOME_LOOK[b.id].terrain}`, ' text-anchor="middle"');
   }
+
   const [ox, oy] = px(0, 0);
-  o.push(`<circle cx="${ox}" cy="${oy}" r="8" fill="#2a2118"/><text x="${ox + 14}" y="${oy - 10}" font-size="26" fill="#2a2118">grid (0,0)</text>`);
-  o.push(`<g font-size="32" fill="#2a2118"><rect x="90" y="1900" width="1000" height="210" fill="#fff" opacity="0.85"/><text x="110" y="1945">white diamond: a site's ground plate (224 × 112 px)</text><text x="110" y="1990">red hatch: nothing tall painted here (drawn in front)</text><text x="110" y="2035">red bar: the gate at that wall tier (drawn, not painted)</text><text x="110" y="2080">outer dashes: keep ~60 px of plain country at the edge</text></g>`);
+  o.push(`<circle cx="${ox}" cy="${oy}" r="8" fill="#2a2118"/>`);
+  text(ox + 14, oy - 10, 24, '#2a2118', 'grid (0,0)');
+  // the legend, top left, clear of the scene
+  const legend = [
+    'white diamond: a slot’s ground plate (224 × 112 px), flat ground',
+    'red hatch: nothing tall painted here (drawn in front of it)',
+    'dotted: the tier-III wall line — at most a low bank or scattered stones',
+    'dashed: the wall at lower tiers, drawn only; red bar: its gate',
+    'no buildings, no central building, no fence ring, anywhere',
+    'outer dashes: keep ~60 px of plain country at the edge',
+  ];
+  o.push(`<g font-size="30" fill="#2a2118"><rect x="90" y="90" width="1130" height="${legend.length * 42 + 30}" fill="#fff" opacity="0.88"/>`
+    + legend.map((l, i) => `<text x="110" y="${135 + i * 42}">${l}</text>`).join('') + '</g>');
   o.push('</svg>');
   return o.join('\n') + '\n';
 }

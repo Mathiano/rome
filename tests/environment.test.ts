@@ -50,7 +50,8 @@ describe('the colony environment (DESIGN §4.5, §10)', () => {
     for (const s of layout.sites) {
       expect(inRect({ x0: big.x0 - 1, x1: big.x1 + 1, y0: big.y0 - 1, y1: big.y1 + 1 }, s.x, s.y), `${s.id} stands against the wall`).toBe(false);
       expect(inRect(bank, s.x, s.y), `${s.id} is on the riverbank`).toBe(false);
-      expect(s.x, `${s.id} is in the river`).toBeLessThanOrEqual(big.x1);
+      // the river starts beyond the bank's depth; past the bank's ends that column is dry land
+      expect(s.x, `${s.id} is in the river`).toBeLessThanOrEqual(big.x1 + layout.grid.riverbankDepth);
       const k = `${s.x},${s.y}`;
       expect(seen.has(k), `${s.id} shares a cell`).toBe(false);
       seen.add(k);
@@ -75,7 +76,7 @@ describe('the village answers the pointer without waiting for a tick', () => {
     view.update(state, 0, null);
     const label = () => view.root.querySelector('.labels .label')!.textContent ?? '';
     expect(label()).toBe('');
-    const site = view.root.querySelector('.slot[data-slot="o1"]')! as SVGGElement;
+    const site = view.root.querySelector('.slot[data-slot="wood1"]')! as SVGGElement;
     site.dispatchEvent(new Event('mouseenter'));
     // no second update() call: the label must already be right
     expect(label().length).toBeGreaterThan(0);

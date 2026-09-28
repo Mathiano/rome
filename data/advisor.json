@@ -17,8 +17,8 @@
     {
       "id": "iron",
       "text": "Open the iron seam. The colony was founded with wood, clay and grain in hand and no mine, and the castellum will want iron before the stores run out of it.",
-      "goto": { "tab": "village", "slot": "o5" },
-      "action": { "build": { "slot": "o5", "building": "iron_mine" } },
+      "goto": { "tab": "village", "slot": "iron1" },
+      "action": { "build": { "slot": "iron1", "building": "iron_mine" } },
       "done": [
         { "underWay": { "building": "iron_mine" } },
         { "buildingTier": { "id": "iron_mine", "atLeast": 1 } }
