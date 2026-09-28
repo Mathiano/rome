@@ -379,4 +379,7 @@ table .neg, .card.report .neg { color: var(--terracotta); }
 .worldmap .rising { font-size: 8px; fill: #c9a24a; text-anchor: middle; }
 .worldmap .tribe-held .t-flag { fill: #2a2118; stroke: #2a2118; stroke-width: 0.5; }
 .worldmap .threat { font-size: 11px; font-weight: bold; fill: #b5563a; text-anchor: middle; }
+.worldmap .road line { stroke-linecap: round; pointer-events: none; }
+.worldmap .road .road-built { stroke: #8a7556; stroke-width: 3.2; }
+.worldmap .road .road-laying { stroke: #c9a24a; stroke-width: 2.6; stroke-dasharray: 4 3; }
 #panel p.threat { border-left: 3px solid var(--terracotta); padding-left: 8px; }

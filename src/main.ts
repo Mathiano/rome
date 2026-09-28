@@ -225,6 +225,8 @@ bindPanel(panelEl, {
   onScout: (hex) => guard(() => game.scout(hex, dev.now())),
   onRaiseHolding: (hex) => guard(() => game.raiseHolding(hex, dev.now())),
   onRushHolding: () => guard(() => game.rushHolding(dev.now())),
+  onBuildRoad: (hex) => guard(() => game.buildRoad(hex, dev.now())),
+  onRushRoad: () => guard(() => game.rushRoad(dev.now())),
   onBuild: (slot, b) => guard(() => game.build(slot, b, dev.now())),
   onRush: (slot) => guard(() => game.rush(slot, dev.now())),
   onPolitical: (a) => guard(() => game.act(a, dev.now())),

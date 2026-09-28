@@ -46,6 +46,7 @@ export const mapConfig = mapJson as unknown as {
   hold: { raidChanceBase: number; raidChancePerRing: number; garrisonStrengthPerMan: number; tribeShareAgainstSite: number; graceRounds: number };
   tiers: { list: HoldingTierDef[] };
   contest: { tribeTakeChancePerHour: number; maxTribeHeldShare: number; noticeRounds: number; watchtowerExtraRounds: number };
+  roads: { segmentCost: Record<string, number>; segmentSeconds: number; exposureCut: number; yieldBonus: number; tradeRate: number };
 };
 
 /** A holding tier's definition: 1 camp, 2 station, 3 fort (§5.3). */

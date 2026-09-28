@@ -5,6 +5,7 @@ import { completeResearch } from './research';
 import { clampToCapacity } from './storage';
 import { completeHoldingWork } from '../map/holdings';
 import { tribesTakeUnclaimed } from '../map/contest';
+import { completeRoad } from '../map/roads';
 
 /**
  * The invisible village clock (DESIGN §3.1). Advances the economy by wall-clock
@@ -23,7 +24,7 @@ export function tick(state: GameState, now: number): void {
   }
   // Constructions that finished during the gap change production; step at each boundary.
   let t = state.lastTick;
-  const boundaries = [...state.constructions.map((c) => c.finishAt), ...(state.research?.active ?? []).map((r) => r.finishAt), ...(state.map.works ? [state.map.works.finishAt] : [])]
+  const boundaries = [...state.constructions.map((c) => c.finishAt), ...(state.research?.active ?? []).map((r) => r.finishAt), ...(state.map.works ? [state.map.works.finishAt] : []), ...(state.map.roadWork ? [state.map.roadWork.finishAt] : [])]
     .filter((f) => f > t && f <= now)
     .sort((a, b) => a - b);
   for (const b of boundaries) {
@@ -31,12 +32,14 @@ export function tick(state: GameState, now: number): void {
     completeFinished(state, b);
     completeResearch(state, b);
     completeHoldingWork(state, b);
+    completeRoad(state, b);
     t = b;
   }
   accrue(state, now - t);
   completeFinished(state, now);
   completeResearch(state, now);
   completeHoldingWork(state, now);
+  completeRoad(state, now);
   clampToCapacity(state);
   // Tribes take unclaimed sites on the clock, present or away (§5.5): an
   // opportunity missed. Nothing the player holds is touched here.

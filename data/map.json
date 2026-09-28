@@ -262,5 +262,17 @@
     "maxTribeHeldShare": 0.3,
     "noticeRounds": 1,
     "watchtowerExtraRounds": 1
+  },
+  "roads": {
+    "_comment": "DESIGN §5.4: roads built segment by segment, hex to hex, from the colonia outward, one segment under construction at a time (Mathias, 2026-09-28). A holding joined to the colonia by an unbroken road: raid exposure falls, yield rises, and trade moves more easily. v0 roads cost denarii and wood; a paved upgrade with stone waits for the stone drop.",
+    "_tuning": "Claude's first pass, 2026-09-28: a segment's cost (30 denarii, 40 wood) and time (15 minutes); a connected holding's raid chance halved (exposureCut 0.5) and its yield raised by a quarter (yieldBonus 0.25); the trade rate sharpened by 0.1 while any holding is connected. ❓ 'Envoys resolve faster' has nothing to shorten: an envoy's road is one round in v0.",
+    "segmentCost": {
+      "denarii": 30,
+      "wood": 40
+    },
+    "segmentSeconds": 900,
+    "exposureCut": 0.5,
+    "yieldBonus": 0.25,
+    "tradeRate": -0.1
   }
 }

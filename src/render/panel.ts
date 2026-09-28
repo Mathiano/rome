@@ -13,6 +13,7 @@ import { portraitSvg } from './portrait';
 import { claimCost, claimOf, isKnown, isScouted, isSpentTreasure, ringOf, scoutCost, siteAt, siteDefence, siteRaidChance, upkeepPerRound } from '../map/sites';
 import { checkHoldingWork, holdingRushPrice } from '../map/holdings';
 import { threatAgainst, tribeHolds } from '../map/contest';
+import { checkRoad, connected, hasRoad, isConnected, roadRushPrice } from '../map/roads';
 import { holdingTier, mapConfig, site as siteDef } from '../map/world';
 import { spareMilitia } from '../combat/militia';
 import { assassinationChance, backingCost, marriageCandidates, totalBodyguards } from '../politics/intrigue';
@@ -54,6 +55,9 @@ export interface PanelHandlers {
   /** Raise a holding a tier: village business on the village clock, no round (§5.3). */
   onRaiseHolding(hex: string): void;
   onRushHolding(): void;
+  /** Lay a road segment: village business on the village clock, no round (§5.4). */
+  onBuildRoad(hex: string): void;
+  onRushRoad(): void;
   onBuild(slotId: string, buildingId: string): void;
   onSelectSlot(slotId: string): void;
   /** Start putting a town building down on the grid; '' stops (DESIGN §4.5 C.1). */
@@ -331,6 +335,16 @@ function renderMap(s: GameState, hex: string | null, now = 0): string {
       <button class="act tiny" data-rush-holding ${s.resources.denarii < price ? 'disabled' : ''}>Finish now, ${price} denarii</button></div>`;
   }
 
+  // Roads (§5.4): the network, and the one segment being laid.
+  const net = connected(s);
+  out += `<p>Road <b>${s.map.roads.length}</b> segment${s.map.roads.length === 1 ? '' : 's'} · holdings on it <b>${claimed.filter((c) => net.has(c.key)).length}</b> of ${claimed.length}</p>`;
+  const rw = s.map.roadWork;
+  if (rw) {
+    const price = roadRushPrice(s, now);
+    out += `<div class="card lane busy" data-lane="road"><b>Road lane</b> a segment to ${esc(rw.key)}, ${esc(remainingText(rw.finishAt - now))}
+      <button class="act tiny" data-rush-road ${s.resources.denarii < price ? 'disabled' : ''}>Finish now, ${price} denarii</button></div>`;
+  }
+
   if (claimed.length) {
     out += `<h3>Held</h3>`;
     for (const c of claimed) {
@@ -340,7 +354,7 @@ function renderMap(s: GameState, hex: string | null, now = 0): string {
       const check = checkHoldingWork(s, c.key);
       const next = mapConfig.tiers.list[c.tier ?? 1];
       out += `<div class="card" data-held="${c.key}"><b>${esc(def.name)}</b> <span class="muted">${c.key}, ${r} rings out · ${esc(tier.name.toLowerCase())}</span>
-        <p class="muted">Raid chance ${Math.round(siteRaidChance(s, c) * 100)}% a round · garrison ${c.garrison} · defence ${Math.round(siteDefence(c))}</p>`;
+        <p class="muted">Raid chance ${Math.round(siteRaidChance(s, c) * 100)}% a round · garrison ${c.garrison} · defence ${Math.round(siteDefence(c))}${isConnected(s, c.key) ? ` · <b data-on-road="${c.key}">on the road</b>: harder to raid, ${Math.round(mapConfig.roads.yieldBonus * 100)}% more yield` : ''}</p>`;
       const threat = threatAgainst(s, c.key);
       if (threat) {
         const left = threat.resolveRound - s.round;
@@ -361,7 +375,8 @@ function renderMap(s: GameState, hex: string | null, now = 0): string {
   const known = isKnown(s, hex);
   const held = claimOf(s, hex);
   out += `<h3>${esc(hex)} <span class="muted">— ${ringOf(hex)} rings out</span></h3>`;
-  if (hex === '0,0') return out + `<p>${esc(config.townName)} stands here.</p>`;
+  if (hex === '0,0') return out + `<p>${esc(config.townName)} stands here. Every road starts from its gate.</p>`;
+  out += roadLine(s, hex);
   const seenTreasure = !!id && siteDef(id).treasure && known && !isScouted(s, hex);
   if (!known || seenTreasure) {
     const cost = scoutCost();
@@ -393,6 +408,18 @@ function renderMap(s: GameState, hex: string | null, now = 0): string {
     if (!inPower) out += ` <span class="muted">A claim is the ${config.topOffice.title}'s to make.</span>`;
   }
   return out + `</div>`;
+}
+
+/** A hex's road: on the network, cut off from it, or where the next segment could go (§5.4). */
+function roadLine(s: GameState, hex: string): string {
+  if (hasRoad(s, hex)) {
+    return `<p class="muted" data-road="${hex}">${isConnected(s, hex) ? 'A road runs here, unbroken to the colonia.' : 'A road runs here.'}</p>`;
+  }
+  if (s.map.roadWork?.key === hex) return `<p class="muted" data-road="${hex}">Road-builders are laying a segment here.</p>`;
+  const check = checkRoad(s, hex);
+  if (check.reason === 'Roads are built outward from the colonia, hex by hex' || check.reason === 'Beyond the known country') return '';
+  return `<p data-road="${hex}">Lay a road segment here: ${costTxt(check.cost, s)} · ${esc(durationText(check.seconds))}
+    <button class="act tiny" data-build-road="${hex}" ${check.ok ? '' : 'disabled'}>Build road</button>${check.ok ? '' : ` <span class="muted">${esc((check.reason ?? '').toLowerCase())}</span>`}</p>`;
 }
 
 /**
@@ -856,6 +883,8 @@ export function bindPanel(panel: HTMLElement, h: PanelHandlers): void {
     if (d.scout) return h.onScout(d.scout);
     if (d.raiseHolding) return h.onRaiseHolding(d.raiseHolding);
     if ('rushHolding' in d) return h.onRushHolding();
+    if (d.buildRoad) return h.onBuildRoad(d.buildRoad);
+    if ('rushRoad' in d) return h.onRushRoad();
     if (d.claim) return h.onPolitical({ type: 'claim', hex: d.claim });
     if (d.release) return h.onPolitical({ type: 'release', hex: d.release });
     if (d.garrison) return h.onPolitical({ type: 'garrison', hex: d.garrison, men: Number(d.men) });
