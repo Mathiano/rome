@@ -12,7 +12,7 @@
     { "src": "iron_mine_t1.jpg", "sprite": "iron-mine-t1" },
     { "src": "library_t1.jpg", "sprite": "library-t1" },
     { "src": "lumber_camp_t1.jpg", "sprite": "lumber-camp-t1" },
-    { "src": "market_t1.jpg", "sprite": "market-t1" },
+    { "src": "market_t1.jpg", "sprite": null, "_note": "the market is folded into the forum (DESIGN §4.4, the seat, 2026-09-28); the forum keeps its own still" },
     { "src": "shrine_t1.jpg", "sprite": "temple-t1", "_note": "the shrine is the temple's first tier (🟡 mapped by Claude, 2026-09-27)" },
     { "src": "warehouse_t1.jpg", "sprite": "warehouse-t1", "crop": [0, 0, 16, 0], "_crop": "the render carries a 15×112 px black bar on its top-right edge (x 2743–2757, y 0–111); Mathias chose to crop it in the pipeline, 2026-09-27" },
     { "src": "waystation_t1.jpg", "sprite": "waystation-t1" },

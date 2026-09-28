@@ -134,6 +134,8 @@ One number. Needs housing and grain upkeep. Grows with buildings. More populatio
 
 The building count stays at fourteen.
 
+*Built 2026-09-28* (overnight, item 0). The praetorium stands at the founding on the cells the forum used to take, at tier I, and `colonyTier()` reads it; every tier's gate is `requiresColonyTier` (renamed from `requiresForumTier`), and the praetorium alone is exempt. It takes over the old forum's tiers — costs, times and gravitas per round — so the founding colony is as strong as before. The forum takes over the market's tiers — tax and trade rate — as a unique 2×2 building that is not standing at the founding; trade with the tribes needs it, as it needed the market. The Market is gone from data, sprites and code. The praetorium draws a placeholder at every tier until its still passes artgen; the market's still stays in `assets/src/`, unplaced. The Aedile *of the market* keeps his title: the post runs the market held in the forum. Save format 3 (building ids changed): under the save rule, every older save resets.
+
 #### Repeatable and unique buildings ✅
 
 Buildings are no longer one-each.
@@ -143,6 +145,8 @@ Buildings are no longer one-each.
 | Praetorium, Forum, Castellum, Wall, Temple, Library, Waystation | Insulae, Warehouse, Granary, Cellars, Barracks, Farm, Lumber camp, Clay works, Iron mine |
 
 Repeatables are where the colony's shape is decided: more farms is a trade colony, more barracks-adjacent buildings is a military one, more libraries later a learned one. Costs may rise per copy 🟡 (`_tuning`). Resource buildings still require their site (§4.5).
+
+*Built 2026-09-28:* each further copy of a repeatable building costs (1 + `repeatables.costGrowthPerCopy`)ⁿ of the first, on every tier, n its copy number from 0 — fixed when it is first built, so a later copy never re-prices an earlier one. 🟡 **0.25**, Claude's first pass: the fourth warehouse costs about twice the first. Unique buildings never scale. The Place row says how much dearer the next one is.
 
 #### Footprints ✅
 
@@ -196,6 +200,8 @@ Every building has a footprint in grid cells. 🟡 starting values: Praetorium, 
 #### C.3 Adjacency ❓
 
 Free placement exists so that placement can matter. Adjacency effects — a granary beside farms, a temple beside insulae, a warehouse beside the forum — are the intended source of supply-chain skill and are **deferred until the grid exists**. ❓ Rules and numbers in a later patch. In-town roads 🟡 likewise.
+
+*Scaffolding built 2026-09-28, with no rule defined.* A building may declare `adjacency` in `data/buildings.json`: a list of `{ beside, effects }`, each effect gained once for every standing neighbour of kind `beside` that shares an edge with its cells (diagonals do not count; a neighbour still rising gives nothing). `sumEffect` applies them, so anything that reads an effect picks them up; the plot card and the placing card state them in words. Which buildings gain what beside what remains ❓ — no content was invented.
 
 #### C.4 View ✅
 
@@ -505,3 +511,4 @@ v0.3.1 — 2026-09-27 — the pivot patch (`docs/DESIGN-patch-2026-09-27-pivot.m
 v0.3.2 — 2026-09-25, merged 2026-09-28 (#13) — §3.3 reversed: no round runs unattended. The idle round, its two config values and every surface that spoke of it are gone; a save loaded after any absence is at the round it was left at, and the dev multiplier scales the village clock only. The UI no longer redraws on the village tick: header, panel, dev bar and news card are patched in place, so the tick never replaces the element under the pointer, the button being clicked or the section being scrolled.
 v0.3.3 — 2026-09-26, merged 2026-09-28 (#14) — §3.3: the absence pillar (§2.11) recorded as the reason the idle round is gone; the 'exploit' ruled not an exploit; no replacement mechanic without Mathias's sign-off. §3.1: the "Since you were last here" strip is anchored to when the player last saw the colony (`lastSeen`) and shows only after `returnStrip.minGapMinutes` (30, a tuning default).
 v0.3.4 — 2026-09-27, merged 2026-09-28 — the grid session. §4.5 C.1, C.2 and C.4 built. The town is a grid of cells inside a rectangular wall. Its size follows the wall's tier (🟡 6/7/8/9) and it grows away from the river. Buildings are placed on free cells by footprint (🟡 2×2 for the forum, castellum and temple), unique or repeatable, and resource sites stay fixed outside the wall. The view zooms in to the old frame. §4.4 and §4.5, Mathias: the **Barracks** is added, a repeatable 1×1 building and the military counterpart to farms, each one adding to the militia pool (§8.1; §5.2's troop field is no longer the only other way to grow it). One edge of the grid is a **riverbank** reserved for a future harbour, 2×1 and placed only there; no harbour building yet. 🟡 The river edge, the bank's depth and the gate's side are Claude's first pass. §14: the Blacksmith, Iron works and Stables are banked, and their stills stay unplaced. §10: every new-style tier-1 still that passes the plate assertion is placed; the library's fails and keeps its drawn sprite. Saves from the ring layout load onto the grid, and `saveVersion` is now 2.
+v0.3.5 — 2026-09-28 — overnight item 0. §4.4: the Praetorium is the seat and its tier the colony's (B.1, built); the Forum takes the Market's role and the Market is removed; costs rise per copy of a repeatable building (🟡 0.25 a copy). §4.5 C.3: adjacency scaffolding, no rules. Save format 3; older saves reset under the save rule.

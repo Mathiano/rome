@@ -1,6 +1,6 @@
 {
   "_comment": "Global tuning. _proposed records where each value was confirmed in DESIGN.md.",
-  "saveVersion": 2,
+  "saveVersion": 3,
   "townName": "Arctown",
   "quietRound": {
     "_comment": "Mathias, 2026-09-24: a round the player calls that brings no news still gets a short card, or pressing the one button that advances the world reads as a bug.",
@@ -186,7 +186,7 @@
   },
   "rome": {
     "startFavour": 20,
-    "_decline": "Letting a request go (DESIGN §6): no punishment from Rome, so favour does not move; only the loyalist house's regard falls. declineFavour (-5) removed 2026-09-24 on Mathias's ruling.",
+    "_decline": "Letting a request go (DESIGN \u00a76): no punishment from Rome, so favour does not move; only the loyalist house's regard falls. declineFavour (-5) removed 2026-09-24 on Mathias's ruling.",
     "declineLoyalistAttitude": -8,
     "fillerEveryRounds": 2,
     "hostOfficialRounds": 2,
@@ -289,5 +289,9 @@
     "_comment": "The militia pool's third sink (DESIGN \u00a78.1, \u00a79.2). Guarding one man leaves another exposed.",
     "maxPerCharacter": 4,
     "blockPerGuard": 0.17
+  },
+  "repeatables": {
+    "_tuning": "DESIGN \u00a74.4 \ud83d\udfe1 'costs may rise per copy': each further copy of a repeatable building costs (1 + costGrowthPerCopy)^n of the first, every tier, n its copy number from 0. 0.25 is Claude's first pass (2026-09-28): the fourth warehouse costs about twice the first. Unique buildings never scale.",
+    "costGrowthPerCopy": 0.25
   }
 }

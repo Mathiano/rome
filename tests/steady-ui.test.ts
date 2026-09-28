@@ -17,7 +17,7 @@ import { patchHtml } from '../src/render/patch';
  */
 const T0 = 1_000_000;
 const MIN = 60_000;
-const FORUM_SLOT = 'c1';
+const FORUM_SLOT = 'c1'; // the seat: the Praetorium since 2026-09-28
 
 /** A colony at work: the mine going up, Rome asking for a waystation, the founding read. */
 function busy(): Game {
@@ -27,7 +27,7 @@ function busy(): Game {
   g.state.resources.clay = 590;
   g.state.resources.iron = 590;
   g.state.resources.grain = 590;
-  g.build(FORUM_SLOT, 'forum', T0); // Forum II: about an hour, longer than ten ticks
+  g.build(FORUM_SLOT, 'praetorium', T0); // Praetorium II: about an hour, longer than ten ticks
 
   const r02 = requestProgression.find((r) => r.kind === 'build')!;
   g.state.rome.activeRequest = { ...r02, delivered: {}, fulfilled: false, issuedRound: 0 };

@@ -142,7 +142,7 @@ describe('the round ledger and the history (reports unit)', () => {
     expect(r.resources).toEqual(g.state.resources);
     expect(r.toLogId).toBe(g.state.logSeq);
     expect(r.toLogId).toBeGreaterThan(r.fromLogId);
-    expect(r.forumTier).toBe(1);
+    expect(r.colonyTier).toBe(1);
     expect(typeof r.standing).toBe('number');
     expect(r.buildingsRaised).toBe(g.state.slots.filter((s) => s.tier > 0).length);
     expect(r.claimed).toBe(0);

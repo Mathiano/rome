@@ -11,8 +11,9 @@ export function createInitialState(now: number = Date.now(), seed: number = (now
       const slot = slots.find((s) => s.id === b.slot)!;
       slot.building = b.building;
       slot.tier = b.tier;
+      slot.copy = 0;
     } else {
-      slots.push({ id: b.id, zone: 'town', x: b.x, y: b.y, building: b.building, tier: b.tier });
+      slots.push({ id: b.id, zone: 'town', x: b.x, y: b.y, building: b.building, tier: b.tier, copy: 0 });
     }
   }
 

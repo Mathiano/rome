@@ -1,6 +1,6 @@
 /**
  * The colony at a glance (DESIGN §1: build the colonia through tiers; §4.4:
- * the Forum's tier is the colony's tier). Every figure is read through a
+ * the Praetorium's tier is the colony's tier). Every figure is read through a
  * function that already exists — buildingTier, populationCap, standing,
  * defenceStrength, claimedProduction — and nothing is weighted or summed into
  * a score: DESIGN has no score, and a colony-wide tier total would be one in
@@ -11,7 +11,7 @@
  */
 import { config, researchNodes, tribeDef, type ResourceId } from '../data';
 import type { GameState } from '../state/types';
-import { buildingTier, forumTier, populationCap } from '../village/storage';
+import { buildingTier, colonyTier, populationCap } from '../village/storage';
 import { cellCount, enclosure, freeCells } from '../village/grid';
 import { claimedProduction, siteAt } from '../map/sites';
 import { mapConfig } from '../map/world';
@@ -49,7 +49,7 @@ function row(label: string, value: string): string {
 const midName = (id: string) => tribeDef(id).name.replace(/^The /, 'the ');
 
 export function renderSummary(state: GameState): string {
-  const forum = forumTier(state);
+  const forum = colonyTier(state);
   const wall = buildingTier(state, 'wall');
   const c = cellsUsed(state);
   const cap = populationCap(state);
@@ -64,7 +64,7 @@ export function renderSummary(state: GameState): string {
   const arms = `${n(defenceStrength(state))} against ${esc(midName(strongest.id))}'s ${n(raidStrength(state, strongest))} · ${homeMilitia(state)} of ${militiaPool(state)} men at home`;
 
   return `<div class="card summary" data-summary>`
-    + row('Colony', `Forum ${ROMAN[forum]} <span class="muted">— the colony's tier</span>`)
+    + row('Colony', `Praetorium ${ROMAN[forum]} <span class="muted">— the colony's tier</span>`)
     + row('Wall', wall ? ROMAN[wall] : 'none raised')
     + row('Town', `${c.used} of ${c.total} cells built on, inside ${wall ? `a wall of tier ${ROMAN[wall]}` : 'the ditch and bank'}`)
     + row('Population', `${config.population.start} → ${Math.floor(state.population)} of ${cap}${stalled}`)

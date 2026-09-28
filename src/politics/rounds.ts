@@ -10,7 +10,7 @@ import { romeTurn, checkCollapse } from '../rome/requests';
 import { ageAll } from './characters';
 import { rollEvent } from './events';
 import { accrueGravitas, driftAttitudes, updateCorruption } from './posts';
-import { forumTier, sumEffect } from '../village/storage';
+import { colonyTier, sumEffect } from '../village/storage';
 
 /**
  * One political round (DESIGN §3.2). The player's own action has already been
@@ -49,7 +49,7 @@ export function runRound(state: GameState, now: number): void {
     before,
     toLogId: state.logSeq,
     standing: standing(state, playerFamily(state).id),
-    forumTier: forumTier(state),
+    colonyTier: colonyTier(state),
     buildingsRaised: state.slots.filter((s) => s.building && s.tier > 0).length,
     claimed: state.map.claimed.length,
   };

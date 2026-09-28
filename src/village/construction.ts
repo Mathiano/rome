@@ -1,7 +1,7 @@
 import { building, buildings, config } from '../data';
 import type { GameState, Construction, Slot } from '../state/types';
 import { canAfford, pay, buildTimeMultiplier, corruptionCostMultiplier, outputValuePerHour } from './economy';
-import { forumTier } from './storage';
+import { colonyTier } from './storage';
 import { anchors, nextTownSlotId, placeProblem, uniqueTaken } from './grid';
 import { log } from '../state/store';
 import type { BuildingDef, Cost } from '../data';
@@ -12,8 +12,30 @@ export function slotById(state: GameState, id: string): Slot {
   return s;
 }
 
-export function scaledCost(state: GameState, base: Cost): Cost {
-  const m = corruptionCostMultiplier(state);
+/**
+ * What a copy of a building costs against the first (DESIGN §4.4, 🟡 "costs
+ * may rise per copy"): 1 for a unique building, and for a repeatable one
+ * (1 + config.repeatables.costGrowthPerCopy) to the power of its copy number.
+ */
+export function copyFactor(buildingId: string, copy: number): number {
+  if (building(buildingId).unique) return 1;
+  return (1 + config.repeatables.costGrowthPerCopy) ** Math.max(0, copy);
+}
+
+/** The copy number a building would take if one more were started now. */
+export function nextCopy(state: GameState, buildingId: string): number {
+  return state.slots.filter((s) => s.building === buildingId).length;
+}
+
+/** The copy a slot is or would be: its own once built, the next one while it is open ground. */
+export function copyOf(state: GameState, slot: Slot, buildingId: string): number {
+  if (slot.building === buildingId && slot.copy !== undefined) return slot.copy;
+  if (slot.building === buildingId) return state.slots.filter((s) => s.building === buildingId && s.id !== slot.id).length;
+  return nextCopy(state, buildingId);
+}
+
+export function scaledCost(state: GameState, base: Cost, copy = 1): Cost {
+  const m = corruptionCostMultiplier(state) * copy;
   const out: Cost = {};
   for (const [k, v] of Object.entries(base)) out[k as keyof Cost] = Math.ceil((v ?? 0) * m);
   return out;
@@ -33,7 +55,7 @@ export function eligibleBuildings(_state: GameState, slot: Slot): string[] {
 }
 
 /** Which rule a build fails on. `reason` is the same gate in words. */
-export type BuildGate = 'top' | 'occupied' | 'ineligible' | 'slot_busy' | 'unique' | 'room' | 'lane' | 'forum' | 'resources';
+export type BuildGate = 'top' | 'occupied' | 'ineligible' | 'slot_busy' | 'unique' | 'room' | 'lane' | 'colony' | 'resources';
 
 export interface BuildCheck {
   ok: boolean;
@@ -41,7 +63,7 @@ export interface BuildCheck {
   reason?: string;
   /** Every failing gate, in the order `checkBuild` tests them. `reason` is `reasons[0]`. */
   reasons: string[];
-  /** The same gates as codes, parallel to `reasons`, so a panel can tell the Forum from the lane. */
+  /** The same gates as codes, parallel to `reasons`, so a panel can tell the Praetorium from the lane. */
   gates: BuildGate[];
   /** What is missing of each resource, by resource. Empty when the cost is covered. */
   short: Cost;
@@ -53,7 +75,7 @@ export interface BuildCheck {
 /**
  * Every gate a build would fail on, not only the first (DESIGN §4.4). While
  * anything is under way every other row would otherwise read "lane busy" and
- * hide that it also needs the Forum, or that it is 120 clay short.
+ * hide that it also needs the Praetorium, or that it is 120 clay short.
  */
 export function checkBuild(state: GameState, slotId: string, buildingId: string): BuildCheck {
   const slot = slotById(state, slotId);
@@ -69,7 +91,7 @@ export function checkBuild(state: GameState, slotId: string, buildingId: string)
   if (slot.building && slot.building !== buildingId) fail('occupied', 'Slot holds another building');
   if (!eligibleBuildings(state, slot).includes(buildingId)) fail('ineligible', 'Cannot build that here');
   if (state.constructions.some((c) => c.slotId === slotId)) fail('slot_busy', 'Already under construction');
-  return commonGates(state, def, toTier, fail, reasons, gates);
+  return commonGates(state, def, toTier, fail, reasons, gates, copyFactor(buildingId, copyOf(state, slot, buildingId)));
 }
 
 /**
@@ -90,21 +112,22 @@ export function checkPlace(state: GameState, buildingId: string, at?: { x: numbe
   } else if (!anchors(state, buildingId).length) {
     fail('room', def.placement === 'riverbank' ? 'No room on the riverbank' : 'No room inside the wall');
   }
-  return commonGates(state, def, 1, fail, reasons, gates);
+  return commonGates(state, def, 1, fail, reasons, gates, copyFactor(buildingId, nextCopy(state, buildingId)));
 }
 
 function commonGates(
   state: GameState, def: BuildingDef, toTier: number,
-  fail: (gate: BuildGate, reason: string) => void, reasons: string[], gates: BuildGate[],
+  fail: (gate: BuildGate, reason: string) => void, reasons: string[], gates: BuildGate[], copy: number,
 ): BuildCheck {
   const buildingId = def.id;
   const tier = def.tiers[toTier - 1];
-  const cost = scaledCost(state, tier.cost);
+  const cost = scaledCost(state, tier.cost, copy);
   const seconds = Math.ceil(tier.buildSeconds * buildTimeMultiplier(state));
   const concurrent = state.constructions.filter((c) => c.kind === def.kind).length;
   const limit = def.kind === 'field' ? config.concurrency.field : config.concurrency.building;
   if (concurrent >= limit) fail('lane', def.kind === 'field' ? 'A field is already being worked' : 'A building is already under construction');
-  if (forumTier(state) < tier.requiresForumTier && buildingId !== 'forum') fail('forum', `Needs forum tier ${tier.requiresForumTier}`);
+  // The seat is exempt: it is what raises the colony's tier.
+  if (colonyTier(state) < tier.requiresColonyTier && buildingId !== 'praetorium') fail('colony', `Needs praetorium tier ${tier.requiresColonyTier}`);
   const short: Cost = {};
   for (const [k, v] of Object.entries(cost)) {
     const have = state.resources[k as keyof Cost];
@@ -116,16 +139,16 @@ function commonGates(
 }
 
 /**
- * What a Forum of tier `t` opens: every building tier gated on it, read from
- * `requiresForumTier` in data/buildings.json and never authored (DESIGN §4.4,
- * "its tier is the colony's tier"). The forum itself is skipped, as
+ * What a Praetorium of tier `t` opens: every building tier gated on it, read
+ * from `requiresColonyTier` in data/buildings.json and never authored (DESIGN
+ * §4.4, "its tier is the colony's tier"). The praetorium itself is skipped, as
  * `checkBuild` exempts it.
  */
-export function openedByForumTier(t: number): { building: BuildingDef; tier: number }[] {
+export function openedByColonyTier(t: number): { building: BuildingDef; tier: number }[] {
   const out: { building: BuildingDef; tier: number }[] = [];
   for (const b of buildings) {
-    if (b.id === 'forum') continue;
-    b.tiers.forEach((tier, i) => { if (tier.requiresForumTier === t) out.push({ building: b, tier: i + 1 }); });
+    if (b.id === 'praetorium') continue;
+    b.tiers.forEach((tier, i) => { if (tier.requiresColonyTier === t) out.push({ building: b, tier: i + 1 }); });
   }
   return out;
 }
@@ -135,6 +158,7 @@ export function startBuild(state: GameState, slotId: string, buildingId: string,
   if (!check.ok) throw new Error(check.reason);
   pay(state, check.cost);
   const slot = slotById(state, slotId);
+  if (slot.copy === undefined) slot.copy = copyOf(state, slot, buildingId);
   slot.building = buildingId;
   const c: Construction = {
     slotId,

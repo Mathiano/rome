@@ -367,9 +367,9 @@ export function renderHistoryTable(state: GameState): string {
   const every = config.history.tableEvery;
   const rows = state.history.filter((r) => r.round % every === 0 && r.before);
   if (!rows.length) return '';
-  let out = `<h3>Round by round</h3><table class="history"><tr><th>round</th><th>population</th><th>standing</th><th>forum</th><th>buildings</th><th>holdings</th></tr>`;
+  let out = `<h3>Round by round</h3><table class="history"><tr><th>round</th><th>population</th><th>standing</th><th>colony</th><th>buildings</th><th>holdings</th></tr>`;
   for (const r of rows) {
-    out += `<tr><td>${r.round}</td><td>${r.population}</td><td>${n(r.standing ?? 0)}</td><td>${ROMAN[r.forumTier ?? 0]}</td><td>${r.buildingsRaised ?? ''}</td><td>${r.claimed ?? ''}</td></tr>`;
+    out += `<tr><td>${r.round}</td><td>${r.population}</td><td>${n(r.standing ?? 0)}</td><td>${ROMAN[r.colonyTier ?? 0]}</td><td>${r.buildingsRaised ?? ''}</td><td>${r.claimed ?? ''}</td></tr>`;
   }
   return out + `</table>`;
 }

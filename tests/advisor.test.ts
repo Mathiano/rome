@@ -65,8 +65,8 @@ describe('the condition vocabulary', () => {
     const s = g.state;
     const t = (c: Record<string, unknown>) => holds(s, c);
     // a fresh colony, word by word
-    expect(t({ buildingTier: { id: 'forum', atLeast: 1 } })).toBe(true);
-    expect(t({ buildingTier: { id: 'forum', atLeast: 2 } })).toBe(false);
+    expect(t({ buildingTier: { id: 'praetorium', atLeast: 1 } })).toBe(true);
+    expect(t({ buildingTier: { id: 'praetorium', atLeast: 2 } })).toBe(false);
     expect(t({ underWay: { building: 'iron_mine' } })).toBe(false);
     expect(t({ affordable: { slot: 'o5', building: 'iron_mine' } })).toBe(true);
     expect(t({ roundAtLeast: 1 })).toBe(false);

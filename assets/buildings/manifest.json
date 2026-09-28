@@ -902,38 +902,15 @@
         }
       ]
     },
-    "market-t1": {
-      "file": "market-t1.png",
-      "width": 452,
-      "height": 304,
-      "ax": 226.42,
-      "ay": 191.7,
-      "ppu": 4,
-      "plateWidth": 112,
-      "source": "assets/src/market_t1.jpg",
-      "trimOffset": [
-        298,
-        0
-      ],
-      "sourceScale": 0.201893,
-      "slopes": {
-        "left": 0.5005,
-        "right": -0.4973
-      },
-      "overhangPx": [
-        4.0,
-        0.0
-      ]
-    },
-    "market-t2": {
-      "file": "market-t2.png",
+    "praetorium-t1": {
+      "file": "praetorium-t1.png",
       "width": 455,
       "height": 235,
       "ax": 227.5,
       "ay": 118.88,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/market-t2.png",
+      "source": "../../../tmp/tmpur75tath/praetorium-t1.png",
       "trimOffset": [
         119,
         495
@@ -948,18 +925,41 @@
         0.0
       ]
     },
-    "market-t3": {
-      "file": "market-t3.png",
+    "praetorium-t2": {
+      "file": "praetorium-t2.png",
       "width": 455,
-      "height": 248,
+      "height": 245,
       "ax": 227.5,
-      "ay": 132.0,
+      "ay": 128.94,
       "ppu": 4,
       "plateWidth": 112,
-      "source": "../../../tmp/tmpu9cfhvdy/market-t3.png",
+      "source": "../../../tmp/tmpur75tath/praetorium-t2.png",
       "trimOffset": [
         119,
-        465
+        472
+      ],
+      "sourceScale": 0.437073,
+      "slopes": {
+        "left": 0.4995,
+        "right": -0.4995
+      },
+      "overhangPx": [
+        0.0,
+        0.0
+      ]
+    },
+    "praetorium-t3": {
+      "file": "praetorium-t3.png",
+      "width": 455,
+      "height": 272,
+      "ax": 227.5,
+      "ay": 156.47,
+      "ppu": 4,
+      "plateWidth": 112,
+      "source": "../../../tmp/tmpur75tath/praetorium-t3.png",
+      "trimOffset": [
+        119,
+        409
       ],
       "sourceScale": 0.437073,
       "slopes": {
@@ -974,16 +974,16 @@
         {
           "type": "anim",
           "kind": "flag",
-          "x": -120.07,
-          "y": -23.66,
-          "scale": 0.7
+          "x": -122.86,
+          "y": -85.66,
+          "scale": 0.9
         },
         {
           "type": "anim",
           "kind": "flag",
-          "x": -41.74,
-          "y": 21.1,
-          "scale": 0.7
+          "x": -22.16,
+          "y": -35.31,
+          "scale": 0.9
         }
       ]
     },

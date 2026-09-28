@@ -64,7 +64,7 @@ assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites +
 - **The wall is lit like everything else:** from the top left. `wallLight(edge)` lights the faces that look down and to the left and shades the ones that look right, the same split the sprites' boxes use.
 - **A yard is not a building:** a resource plot carries the stock, tools and clutter of its trade, and people working it. One tree in a lumber camp is a bug, not a style.
 - **Animation:** tier 3 only. SVG overlays on the PNG sprite, CSS keyframes and the Web Animations API, positioned from the same anchor.
-- **Naming in code:** English. Latin only where the doc says so (`forum`, `castellum`).
+- **Naming in code:** English. Latin only where the doc says so (`praetorium`, `forum`, `castellum`).
 - **Gods:** Roman names. Jupiter, not Zeus.
 - **Assets:** generated or original only. Nothing copied from Rome II, Travian, Anno or any other game.
 

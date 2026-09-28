@@ -80,9 +80,9 @@ describe('the colony at a glance', () => {
   it('the header names the wall, the cells built on and the holdings; the wall is not counted', () => {
     const g = new Game(createInitialState(0, 1));
     const head = renderHeader(g.state);
-    // the forum stands on 2×2 of the ditch-and-bank's 6×6 (DESIGN §4.5 C.1)
+    // the praetorium stands on 2×2 of the ditch-and-bank's 6×6 (DESIGN §4.5 C.1)
     const size = (t: number) => layout.grid.sizeByWallTier[t] ** 2;
-    expect(head).toContain(`Forum I · no wall · 4 of ${size(0)} cells built on · no holdings`);
+    expect(head).toContain(`Praetorium I · no wall · 4 of ${size(0)} cells built on · no holdings`);
     expect(cellsUsed(g.state)).toEqual({ used: 4, total: size(0) });
     g.state.slots.find((s) => s.id === 'w1')!.tier = 2;
     expect(renderHeader(g.state)).toContain(`Wall II · 4 of ${size(2)} cells built on`);
@@ -94,7 +94,7 @@ describe('the colony at a glance', () => {
     const card = strip(html.slice(html.indexOf('data-summary'), html.indexOf('One building and one field')));
     expect(html.indexOf('data-summary'), 'under the Due block, above the lanes').toBeGreaterThan(html.indexOf('data-menu="due"'));
     expect(html.indexOf('data-summary')).toBeLessThan(html.indexOf('<div class="lanes">'));
-    expect(card).toContain('Forum I');
+    expect(card).toContain('Praetorium I');
     expect(card).toContain('none raised');
     expect(card).toContain(`4 of ${layout.grid.sizeByWallTier[0] ** 2} cells built on, inside the ditch and bank`);
     expect(card).toContain(`Population ${config.population.start} → ${config.population.start} of`);

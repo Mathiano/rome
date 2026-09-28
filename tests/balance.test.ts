@@ -193,7 +193,7 @@ describe('balance: haste and hunger', () => {
     expect(outputValuePerHour(s)).toBeGreaterThan(netPerHour(s).denarii * 4);
 
     const quotes: number[] = [];
-    for (const [slot, b] of [['', 'castellum'], ['', 'warehouse'], ['c1', 'forum']] as const) {
+    for (const [slot, b] of [['', 'castellum'], ['', 'warehouse'], ['c1', 'praetorium']] as const) {
       const c = slot ? checkBuild(s, slot, b) : checkPlace(s, b);
       const work = { slotId: slot, buildingId: b, toTier: c.toTier, kind: 'building' as const, startedAt: 0, finishAt: c.seconds * 1000 };
       const price = rushPrice(s, work, 0);

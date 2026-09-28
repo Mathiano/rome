@@ -12,7 +12,6 @@
  */
 import { building, layout, type BuildingDef } from '../data';
 import type { GameState, Slot } from '../state/types';
-import { buildingTier } from './storage';
 
 export interface Rect { x0: number; x1: number; y0: number; y1: number }
 export interface Cell { x: number; y: number }
@@ -37,7 +36,9 @@ export function enclosureOfSize(n: number): Rect {
 }
 
 export function enclosure(state: GameState): Rect {
-  return enclosureOfSize(enclosureSize(buildingTier(state, 'wall')));
+  // Read directly rather than through village/storage, which reads this module.
+  const wallTier = Math.max(0, ...state.slots.filter((s) => s.building === 'wall').map((s) => s.tier));
+  return enclosureOfSize(enclosureSize(wallTier));
 }
 
 /** The reserved strip beyond the river edge, outside the wall, as long as the enclosure is deep. */
@@ -56,6 +57,30 @@ export const cellCount = (r: Rect) => (r.x1 - r.x0 + 1) * (r.y1 - r.y0 + 1);
 export function extentOf(def: BuildingDef): [number, number] {
   const [a, b] = def.footprint ?? [1, 1];
   return def.placement === 'riverbank' ? [b, a] : [a, b];
+}
+
+/** Every cell a slot covers: a town building's footprint, a site's one cell, nothing for the wall. */
+export function cellsCovered(slot: Slot): Cell[] {
+  if (slot.zone === 'site' && slot.x !== undefined && slot.y !== undefined) return [{ x: slot.x, y: slot.y }];
+  return cellsOf(slot);
+}
+
+/**
+ * The slots beside this one: any whose cells share an edge with its cells
+ * (DESIGN §4.5 C.3, the scaffolding for adjacency). Diagonals do not count.
+ */
+export function neighbours(state: GameState, slot: Slot): Slot[] {
+  const mine = new Set(cellsCovered(slot).map((c) => key(c.x, c.y)));
+  if (!mine.size) return [];
+  const edge = new Set<string>();
+  for (const k of mine) {
+    const [x, y] = k.split(',').map(Number);
+    for (const [dx, dy] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+      const n = key(x + dx, y + dy);
+      if (!mine.has(n)) edge.add(n);
+    }
+  }
+  return state.slots.filter((o) => o.id !== slot.id && cellsCovered(o).some((c) => edge.has(key(c.x, c.y))));
 }
 
 /** Every cell a town slot covers. Empty for a slot off the grid. */
@@ -147,7 +172,7 @@ export function fixedSlots(): Slot[] {
  *
  * Its sites and its wall keep their slots, ids and tiers. Every building that
  * stood or was rising in the centre or the inner ring keeps its slot id —
- * a construction under way names it — and is set down on the grid: the forum
+ * a construction under way names it — and is set down on the grid: the seat
  * on its founding cells, then the largest first, each on the free cells
  * nearest the centre. An empty plot, or a castellum the ring layout pinned to
  * its slot but nobody raised, holds nothing and is dropped. Nothing held is
@@ -172,7 +197,8 @@ export function migrateRingsToGrid(state: GameState): void {
   }
   state.slots = kept;
   const area = (s: Slot) => { const [w, h] = extentOf(building(s.building!)); return w * h; };
-  toPlace.sort((a, b) => Number(b.building === 'forum') - Number(a.building === 'forum') || area(b) - area(a) || a.id.localeCompare(b.id));
+  const founded = (s: Slot) => Number(layout.startBuilt.some((b) => 'id' in b && b.building === s.building));
+  toPlace.sort((a, b) => founded(b) - founded(a) || area(b) - area(a) || a.id.localeCompare(b.id));
   for (const s of toPlace) {
     const founding = layout.startBuilt.find((b): b is { id: string; building: string; x: number; y: number; tier: number } => 'id' in b && b.building === s.building);
     const spot = founding && !placeProblem(state, s.building!, founding.x, founding.y)
