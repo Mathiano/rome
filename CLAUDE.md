@@ -73,7 +73,7 @@ assets/          style/ (anchor, prompts), src/ (renders), buildings/ (sprites +
 - Mathias decides design; Claude proposes and implements. When a design gap appears, propose one option with a 🟡 and continue only after confirmation.
 - Verify with assertions and tests, not by eye. Vision can be unreliable; a pixel or math check is the fallback.
 - Small commits with descriptive messages. One feature per branch when it touches more than one `src/` module.
-- Every change lands through a pull request with CI green, and Mathias merges; branch protection on `main` enforces it. Branch off `main`, and stack a branch on another only when it depends on it. At most two pull requests open at once. Session capsules are the exception: they go straight to `main`.
+- Every change lands through a pull request with CI green; branch protection on `main` enforces it. **Merging:** Mathias reviews the preview and says "merge"; Claude then merges main into the PR, waits for CI to pass on that head, merges, and confirms the merge commit by reading the PR back as merged. Mathias does not merge by hand: his manual merges failed silently three times (Mathias, 2026-10-04). Branch off `main`, and stack a branch on another only when it depends on it. At most two pull requests open at once. Session capsules are the exception: they go straight to `main`.
 - Flag uncertainty with ✅ / 🟡 / 🔴 rather than projecting confidence.
 - Mathias cross-checks proposals with Gemini. Gemini's art-direction instincts are sound; its codebase-specific claims need verification against this repo before acting on them.
 - End every substantial session with a `docs/CAPSULE-SESSION-<date>.md`: what changed, what's verified, what's next, what's open.
