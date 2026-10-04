@@ -149,11 +149,11 @@ describe('research (DESIGN §4.6)', () => {
     const g = new Game(createInitialState(0, 2));
     const raw = JSON.parse(serialise(g.state));
     delete raw.research;
-    raw.slots = raw.slots.filter((s: { id: string }) => s.id !== 'o8');
+    raw.slots = raw.slots.filter((s: { id: string }) => s.id !== 'grain3');
     const migrated = deserialise(JSON.stringify(raw));
     expect(migrated.research).toEqual({ active: [], completed: [] });
     expect(migrated.slots.map((s) => s.id).sort()).toEqual(g.state.slots.map((s) => s.id).sort());
-    expect(migrated.slots.find((s) => s.id === 'o8')!.building).toBeNull();
+    expect(migrated.slots.find((s) => s.id === 'grain3')!.building).toBeNull();
   });
 
   it('the tree is finishable, and finishing it takes real time', () => {

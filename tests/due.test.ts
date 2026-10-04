@@ -131,7 +131,7 @@ describe('the Due block on the Village tab', () => {
     expect(block).not.toMatch(/second/);
     // above the overview's lanes, and on the plot card too
     expect(start).toBeLessThan(html.indexOf('<div class="lanes">'));
-    expect(renderPanel(g, 'village', 'o2', 0)).toContain('data-menu="due"');
+    expect(renderPanel(g, 'village', 'wood2', 0)).toContain('data-menu="due"');
   });
 
   it('each line is a link to where it lands, grouped and each stated once', () => {
@@ -164,7 +164,7 @@ describe('the Due block on the Village tab', () => {
     expect(details().open).toBe(true);
     details().open = false;
     details().dispatchEvent(new Event('toggle'));
-    panel.innerHTML = renderPanel(g, 'village', 'o2', 0);
+    panel.innerHTML = renderPanel(g, 'village', 'wood2', 0);
     expect(details().open, 'closed stays closed when a plot is selected').toBe(false);
     panel.innerHTML = renderPanel(g, 'village', null, 0);
     expect(details().open).toBe(false);
@@ -198,7 +198,7 @@ describe('before you go, from the same collector', () => {
     expect(renderNews(pendingNews(g.state)!, g.state, 0)).not.toContain('Before you go');
     g.state.seenLogId = g.state.logSeq;
     g.state.seenOpening = true;
-    g.build('o5', 'iron_mine', 1000);
+    g.build('iron1', 'iron_mine', 1000);
     // Rome's founding letter is already open, so clear it: Rome writes its next
     // letter at this round, and the round has news to raise a card with.
     g.state.rome.activeRequest = null;

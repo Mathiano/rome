@@ -63,14 +63,14 @@ describe('construction', () => {
     plot(s, 'warehouse', 'i1');
     startBuild(s, 'i1', 'warehouse', 0);
     expect(checkPlace(s, 'granary').gates).toEqual(['lane']);
-    expect(checkBuild(s, 'o2', 'lumber_camp').ok).toBe(true);
-    startBuild(s, 'o2', 'lumber_camp', 0);
-    expect(checkBuild(s, 'o4', 'clay_works').ok).toBe(false);
+    expect(checkBuild(s, 'wood2', 'lumber_camp').ok).toBe(true);
+    startBuild(s, 'wood2', 'lumber_camp', 0);
+    expect(checkBuild(s, 'clay2', 'clay_works').ok).toBe(false);
   });
   it('rejects a building on the wrong site; a unique building stands once, a repeatable as often as there is room (§4.4)', () => {
     const s = createInitialState(0, 1);
     s.resources = { wood: 9999, clay: 9999, iron: 9999, grain: 9999, denarii: 9999 };
-    expect(checkBuild(s, 'o2', 'farm').ok).toBe(false);
+    expect(checkBuild(s, 'wood2', 'farm').ok).toBe(false);
     const at = anchors(s, 'warehouse')[0];
     placeBuild(s, 'warehouse', at.x, at.y, 0);
     completeFinished(s, 1e9);
@@ -114,7 +114,7 @@ describe('clock', () => {
   it('handles a long offline gap with a construction boundary inside it', () => {
     const s = createInitialState(0, 1);
     s.resources = { wood: 500, clay: 500, iron: 500, grain: 500, denarii: 500 };
-    const c = startBuild(s, 'o2', 'lumber_camp', 0);
+    const c = startBuild(s, 'wood2', 'lumber_camp', 0);
     const woodBefore = s.resources.wood;
     tick(s, c.finishAt + H);
     // one hour at the new (higher) rate after completion, plus the pre-completion accrual

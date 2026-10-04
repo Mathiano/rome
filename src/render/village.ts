@@ -49,7 +49,7 @@ function plate(w: number, h: number): string {
  * Everything the view can show, in grid units: the largest enclosure, its
  * riverbank and the river past it, and every site outside the wall.
  */
-function sceneBounds(): { x: number; y: number; w: number; h: number } {
+export function sceneBounds(): { x: number; y: number; w: number; h: number } {
   const big = enclosureOfSize(Math.max(...layout.grid.sizeByWallTier));
   const pts: [number, number][] = [
     [big.x0, big.y0], [big.x1 + 1 + layout.grid.riverbankDepth + 1, big.y0], [big.x0, big.y1 + 1], [big.x1 + 1 + layout.grid.riverbankDepth + 1, big.y1 + 1],
@@ -230,6 +230,8 @@ export function createVillageView(onSelect: (slotId: string) => void, onPlace: (
   function update(state: GameState, now: number, selected: string | null, placing: string | null = null): void {
     last = { state, now, selected };
     compose(state);
+    // The grid is a tool, not scenery: its lines show only while a building is being placed.
+    floorLayer.querySelector('.cell-lines')?.setAttribute('display', placing ? 'inline' : 'none');
     drawPlacing(state, placing);
     // The counsel's plot is marked the way the selected one is.
     const step = currentAdvice(state);

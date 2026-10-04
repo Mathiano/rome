@@ -1,100 +1,96 @@
 # Base map v2 — geometry for the town grid
 
-The brief for the painted country under the rectangular town (DESIGN §10: "regenerated in the new style, after the grid and zones exist, so it is painted to the layout rather than the layout fitted to it"). It replaces the round-wall geometry in `assets/style/PROMPTS.md` (base map v1, `-330 -190 660 360`, ellipse 835 × 417). Style, palette and lighting come from §10 and `anchor-v2`; this document fixes only **where things are**.
+The brief for the painted country under the town (DESIGN §10: "regenerated in the new style, after the grid and zones exist, so it is painted to the layout rather than the layout fitted to it"). Style, palette and lighting come from §10 and `anchor-v2`; this document fixes **where things are** and **what must not be painted**.
 
-Written 2026-09-28 (overnight item 4). Nothing has been generated. Every pixel below is computed from `data/layout.json` and the projection in `src/render/environment.ts`. `tests/basemap-spec.test.ts` recomputes them and fails if the layout changes without this file changing too.
-
-`docs/basemap-v2-geometry.svg` draws the same numbers at the same size (`npm run basemap:guide`, from `tools/basemap/`), and can go to the image model as a layout guide. It is a wireframe, not art.
+Regenerated 2026-09-28 for the resource biomes, the fixed praetorium and the organic clearing (Mathias). Nothing has been generated. Every pixel here is computed from `data/layout.json` and the village projection by `tools/basemap/` (`npm run basemap:spec`), which also draws `docs/basemap-v2-geometry.svg`: the same geometry at the same size, with the three slots of every biome marked, to hand to the image model as a layout guide. It is a wireframe, not art. `tests/basemap-spec.test.ts` fails if either file differs from what the script writes.
 
 ## 1. The frame, which is not negotiable
 
-- **Image: 3520 × 2200 px, aspect 16:10 exactly.** Any other resolution must keep 16:10. Then every coordinate here scales by the same factor; for example, at 1760 × 1100, halve them all.
-- **The mapping from the game's scene units to image pixels:**
+- **Image: 4224 × 2640 px, aspect 16:10 exactly** (1.6). At another resolution keep 16:10 and scale every coordinate by the same factor.
+- **Scene units to image pixels:** `px = 2 · (sx + 1084)`, `py = 2 · (sy + 652)`. The image covers scene x -1084 to 1028 and y -652 to 668.
+- **Grid cells to scene units:** `sx = 56 · (x − y)`, `sy = 28 · (x + y)`. One cell is a 2:1 diamond, **224 × 112 px** in the image. +x runs down-right, +y down-left; up is north.
+- **Grid origin:** cell corner (0, 0) is at **(2168, 1304)**.
+- **Why this size:** at its widest the view shows the whole scene — image px 690 … 3534 by 361 … 2281 — and letterboxes it to the stage. The frame's bleed keeps painted country behind it for any stage aspect from 1.08:1 to 2.20:1. Keep the outermost ~60 px ordinary country.
 
-  `px = 2 · (sx + 908)` and `py = 2 · (sy + 542)`.
+## 2. The clearing and the grid under it
 
-  The image covers scene x −908 … 852 and y −542 … 558, at 2 px per scene unit.
-- **The projection from grid cells to scene units:**
+The town stands in a **clearing with an organic, irregular edge** — packed earth and trodden grass, flat, no marks. The logical grid under it stays square: a rectangle of cells whose wall is drawn in code. The clearing must hold the **9×9 enclosure at wall tier III** with margin, so the edge wanders freely but only inside a band:
 
-  `sx = 56 · (x − y)` and `sy = 28 · (x + y)`.
+- **never nearer** than 0.5 cell beyond the tier-III wall: (2168, 800) (3344, 1388) (2224, 1948) (1048, 1360) (top, right, bottom, left);
+- **never further** than 1.5 cells beyond it: (2168, 688) (3456, 1332) (2112, 2004) (824, 1360).
 
-  One cell is a 2:1 diamond 112 units wide (`tile` 64 × `cellTiles` 1.75), so it is **224 × 112 px** in the image. +x runs down-right and +y runs down-left.
-- **Grid origin:** cell corner (0, 0) is at **(1816, 1084)**. The largest town's centre is at **(1816, 1140)**.
-- **Why 16:10:** at its widest zoom the view shows the whole scene, which is scene x −739 … 683 and y −388 … 404, or image px 338 … 3182 by 309 … 1893. It scales that to fit the stage and letterboxes it. The frame's bleed keeps painted country, not a flat colour, behind a stage of any aspect from 1.29:1 to 2.22:1. The outermost ~60 px should be ordinary country so the join to the edge-colour flood beyond the frame doesn't show.
+On the river side the clearing runs down to the water (§4). Everything the band encloses is flat; everything outside it is country and the biomes (§5).
 
-## 2. The enclosure and its wall, per tier
+## 3. The wall, at most hinted
 
-The town is a rectangle of cells inside a rectangular wall. The wall's tier sets its size: 6, 7, 8 or 9 cells a side (`grid.sizeByWallTier`, 🟡 _tuning). The river edge is fixed and the town grows away from it, so every tier contains the one before. On screen, each enclosure is a diamond. Its corners, in image px:
+The wall is drawn in code at every tier — a ditch and bank, a palisade, stone, a crenellated circuit — and its line moves as the town grows. **Never paint it as a structure.** At most, the tier-III line may be hinted in the terrain: a low bank, scattered stones, faint enough to vanish under the drawn wall. Its corners and gate for reference:
 
-| Wall tier | Cells | Top | Right (river end) | Bottom | Left | Gate opening, along the lower-left edge |
+| Wall tier | Cells | Top | Right (river end) | Bottom | Left | Gate opening (drawn) |
 |---|---|---|---|---|---|---|
-| 0 | 6×6 | (1928, 916) | (2600, 1252) | (1928, 1588) | (1256, 1252) | (1592, 1420)–(1704, 1476) |
-| 1 | 7×7 | (1928, 804) | (2712, 1196) | (1928, 1588) | (1144, 1196) | (1480, 1364)–(1592, 1420) |
-| 2 | 8×8 | (1816, 748) | (2712, 1196) | (1816, 1644) | (920, 1196) | (1368, 1420)–(1480, 1476) |
-| 3 | 9×9 | (1816, 636) | (2824, 1140) | (1816, 1644) | (808, 1140) | (1256, 1364)–(1368, 1420) |
+| 0 | 6×6 | (2280, 1136) | (2952, 1472) | (2280, 1808) | (1608, 1472) | (1944, 1640)–(2056, 1696) |
+| 1 | 7×7 | (2280, 1024) | (3064, 1416) | (2280, 1808) | (1496, 1416) | (1832, 1584)–(1944, 1640) |
+| 2 | 8×8 | (2168, 968) | (3064, 1416) | (2168, 1864) | (1272, 1416) | (1720, 1640)–(1832, 1696) |
+| 3 | 9×9 | (2168, 856) | (3176, 1360) | (2168, 1864) | (1160, 1360) | (1608, 1584)–(1720, 1640) |
 
-- **The river edge is the lower-right side,** from Right to Bottom. It is the same line at every tier; only its length changes.
-- **The gate** is the middle cell of the lower-left side, facing the viewer's left, so it moves as the town grows. The wall, its towers, the gate and the standard over it are all drawn in code. **Paint none of them, and no road to any gate:** roads and in-town roads are drawn or banked (§14).
-- **Inside the tier-0 diamond** the drawn town floor always covers the painting at 92% opacity. Paint flat packed earth there (`earth light`, as in v1), with no marks.
-- **Between the tier-0 and tier-3 diamonds** is country at a low wall tier and town at a high one. The floor covers it at 92%, so 8% of the painting shows through. Paint cleared ground there: short grass and worn earth, low in contrast. No trees, rocks, water, fields, tracks or anything with height.
+The river edge is the lower-right side, the same line at every tier. The gate is the middle cell of the lower-left side and moves as the town grows; paint no road to it.
 
-## 3. The riverbank, per tier
+## 4. The riverbank and the river
 
-A strip one cell deep (`grid.riverbankDepth`) runs outside the lower-right wall, as long as the enclosure. It is reserved for the harbour, which is not built yet, and is drawn in code in a stone tone. Its corners in px:
+A strip one cell deep runs outside the lower-right wall, as long as the enclosure, reserved for the harbour (not built yet) and drawn in code. Paint it as level bank — dry earth and gravel, fit for a quay. At tier III its corners are (3176, 1360) (3288, 1416) (2280, 1920) (2168, 1864).
 
-| Wall tier | Top | Right | Bottom | Left |
-|---|---|---|---|---|
-| 0 | (2600, 1252) | (2712, 1308) | (2040, 1644) | (1928, 1588) |
-| 1 | (2712, 1196) | (2824, 1252) | (2040, 1644) | (1928, 1588) |
-| 2 | (2712, 1196) | (2824, 1252) | (1928, 1700) | (1816, 1644) |
-| 3 | (2824, 1140) | (2936, 1196) | (1928, 1700) | (1816, 1644) |
+The river runs the whole frame, parallel to that edge, from the upper right down to the lower left:
 
-Under the tier-3 strip, paint flat bank: dry earth and gravel, level, fit for a quay. The strip's outer edge is the water's edge.
+- **near bank** (grid x = 6, flush with the strip): enters at **(4224, 948)** and leaves at **(840, 2640)**;
+- **far bank** (grid x = 8.4, 2.4 cells of water): **(4224, 1217)** to **(1378, 2640)**;
+- **deep channel** (x 6.7 to 7.7): enters between **(4224, 1026)** and **(4224, 1138)**, leaves between **(997, 2640)** and **(1221, 2640)**;
+- beyond the far bank: the other shore, grass and scrub, less worked than ours.
 
-## 4. The river
+✅ *Mathias, 2026-09-28:* the river is painted in exactly this band, and the river the game draws now is removed when v2 is wired in. A painted bank more than ~10 px off these lines leaves the riverbank strip floating.
 
-The river runs the whole frame, parallel to the town's river edge: from the upper right down to the lower left.
+## 5. The four biomes and their slots
 
-- **Near bank** (grid x = 6, flush with the riverbank strip's outer edge): enters the right edge at **(3520, 904)**, passes **(2488, 1420)**, and leaves the bottom edge at **(928, 2200)**.
-- **Far bank** (grid x = 8.4, 2.4 cells of water): enters the right edge at **(3520, 1173)** and leaves the bottom edge at **(1465, 2200)**.
-- **Deep channel** (x 6.7 to 7.7): a darker band down the middle. It enters the right edge between **(3520, 982)** and **(3520, 1094)** and leaves the bottom between **(1084, 2200)** and **(1308, 2200)**.
-- **Beyond the far bank** (the lower-right corner of the frame): the other shore. Grass and scrub, less worked than the colony's side.
+Outside the clearing lie the four resource biomes (DESIGN §4.5 C.2, ✅ Mathias 2026-09-28). **Paint each biome as terrain**, with room for its three slots. Each slot is a 224 × 112 px ground plate where the game draws the resource building and its yard: paint the plate as flat ground in the biome's own material, and the terrain around it.
 
-✅ *Mathias, 2026-09-28:* v2 paints the river in exactly this band, and the river the game draws over the painting now (`createGround`) is removed when v2 is wired in. If the painted band misses these lines by more than ~10 px, the riverbank strip will float off the water.
+| Biome | Where | Paint it as |
+|---|---|---|
+| wood | north and north-west | forest, with stumps and log piles |
+| clay | north-east | a red clay excavation |
+| iron | the cliffs by the river, at the town’s south end | rocky cliffs above the river |
+| grain | south-west | open field strips |
 
-## 5. The resource sites, outside the wall
+| Slot | Cell (x, y) | Plate centre | Plate corners: top, right, bottom, left |
+|---|---|---|---|
+| wood1 | -7, -3 | (1720, 800) | (1720, 744) (1832, 800) (1720, 856) (1608, 800) |
+| wood2 | -7, 0 | (1384, 968) | (1384, 912) (1496, 968) (1384, 1024) (1272, 968) |
+| wood3 | -7, -6 | (2056, 632) | (2056, 576) (2168, 632) (2056, 688) (1944, 632) |
+| clay1 | 3, -7 | (3288, 1136) | (3288, 1080) (3400, 1136) (3288, 1192) (3176, 1136) |
+| clay2 | 1, -7 | (3064, 1024) | (3064, 968) (3176, 1024) (3064, 1080) (2952, 1024) |
+| clay3 | -2, -7 | (2728, 856) | (2728, 800) (2840, 856) (2728, 912) (2616, 856) |
+| iron1 | 5, 7 | (1944, 2032) | (1944, 1976) (2056, 2032) (1944, 2088) (1832, 2032) |
+| iron2 | 3, 8 | (1608, 1976) | (1608, 1920) (1720, 1976) (1608, 2032) (1496, 1976) |
+| iron3 | 5, 9 | (1720, 2144) | (1720, 2088) (1832, 2144) (1720, 2200) (1608, 2144) |
+| grain1 | -3, 7 | (1048, 1584) | (1048, 1528) (1160, 1584) (1048, 1640) (936, 1584) |
+| grain2 | -1, 7 | (1272, 1696) | (1272, 1640) (1384, 1696) (1272, 1752) (1160, 1696) |
+| grain3 | -5, 7 | (824, 1472) | (824, 1416) (936, 1472) (824, 1528) (712, 1472) |
 
-Eight fixed sites (`data/layout.json` `sites`), each one cell. The game draws a sprite on each: the building and its yard, standing on a 224 × 112 px ground plate centred on the point below. Paint each plate as flat ground matching its trade. The setting around it is what the painting gives.
+The strategic resources — stone, marble, salt — come only from the map (DESIGN §4.1): paint no quarry, marble or salt works here.
 
-| Slot | Site | Cell (x, y) | Plate centre | Plate corners: top, right, bottom, left | Setting to paint around it |
-|---|---|---|---|---|---|
-| o1 | forest | -7, -3 | (1368, 580) | (1368, 524) (1480, 580) (1368, 636) (1256, 580) | standing wood behind (above) it |
-| o2 | forest | -7, 0 | (1032, 748) | (1032, 692) (1144, 748) (1032, 804) (920, 748) | standing wood behind (above) it |
-| o3 | clay_bank | 3, -7 | (2936, 916) | (2936, 860) (3048, 916) (2936, 972) (2824, 916) | clay bank toward the river |
-| o4 | clay_bank | 1, -7 | (2712, 804) | (2712, 748) (2824, 804) (2712, 860) (2600, 804) | clay bank toward the river |
-| o5 | iron_seam | -2, -7 | (2376, 636) | (2376, 580) (2488, 636) (2376, 692) (2264, 636) | rock outcrops behind it |
-| o6 | farmland | 4, 7 | (1480, 1756) | (1480, 1700) (1592, 1756) (1480, 1812) (1368, 1756) | ploughed strips around it |
-| o7 | farmland | -2, 7 | (808, 1420) | (808, 1364) (920, 1420) (808, 1476) (696, 1420) | ploughed strips around it |
-| o8 | farmland | -5, 7 | (472, 1252) | (472, 1196) (584, 1252) (472, 1308) (360, 1252) | ploughed strips around it |
+## 6. Nothing built, anywhere
 
-The broad layout is unchanged from v1: wood to the west and north-west, clay by the river upstream, rock to the north, fields to the south-west and south.
+**No buildings anywhere in the painting.** No central building, no villa, no temple, no huts; no fence ring or palisade round the clearing; no wall, tower or gate; no roads, tracks to the gate, bridges or jetties; no figures, animals, carts, text or watermark. Everything built is drawn by the game, and a painted copy doubles it.
 
-## 6. Occlusion: the painting is always behind
+The **praetorium** stands at the centre of the grid, fixed (DESIGN §4.4): cells (2168, 1304) (2392, 1416) (2168, 1528) (1944, 1416). Paint only the clearing's ground there.
 
-Every sprite and every piece of wall is drawn over the painting. So anything painted with height looks as if it stands *behind* whatever is drawn over it, even where it should be in front.
+## 7. Occlusion: the painting is always behind
 
-- **Nothing tall directly below a plate.** No tree, rock or standing object in each plate's diamond, or in a band one cell (112 px) below its bottom corner. Tall things above a plate are fine: they read as behind the building, which is correct.
-- **Nothing tall within 112 px below the tier-3 wall's two lower sides.** The tier-3 wall stands up to ~70 px high with its towers, and a tree painted just below it would be cut off by it.
-- **Nothing in the painting may read as a building, wall, tower, gate, road, bridge, figure, text or watermark.** All of those are drawn, and a painted copy would double them.
+Every sprite and every piece of wall is drawn over the painting, so anything painted with height reads as *behind* whatever is drawn over it.
 
-## 7. Light, palette, edges, delivery
+- **Nothing tall directly below a slot:** no tree, rock or cliff face in a plate's diamond or in the cell below it (112 px under its bottom corner). Tall things above a plate read as behind the building, which is right.
+- **Nothing tall within 112 px below the tier-III wall's two lower sides**: the drawn wall stands up to ~70 px high with its towers.
 
-- **Light** from the upper left, as on every sprite and on the drawn wall (`wallLight`).
-- **Palette:** re-derived from `anchor-v2` per §10. Until that lands, match `tools/artgen/palette.json` so the seam with the drawn floor and bank holds: grass `#8d9a5f`, leaf mid `#6e7d48`, leaf dark `#4d5a36`, water `#7d94a0`, water deep `#5d7682`, earth light `#cfa278`, stone light `#d7b791`, grain `#d9b969`.
-- **Edges:** see §1. Plain country at the border, with no strong feature cut by the frame.
-- **Delivery:** `assets/src/base-map-v2.jpg`, 3520 × 2200 (or any 16:10), ideally under 1.5 MB.
-- **Wiring,** a later session and not this spec:
-  - `createGround` places the image at exactly scene x −908, y −542, 1760 × 1100 units, with no clearing-fit (`MAP_FIT` goes);
-  - the frame numbers move to `data/layout.json`;
-  - the drawn river is removed (§4);
-  - the check is a pixel assertion that the painted near bank sits on grid x = 6.
+## 8. Light, palette, edges, delivery
+
+- **Light** from the upper left, as on every sprite and on the drawn wall.
+- **Palette:** re-derived from `anchor-v2` per §10; until then match `tools/artgen/palette.json` so the seam with the drawn town holds — grass `#8d9a5f`, leaf mid `#6e7d48`, leaf dark `#4d5a36`, water `#7d94a0`, water deep `#5d7682`, earth light `#cfa278`, stone light `#d7b791`, grain `#d9b969`.
+- **Delivery:** `assets/src/base-map-v2.jpg`, 4224 × 2640 (or any 16:10), ideally under 2 MB.
+- **Wiring,** a later session: `createGround` places the image at exactly scene (-1084, -652), 2112 × 1320 units, with no clearing-fit (`MAP_FIT` goes); the drawn river is removed (§4); 🟡 the drawn town floor shows only in build mode, like the grid, so the painted clearing's edge is what the player sees; the check is a pixel assertion that the painted near bank sits on grid x = 6.

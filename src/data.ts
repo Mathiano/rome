@@ -44,7 +44,8 @@ export interface BuildingDef {
    * `riverbank`: placed only on the reserved strip along the river edge,
    * its footprint read as [along the bank, away from it] (§4.5, the harbour).
    */
-  placement?: 'riverbank';
+  /** 'riverbank': placed only on the bank strip. 'fixed': stands where the layout founds it and is never placed or moved by the player. */
+  placement?: 'riverbank' | 'fixed';
   /**
    * What this building gains beside others (DESIGN §4.5 C.3): each rule's
    * effects once for every standing neighbour of kind `beside`. The engine and
@@ -71,9 +72,18 @@ export interface ResearchDef {
 /** A resource site outside the wall: fixed by the layout, not placed by the player (§4.5 C.2). */
 export interface SiteSlotDef {
   id: string;
+  /** The biome it belongs to; it takes that biome's resource building and no other. */
+  biome: string;
   site: string;
   x: number;
   y: number;
+}
+/** A resource biome outside the wall (§4.5 C.2): one site kind, a fixed list of slots. */
+export interface BiomeDef {
+  site: string;
+  /** Where it lies, in words, from the town. */
+  where: string;
+  slots: { id: string; x: number; y: number }[];
 }
 export interface GridDef {
   /** The enclosure's side in cells, indexed by the wall's tier (§4.5 C.1). */
@@ -86,6 +96,8 @@ export interface LayoutDef {
   tile: { w: number; h: number };
   cellTiles: number;
   grid: GridDef;
+  biomes: Record<string, BiomeDef>;
+  /** Every biome's slots in one list, derived from `biomes` when the data loads. */
   sites: SiteSlotDef[];
   wall: { id: string };
   startBuilt: ({ id: string; building: string; x: number; y: number; tier: number } | { slot: string; building: string; tier: number })[];
@@ -193,6 +205,9 @@ export const resources = resourcesJson.resources as { id: ResourceId; name: stri
 export const startResources = resourcesJson.start as Record<ResourceId, number>;
 export const buildings = buildingsJson.buildings as BuildingDef[];
 export const layout = layoutJson as unknown as LayoutDef;
+/** The biomes by id, their `_comment` and `_tuning` notes left out. */
+export const biomes: Record<string, BiomeDef> = Object.fromEntries(Object.entries(layout.biomes).filter(([k]) => !k.startsWith('_')));
+layout.sites = Object.entries(biomes).flatMap(([biome, b]) => b.slots.map((c) => ({ ...c, biome, site: b.site })));
 export const families = familiesJson.families as FamilyDef[];
 export const newMen = familiesJson.newMen;
 export const posts = postsJson.posts as PostDef[];

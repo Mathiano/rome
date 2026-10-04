@@ -106,10 +106,10 @@ describe('a hovered tooltip survives ten ticks', () => {
 describe('patchHtml', () => {
   it('changes text and attributes in place, and replaces only a node that became a different thing', () => {
     const host = document.createElement('div');
-    host.innerHTML = '<p id="a" class="x">one</p><button data-build="o5">Build</button><i>gone</i>';
+    host.innerHTML = '<p id="a" class="x">one</p><button data-build="iron1">Build</button><i>gone</i>';
     const p = host.querySelector('#a')!;
     const b = host.querySelector('button')!;
-    patchHtml(host, '<p id="a" class="y">two</p><button data-build="o6">Build</button>');
+    patchHtml(host, '<p id="a" class="y">two</p><button data-build="grain2">Build</button>');
     expect(host.querySelector('#a')).toBe(p);
     expect(p.className).toBe('y');
     expect(p.textContent).toBe('two');

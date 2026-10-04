@@ -161,7 +161,7 @@ describe('a save from the ring layout', () => {
   function ringSave(): string {
     const raw = JSON.parse(serialise(createInitialState(0, 1)));
     const outer = layout.sites.map((d) => ({ id: d.id, ring: 'outer', site: d.site, building: null as string | null, tier: 0 }));
-    outer.find((o) => o.id === 'o1')!.building = 'lumber_camp'; outer.find((o) => o.id === 'o1')!.tier = 2;
+    outer.find((o) => o.id === 'wood1')!.building = 'lumber_camp'; outer.find((o) => o.id === 'wood1')!.tier = 2;
     raw.slots = [
       { id: 'c1', ring: 'centre', building: 'praetorium', tier: 2 },
       { id: 'c2', ring: 'centre', building: 'castellum', tier: 0 },
@@ -198,7 +198,7 @@ describe('a save from the ring layout', () => {
     // an empty plot and a castellum nobody raised hold nothing, and are gone
     expect(s.slots.some((x) => x.id === 'i2' || x.id === 'c2')).toBe(false);
     // sites and the wall keep their tiers; nothing carries the old ring
-    expect(s.slots.find((x) => x.id === 'o1')).toMatchObject({ zone: 'site', building: 'lumber_camp', tier: 2 });
+    expect(s.slots.find((x) => x.id === 'wood1')).toMatchObject({ zone: 'site', building: 'lumber_camp', tier: 2 });
     expect(s.slots.find((x) => x.id === 'w1')).toMatchObject({ zone: 'wall', building: 'wall', tier: 1 });
     expect(s.slots.every((x) => !('ring' in x))).toBe(true);
     // and it loads the same way twice
@@ -227,6 +227,24 @@ describe('the village view on the grid', () => {
     view.update(s, 0, null, null);
     expect(view.root.querySelectorAll('.place-spot')).toHaveLength(0);
     expect(view.root.classList.contains('placing')).toBe(false);
+  });
+
+  it('shows the grid only while a building is being placed: at rest the town is buildings on the ground', () => {
+    const s = rich(createInitialState(0, 1));
+    const view = createVillageView(() => {});
+    const lines = () => view.root.querySelector('.cell-lines')!;
+    view.update(s, 0, null);
+    expect(lines().getAttribute('display')).toBe('none');
+    view.update(s, 1000, null, 'warehouse');
+    expect(lines().getAttribute('display')).toBe('inline');
+    expect(view.root.querySelectorAll('.place-spot').length).toBeGreaterThan(0);
+    view.update(s, 2000, null);
+    expect(lines().getAttribute('display')).toBe('none');
+    // a wall raised while at rest rebuilds the floor, and its grid stays hidden
+    s.slots.find((x) => x.building === 'wall')!.tier = 1;
+    view.update(s, 3000, null);
+    expect(view.root.querySelectorAll('.cell-lines')).toHaveLength(1);
+    expect(lines().getAttribute('display')).toBe('none');
   });
 
   it('draws a new building the moment it is placed, and never re-sorts on a plain tick', () => {

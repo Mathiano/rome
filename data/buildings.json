@@ -1,5 +1,5 @@
 {
-  "_comment": "Three tiers per building. buildSeconds is real time. requiresColonyTier gates each tier: the colony's tier is the Praetorium's (DESIGN §4.4, the seat). Effects are read by src/village and src/combat; nothing here is duplicated in code. zone (DESIGN §4.5 C.2): 'town' stands on the grid inside the wall, 'site' on a resource site outside it, 'wall' is the circuit. footprint is [along x, along y] in grid cells (§4.4, 🟡 starting values). unique: one per colony; every other building is repeatable (§4.4). adjacency (DESIGN §4.5 C.3, scaffolding only): a building may list [{ \"beside\": <building id>, \"effects\": { <effect>: <value> } }], each effect gained once for every standing neighbour of that kind sharing an edge. None is defined; the rules are ❓.",
+  "_comment": "Three tiers per building. buildSeconds is real time. requiresColonyTier gates each tier: the colony's tier is the Praetorium's (DESIGN §4.4, the seat). Effects are read by src/village and src/combat; nothing here is duplicated in code. zone (DESIGN §4.5 C.2): 'town' stands on the grid inside the wall, 'site' on a resource site outside it, 'wall' is the circuit. footprint is [along x, along y] in grid cells (§4.4, 🟡 starting values). unique: one per colony; every other building is repeatable (§4.4) — a resource building only within its biome's slots (data/layout.json biomes). placement: 'riverbank' goes only on the bank strip; 'fixed' stands where layout.json founds it and is never placed or moved by the player (the praetorium, at the centre of the tier-III grid, Mathias 2026-09-28). adjacency (DESIGN §4.5 C.3, scaffolding only): a building may list [{ \"beside\": <building id>, \"effects\": { <effect>: <value> } }], each effect gained once for every standing neighbour of that kind sharing an edge. None is defined; the rules are ❓.",
   "buildings": [
     {
       "id": "praetorium",
@@ -7,6 +7,7 @@
       "zone": "town",
       "footprint": [2, 2],
       "unique": true,
+      "placement": "fixed",
       "kind": "building",
       "role": "The governor's residence and the seat of your house. Its tier is the colony's tier.",
       "tiers": [

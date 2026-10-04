@@ -333,9 +333,9 @@ export function renderOverview(state: GameState, now: number): string {
   }
   out += `</ul>`;
 
-  // What can still go up: every town building but a unique one that stands,
-  // and every open site. Rome's ask goes first.
-  const toPlace = buildings.filter((b) => b.zone === 'town' && !(b.unique && state.slots.some((s) => s.building === b.id)))
+  // What can still go up: every town building but a unique one that stands
+  // or one the layout fixes, and every open site. Rome's ask goes first.
+  const toPlace = buildings.filter((b) => b.zone === 'town' && b.placement !== 'fixed' && !(b.unique && state.slots.some((s) => s.building === b.id)))
     .sort((a, b) => Number(!!romeAsksFor(state, b.id)) - Number(!!romeAsksFor(state, a.id)));
   const openSites = state.slots.filter((s) => s.zone === 'site' && !s.building);
   if (toPlace.length || openSites.length) {

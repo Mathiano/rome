@@ -36,7 +36,7 @@ describe('render', () => {
     g.act({ type: 'convene' }, 1);
     expect(renderHeader(g.state)).toContain('Round 1');
     for (const t of ['village', 'council', 'family', 'tribe', 'rome', 'log', 'save'] as Tab[]) {
-      expect(renderPanel(g, t, 'o2', 2).length).toBeGreaterThan(50);
+      expect(renderPanel(g, t, 'wood2', 2).length).toBeGreaterThan(50);
     }
   });
   it('renders a slot group per slot the colony has and an <image> only where art exists', () => {
